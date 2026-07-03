@@ -1,0 +1,84 @@
+{
+  "Sections": [
+    {
+      "Name": "GOG",
+      "Visible": true,
+      "Description": "Settings specific to GOG",
+      "ModeLevel": 0,
+      "Options": [
+        {
+          "Key": "OffLineMode",
+          "Label": "OffLine Mode",
+          "Description": "Enable GOG Offline Mode. This will allow you to play games without an internet connection.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "ENABLE_UMU_FIXES",
+          "Label": "Enable UMU Fixes",
+          "Description": "Enables UMU fixes for GOG games",
+          "DefaultValue": "true",
+          "Value": "true",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "InstallLocation",
+          "Label": "Install Location",
+          "Description": "Set the install location for GOG games. This will be used when installing new games.",
+          "DefaultValue": "SSD",
+          "Value": "SSD",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            {
+              "Key": "SSD",
+              "Description": "Internal SSD"
+            },
+            {
+              "Key": "MicroSD",
+              "Description": "Micro SD Card"
+            }
+          ]
+        },
+        {
+          "Key": "Language",
+          "Label": "Game Language",
+          "Description": "Preferred language for downloaded GOG games (when available).",
+          "DefaultValue": "en-US",
+          "Value": "en-US",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "en-US", "Description": "English" },
+            { "Key": "fr-FR", "Description": "Français" },
+            { "Key": "de-DE", "Description": "Deutsch" },
+            { "Key": "es-ES", "Description": "Español" },
+            { "Key": "it-IT", "Description": "Italiano" },
+            { "Key": "pt-BR", "Description": "Português (BR)" },
+            { "Key": "pl-PL", "Description": "Polski" },
+            { "Key": "ru-RU", "Description": "Русский" },
+            { "Key": "nl-NL", "Description": "Nederlands" }
+          ]
+        }
+      ]
+    }
+  ],
+  "Autoexec": ""
+}

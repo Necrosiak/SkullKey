@@ -1,0 +1,403 @@
+{
+  "skeletonkey-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "Actions": [
+        {
+          "Id": "GetMediaTvActions",
+          "Title": "Get TV & Video actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py media-tv-actions"
+        },
+        {
+          "Id": "GetMediaMusicActions",
+          "Title": "Get Music actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py media-music-actions"
+        },
+        {
+          "Id": "GetMediaCloudActions",
+          "Title": "Get Cloud Gaming actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py media-cloud-actions"
+        },
+        {
+          "Id": "GetMediaAppsActions",
+          "Title": "Get Apps & Tools actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py media-apps-actions"
+        }
+      ]
+    }
+  },
+  "skeletonkey-tabs": {
+    "Type": "StoreTabs",
+    "Content": {
+      "Tabs": [
+        {
+          "Title": "TV & Video",
+          "Type": "GameGrid",
+          "ActionId": "GetMediaTvActions",
+          "Category": "media"
+        },
+        {
+          "Title": "Music",
+          "Type": "GameGrid",
+          "ActionId": "GetMediaMusicActions",
+          "Category": "media"
+        },
+        {
+          "Title": "Cloud Gaming",
+          "Type": "GameGrid",
+          "ActionId": "GetMediaCloudActions",
+          "Category": "media"
+        },
+        {
+          "Title": "Apps & Tools",
+          "Type": "GameGrid",
+          "ActionId": "GetMediaAppsActions",
+          "Category": "media"
+        }
+      ]
+    }
+  },
+  "media-game-script-actions": {
+    "Type": "ScriptSet",
+    "Content": {
+      "Actions": [
+        {
+          "ActionId": "Update",
+          "Title": "Update / Reinstall",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        }
+      ]
+    }
+  },
+  "media-script-actions": {
+    "Type": "ScriptSet",
+    "Content": {
+      "Actions": []
+    }
+  },
+  "media-tv-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "MediaTvActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get media list",
+          "Type": "GameGrid",
+          "Command": "./scripts/media.py getgames tv"
+        },
+        {
+          "Id": "GetGameSize",
+          "Title": "Get size",
+          "Type": "GameSize",
+          "Command": "./scripts/media.py getgamesize"
+        },
+        {
+          "Id": "GetDetails",
+          "Title": "Get details",
+          "Type": "GameDetails",
+          "Command": "./scripts/media.py getgamedetails"
+        },
+        {
+          "Id": "GetJsonImages",
+          "Title": "Get images",
+          "Type": "GameImages",
+          "Command": "./scripts/media.py getjsonimages"
+        },
+        {
+          "Id": "Install",
+          "Title": "Install",
+          "Type": "Install",
+          "Command": "./scripts/media.py install"
+        },
+        {
+          "Id": "Download",
+          "Title": "Download",
+          "Type": "Download",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Update",
+          "Title": "Update",
+          "Type": "Update",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Uninstall",
+          "Title": "Uninstall",
+          "Type": "Uninstall",
+          "Command": "./scripts/media.py uninstall"
+        },
+        {
+          "Id": "GetProgress",
+          "Title": "Progress",
+          "Type": "GetProgress",
+          "Command": "./scripts/media.py getprogress"
+        },
+        {
+          "Id": "CancelInstall",
+          "Title": "Cancel",
+          "Type": "CancelInstall",
+          "Command": "./scripts/media.py cancelinstall"
+        },
+        {
+          "Id": "GetGameScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-game-script-actions"
+        },
+        {
+          "Id": "GetScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-script-actions"
+        }
+      ]
+    }
+  },
+  "media-music-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "MediaMusicActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get media list",
+          "Type": "GameGrid",
+          "Command": "./scripts/media.py getgames music"
+        },
+        {
+          "Id": "GetGameSize",
+          "Title": "Get size",
+          "Type": "GameSize",
+          "Command": "./scripts/media.py getgamesize"
+        },
+        {
+          "Id": "GetDetails",
+          "Title": "Get details",
+          "Type": "GameDetails",
+          "Command": "./scripts/media.py getgamedetails"
+        },
+        {
+          "Id": "GetJsonImages",
+          "Title": "Get images",
+          "Type": "GameImages",
+          "Command": "./scripts/media.py getjsonimages"
+        },
+        {
+          "Id": "Install",
+          "Title": "Install",
+          "Type": "Install",
+          "Command": "./scripts/media.py install"
+        },
+        {
+          "Id": "Download",
+          "Title": "Download",
+          "Type": "Download",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Update",
+          "Title": "Update",
+          "Type": "Update",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Uninstall",
+          "Title": "Uninstall",
+          "Type": "Uninstall",
+          "Command": "./scripts/media.py uninstall"
+        },
+        {
+          "Id": "GetProgress",
+          "Title": "Progress",
+          "Type": "GetProgress",
+          "Command": "./scripts/media.py getprogress"
+        },
+        {
+          "Id": "CancelInstall",
+          "Title": "Cancel",
+          "Type": "CancelInstall",
+          "Command": "./scripts/media.py cancelinstall"
+        },
+        {
+          "Id": "GetGameScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-game-script-actions"
+        },
+        {
+          "Id": "GetScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-script-actions"
+        }
+      ]
+    }
+  },
+  "media-cloud-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "MediaCloudActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get media list",
+          "Type": "GameGrid",
+          "Command": "./scripts/media.py getgames cloud"
+        },
+        {
+          "Id": "GetGameSize",
+          "Title": "Get size",
+          "Type": "GameSize",
+          "Command": "./scripts/media.py getgamesize"
+        },
+        {
+          "Id": "GetDetails",
+          "Title": "Get details",
+          "Type": "GameDetails",
+          "Command": "./scripts/media.py getgamedetails"
+        },
+        {
+          "Id": "GetJsonImages",
+          "Title": "Get images",
+          "Type": "GameImages",
+          "Command": "./scripts/media.py getjsonimages"
+        },
+        {
+          "Id": "Install",
+          "Title": "Install",
+          "Type": "Install",
+          "Command": "./scripts/media.py install"
+        },
+        {
+          "Id": "Download",
+          "Title": "Download",
+          "Type": "Download",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Update",
+          "Title": "Update",
+          "Type": "Update",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Uninstall",
+          "Title": "Uninstall",
+          "Type": "Uninstall",
+          "Command": "./scripts/media.py uninstall"
+        },
+        {
+          "Id": "GetProgress",
+          "Title": "Progress",
+          "Type": "GetProgress",
+          "Command": "./scripts/media.py getprogress"
+        },
+        {
+          "Id": "CancelInstall",
+          "Title": "Cancel",
+          "Type": "CancelInstall",
+          "Command": "./scripts/media.py cancelinstall"
+        },
+        {
+          "Id": "GetGameScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-game-script-actions"
+        },
+        {
+          "Id": "GetScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-script-actions"
+        }
+      ]
+    }
+  },
+  "media-apps-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "MediaAppsActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get media list",
+          "Type": "GameGrid",
+          "Command": "./scripts/media.py getgames apps"
+        },
+        {
+          "Id": "GetGameSize",
+          "Title": "Get size",
+          "Type": "GameSize",
+          "Command": "./scripts/media.py getgamesize"
+        },
+        {
+          "Id": "GetDetails",
+          "Title": "Get details",
+          "Type": "GameDetails",
+          "Command": "./scripts/media.py getgamedetails"
+        },
+        {
+          "Id": "GetJsonImages",
+          "Title": "Get images",
+          "Type": "GameImages",
+          "Command": "./scripts/media.py getjsonimages"
+        },
+        {
+          "Id": "Install",
+          "Title": "Install",
+          "Type": "Install",
+          "Command": "./scripts/media.py install"
+        },
+        {
+          "Id": "Download",
+          "Title": "Download",
+          "Type": "Download",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Update",
+          "Title": "Update",
+          "Type": "Update",
+          "Command": "./scripts/media.py download"
+        },
+        {
+          "Id": "Uninstall",
+          "Title": "Uninstall",
+          "Type": "Uninstall",
+          "Command": "./scripts/media.py uninstall"
+        },
+        {
+          "Id": "GetProgress",
+          "Title": "Progress",
+          "Type": "GetProgress",
+          "Command": "./scripts/media.py getprogress"
+        },
+        {
+          "Id": "CancelInstall",
+          "Title": "Cancel",
+          "Type": "CancelInstall",
+          "Command": "./scripts/media.py cancelinstall"
+        },
+        {
+          "Id": "GetGameScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-game-script-actions"
+        },
+        {
+          "Id": "GetScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py media-script-actions"
+        }
+      ]
+    }
+  }
+}

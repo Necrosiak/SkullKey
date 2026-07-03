@@ -1,0 +1,56 @@
+{
+  "name": "SkeletonKey",
+  "version": "1.0.0",
+  "description": "Transform your gaming experience with SkeletonKey - the ultimate solution for seamlessly integrating non-Steam games into your Steam Deck library. Say goodbye to clunky work arounds and hello to a world of endless gaming possibilities. Get ready to elevate your gaming to the next level with SkeletonKey!",
+  "scripts": {
+    "build": "shx rm -rf dist && rollup -c",
+    "watch": "rollup -c -w",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Necrosiak/SkeletonKey.git"
+  },
+  "keywords": [
+    "decky",
+    "plugin",
+    "Epic",
+    "steam-deck",
+    "deck"
+  ],
+  "author": "Eben Bruyns <eben@sdk.co.nz>",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/Necrosiak/SkeletonKey"
+  },
+  "homepage": "https://github.com/Necrosiak/SkeletonKey#readme",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.1.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-replace": "^4.0.0",
+    "@rollup/plugin-typescript": "^8.3.3",
+    "@types/react": "16.14.0",
+    "@types/webpack": "^5.28.0",
+    "decky-frontend-lib": "^3.25.0",
+    "react-markdown": "^8.0.7",
+    "react-qr-code": "^2.0.12",
+    "rollup": "^2.77.1",
+    "rollup-plugin-import-assets": "^1.1.1",
+    "shx": "^0.3.4",
+    "tslib": "^2.4.0",
+    "typescript": "^4.7.4"
+  },
+  "dependencies": {
+    "mobx": "^6.12.1",
+    "react-icons": "^5.0.1"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "react-dom"
+      ]
+    }
+  }
+}

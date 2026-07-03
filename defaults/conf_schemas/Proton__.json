@@ -1,0 +1,449 @@
+
+{
+  "Sections": [
+    {
+      "Name": "Runtimes",
+      "Visible": true,
+      "Description": "Additional runtimes to use",
+      "ModeLevel": 0,
+      "Options": [
+        {
+          "Key": "EasyAntiCheat",
+          "Label": "Easy Anti-Cheat",
+          "Description": "Enable steam Easy Anti-Cheat runtime. You may have to install this from desktop mode from the steam store if it's not already installed.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "BattlEye",
+          "Label": "BattlEye",
+          "Description": "Enable BattlEye runtime. You may have to install this from desktop mode from the steam store if it's not already installed.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "ESYNC",
+          "Description": "Enable ESYNC. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "FSYNC",
+          "Description": "Enable FSYNC. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "PULSE_LATENCY_MSEC",
+          "Label": "Pulse Audio Latency ms",
+          "Description": "Enable PulseAudio latency fix. This can help with audio latency in some games, but can also cause issues in others.",
+          "DefaultValue": "0",
+          "Value": "0",
+          "Type": "Range",
+          "Min": 0,
+          "Max": 500,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "RADV_PERFTEST",
+          "RADV": "RADV Perf Test",
+          "Description": "Enable RADV performance test. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "gpl", "Description": "", "Label": "gpl" },
+            { "Key": "aco", "Description": "", "Label": "aco" },
+            { "Key": "amdvlk", "Description": "", "Label": "amdvlk" }
+          ]
+        },
+        {
+          "Key": "VKD3D",
+          "Label": "VKD3D",
+          "Description": "Enable VKD3D. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "VKD3D_PROTON",
+          "Label": "VKD3D-Proton",
+          "Description": "Enable VKD3D-Proton. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "FSR_STRENGTH",
+          "Label": "FSR Strength",
+          "Description": "Enable FidelityFX Super Resolution. This can help with performance in some games, but can also cause issues in others. 0 = Off, 1 = Ultra Performance, 2 = Performance, 3 = Balanced, 4 = Quality, 5 = Ultra Quality",
+          "DefaultValue": "0",
+          "Value": "0",
+          "Type": "Range",
+          "Min": 0,
+          "Max": 5,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "LIMIT_FRAMERATE",
+          "Description": "Enable Framerate limiter",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "FRAME_RATE",
+          "Description": "Set Frame rate limiter",
+          "DefaultValue": "60",
+          "Value": "60",
+          "Type": "Range",
+          "Min": 0,
+          "Max": 90,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "PROTON_FORCE_LARGE_ADDRESS_AWARE",
+          "Label": "Force Large Address Aware",
+          "Description": "Enable Large Address Aware. This can help with performance in some games, but can also cause issues in others.",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "MESA_EXTENSION_MAX_YEAR",
+          "Label": "Mesa Extension Max Year",
+          "Description": "Set the max year for Mesa extensions, empty to disable",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "String",
+          "Min": 1990,
+          "Max": 2030,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": [
+           
+          ]
+        }
+
+      ]
+    },
+    {
+      "Name": "Advanced",
+      "Visible": true,
+      "Description": "Additional arguments to use",
+      "ModeLevel": 2,
+      "Options": [
+        {
+          "Key": "Variables",
+          "Label": "Additional Variables",
+          "Description": "Additional variables to pass to the environment, usefull for things like WINEDEBUG=-all",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "String",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "Arguments",
+          "Label": "Additional Arguments",
+          "Description": "Additional arguments to pass to the game, usefull for things like -nolauncher or -windowed",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "String",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": [{ "Key": "-epicdeploymentid=78a046d4ac1b42d7aaba9fe80f88a5d8", "Description": "work around to get Cygni running", "Label": "Cygni epic deployment id" }]
+        },
+        {
+          "Key": "VK_ICD_FILENAMES",
+          "Label": "Custom Mesa ICD",
+          "Description": "Custom Mesa ICD file to use, please make sure the file is in /home/(YOUR-USER-PROFILE-NAME)/mesa/share/vulkan/icd.d/radeon_icd.x86_64.json",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "IGNORE_EPIC_ARGS",
+          "Label": "Ignore EGS Arguments in launcher",
+          "Description": "Ignores the arguments passed by the Epic Games Store launcher",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "SET_STEAM_COMPAT_LIBRARY_PATHS",
+          "Label": "Set Steam Compatibility Library Paths",
+          "Description": "Sets the library paths for Steam compatibility",
+          "DefaultValue": "true",
+          "Value": "true",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "GAMESCOPE_HACK",
+          "Label": "Hack to show windows that are hidden by gamescope",
+          "Description": "This for games that run in the background like pumpkin jack",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "GAMESCOPE_HACK_DELAY",
+          "Label": "Delay for applying gamescope hack",
+          "Description": "This is the delay in seconds before the hack is applied",
+          "DefaultValue": "20",
+          "Value": "20",
+          "Type": "Range",
+          "Min": 0,
+          "Max": 60,
+          "ModeLevel": 2,
+          "Parents": [],
+          "EnumValues": []
+        }
+      ]
+    },
+    {
+      "Name": "LSFG",
+      "Visible": true,
+      "Description": "This is to use LSFG with games, please make sure you have LSFG installed from the store and lsfg-vk ",
+      "ModeLevel": 0,
+      "Options": [
+        {
+          "Key": "DISABLE_LSFG",
+          "Label": "Disable LSFG-VK",
+          "Description": "Disable LSFG-VK for this game, use this if you have issues with LSFG-VK.",
+          "DefaultValue": "1",
+          "Value": "1",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "NoPrefix": true,
+          "UnsetIfEmpty": true,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "", "Description": "Enable LSFG-VK", "Label": "Enable" },
+            { "Key": "1", "Description": "Disable LSFG-VK", "Label": "Disable" }
+          ]
+        },
+        {
+          "Key": "LEGACY",
+          "Label": "Enable LSFG",
+          "Description": "Enable LSFG for this game",
+          "DefaultValue": "false",
+          "Value": "0",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "0", "Description": "Enable LSFG", "Label": "Enable" },
+            { "Key": "1", "Description": "Disable LSFG", "Label": "Disable" }
+          ]
+        },
+        {
+          "Key": "MULTIPLIER",
+          "Label": "FPS Multiplier",
+          "Description": "Set the FPS multiplier for LSFG",
+          "DefaultValue": "2",
+          "Value": "2",
+          "Type": "Range",
+          "Min": 1,
+          "Max": 5,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "FLOW_SCALE",
+          "Label": "Flow Scale",
+          "Description": "Set the flow scale for LSFG, lower values improve performance but reduce quality",
+          "DefaultValue": "1.0",
+          "Value": "1.0",
+          "Type": "RangeFloat",
+          "Min": 0.1,
+          "Max": 2.0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "PERFORMANCE_MODE",
+          "Label": "Performance Mode",
+          "Description": "Enable performance mode for LSFG, this improves performance but reduces quality",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "NO_FP16",
+          "Label": "Disable FP16",
+          "Description": "Disable half-precision shader operations. By default, LSFG-VK uses FP16 for performance gains on AMD cards. Enable this to disable FP16.",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "UnsetIfEmpty": true,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "", "Description": "Allow FP16 (default)", "Label": "Allow FP16" },
+            { "Key": "1", "Description": "Disable FP16", "Label": "Disable FP16" }
+          ]
+        },
+        {
+          "Key": "GPU",
+          "Label": "GPU",
+          "Description": "Specify which GPU to use for LSFG-VK. Can be a GPU name, uppercase ID (e.g., 0x10DE:0x2C02), or PCI bus ID. Leave empty to use primary GPU.",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "String",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "UnsetIfEmpty": true,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "PACING",
+          "Label": "Frame Pacing",
+          "Description": "Determines frame synchronization with application refresh rate",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "UnsetIfEmpty": true,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "", "Description": "Use default (none)", "Label": "Default" },
+            { "Key": "none", "Description": "No frame pacing", "Label": "None" },
+            { "Key": "vsync", "Description": "Synchronize with VSync", "Label": "VSync" },
+            { "Key": "adaptive", "Description": "Adaptive frame pacing", "Label": "Adaptive" }
+          ]
+        },
+        {
+          "Key": "HDR_MODE",
+          "Label": "HDR Mode",
+          "Description": "Enable HDR mode for LSFG, this improves color quality but may reduce performance",
+          "DefaultValue": "false",
+          "Value": "false",
+          "Type": "Boolean",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": []
+        },
+        {
+          "Key": "EXPERIMENTAL_PRESENT_MODE",
+          "Label": "Experimental Present Mode",
+          "Description": "Set the present mode for LSFG, this may improve performance or reduce latency",
+          "DefaultValue": "",
+          "Value": "",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "", "Description": "Default", "Label": "Default" },
+            { "Key": "fifo", "Description": "FIFO", "Label": "FIFO" },
+            { "Key": "vsync", "Description": "VSync", "Label": "VSync" },
+            { "Key": "mailbox", "Description": "Mailbox", "Label": "Mailbox" },
+            { "Key": "immediate", "Description": "Immediate", "Label": "Immediate" }
+          ]
+        }
+      ]
+    }
+  ],
+  "Autoexec": "",
+  "AutoexecEnabled": false
+}

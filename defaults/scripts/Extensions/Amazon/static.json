@@ -1,0 +1,330 @@
+{
+  "skeletonkey-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "Actions": [
+        {
+          "Id": "GetAmazonActions",
+          "Title": "Get Amazon store actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-actions"
+        }
+      ]
+    }
+  },
+  "main-menu-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "Actions": [
+        {
+          "Id": "GetAmazonActions",
+          "Title": "Get Amazon store actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-actions"
+        }
+      ]
+    }
+  },
+  "skeletonkey-tabs": {
+    "Type": "StoreTabs",
+    "Content": {
+      "Tabs": [
+        { "Title": "Amazon", "Type": "GameGrid", "ActionId": "GetAmazonActions", "Category": "games" }
+      ]
+    }
+  },
+  "amazon-login-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "AmazonLoginActions",
+      "Actions": [
+        {
+          "Id": "Login",
+          "Title": "Login",
+          "Type": "Login",
+          "Command": "./scripts/skeletonkey.sh Amazon login"
+        },
+        {
+          "Id": "LoginLaunchOptions",
+          "Title": "Login",
+          "Type": "Login",
+          "Command": "./scripts/skeletonkey.sh Amazon login-launch-options"
+        },
+        {
+          "Id": "Logout",
+          "Title": "Logout",
+          "Type": "Logout",
+          "Command": "./scripts/skeletonkey.sh Amazon logout"
+        },
+        {
+          "Id": "GetContent",
+          "Title": "Status",
+          "Type": "Status",
+          "Command": "./scripts/skeletonkey.sh Amazon loginstatus"
+        },
+        {
+          "Id": "GetSetting",
+          "Title": "Get settings",
+          "Type": "GetSettings",
+          "Command": "./scripts/skeletonkey.sh Amazon getsetting"
+        },
+        {
+          "Id": "SaveSetting",
+          "Title": "Set settings",
+          "Type": "SaveSettings",
+          "Command": "./scripts/skeletonkey.sh Amazon savesetting"
+        }
+      ]
+    }
+  },
+  "amazon-game-script-actions": {
+    "Type": "ScriptSet",
+    "Content": {
+      "Actions": [
+        {
+          "ActionId": "Update",
+          "Title": "Update Game",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "Repair",
+          "Title": "Verify / Repair Game",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "ProtonTricks",
+          "Title": "Proton Tricks",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "UmuIdUpdate",
+          "Title": "Update UMU Id",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        }
+      ]
+    }
+  },
+  "amazon-script-actions": {
+    "Type": "ScriptSet",
+    "Content": {
+      "Actions": [
+        {
+          "ActionId": "Refresh",
+          "Title": "Refresh Games List",
+          "Type": "ScriptAction",
+          "InstalledOnly": "False"
+        }
+      ]
+    }
+  },
+  "amazon-exe-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "AmazonExeActions",
+      "Actions": [
+        {
+          "Id": "RunBinary",
+          "Title": "Run executable in game folder",
+          "Type": "ScriptAction",
+          "Command": "./scripts/skeletonkey.sh Amazon run-exe"
+        },
+        {
+          "Id": "GetContent",
+          "Title": "Get executable list",
+          "Type": "Content",
+          "Command": "./scripts/skeletonkey.sh Amazon get-exe-list"
+        }
+      ]
+    }
+  },
+  "amazon-config-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "AmazonPlatformConfigFileActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get the ini files as json",
+          "Type": "IniEditor",
+          "Command": "./scripts/skeletonkey.sh Amazon getplatformconfig"
+        },
+        {
+          "Id": "SaveContent",
+          "Title": "Save the ini files as json",
+          "Type": "IniEditor",
+          "Command": "./scripts/skeletonkey.sh Amazon saveplatformconfig"
+        }
+      ]
+    }
+  },
+  "amazon-tab-config-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "AmazonTabConfigEditor",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get the ini files as json",
+          "Type": "IniEditor",
+          "Command": "./scripts/skeletonkey.sh Amazon gettabconfig"
+        },
+        {
+          "Id": "SaveContent",
+          "Title": "Save the ini files as json",
+          "Type": "IniEditor",
+          "Command": "./scripts/skeletonkey.sh Amazon savetabconfig"
+        }
+      ]
+    }
+  },
+  "amazon-actions": {
+    "Type": "ActionSet",
+    "Content": {
+      "SetName": "AmazonActions",
+      "Actions": [
+        {
+          "Id": "GetContent",
+          "Title": "Get Amazon games list",
+          "Type": "GameGrid",
+          "Command": "./scripts/skeletonkey.sh Amazon getgames"
+        },
+        {
+          "Id": "GetGameSize",
+          "Title": "Get game size",
+          "Type": "GameSize",
+          "Command": "./scripts/skeletonkey.sh Amazon getgamesize"
+        },
+        {
+          "Id": "GetDetails",
+          "Title": "Get game details",
+          "Type": "GameDetails",
+          "Command": "./scripts/skeletonkey.sh Amazon getgamedetails"
+        },
+        {
+          "Id": "GetJsonImages",
+          "Title": "Get game images as json",
+          "Type": "GameImages",
+          "Command": "./scripts/skeletonkey.sh Amazon getjsonimages"
+        },
+        {
+          "Id": "Install",
+          "Title": "Install game",
+          "Type": "Install",
+          "Command": "./scripts/skeletonkey.sh Amazon install"
+        },
+        {
+          "Id": "Download",
+          "Title": "Download game",
+          "Type": "Download",
+          "Command": "./scripts/skeletonkey.sh Amazon download"
+        },
+        {
+          "Id": "Update",
+          "Title": "Update game",
+          "Type": "Update",
+          "Command": "./scripts/skeletonkey.sh Amazon update"
+        },
+        {
+          "Id": "Repair",
+          "Title": "Repair game",
+          "Type": "Update",
+          "Command": "./scripts/skeletonkey.sh Amazon repair"
+        },
+        {
+          "Id": "RepairUpdate",
+          "Title": "Repair and Update game",
+          "Type": "Update",
+          "Command": "./scripts/skeletonkey.sh Amazon repair_and_update"
+        },
+        {
+          "Id": "Verify",
+          "Title": "Verify game",
+          "Type": "Verify",
+          "Command": "./scripts/skeletonkey.sh Amazon verify"
+        },
+        {
+          "Id": "Uninstall",
+          "Title": "Uninstall game",
+          "Type": "Uninstall",
+          "Command": "./scripts/skeletonkey.sh Amazon uninstall"
+        },
+        {
+          "Id": "ProtonTricks",
+          "Title": "Proton Tricks",
+          "Type": "Executable",
+          "Command": "./scripts/skeletonkey.sh Amazon protontricks"
+        },
+        {
+          "Id": "GetProgress",
+          "Title": "Get install progress",
+          "Type": "GetProgress",
+          "Command": "./scripts/skeletonkey.sh Amazon getprogress"
+        },
+        {
+          "Id": "CancelInstall",
+          "Title": "Cancel install",
+          "Type": "CancelInstall",
+          "Command": "./scripts/skeletonkey.sh Amazon cancelinstall"
+        },
+        {
+          "Id": "GetLoginActions",
+          "Title": "Get login status",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-login-actions"
+        },
+        {
+          "Id": "GetLaunchOptions",
+          "Title": "Get launch options",
+          "Type": "GetLaunchOptions",
+          "Command": "./scripts/skeletonkey.sh Amazon getlaunchoptions"
+        },
+        {
+          "Id": "GetExeActions",
+          "Title": "Get executable action set to run exe's in game dir",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-exe-actions"
+        },
+        {
+          "Id": "GetGameScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py amazon-game-script-actions"
+        },
+        {
+          "Id": "GetScriptActions",
+          "Title": "",
+          "Type": "ScriptActions",
+          "Command": "./scripts/get-json.py amazon-script-actions"
+        },
+        {
+          "Id": "GetPlatformConfigFileActions",
+          "Title": "Get platform config file actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-config-actions"
+        },
+        {
+          "Id": "GetTabConfigActions",
+          "Title": "Get gog tab config file actions",
+          "Type": "Init",
+          "Command": "./scripts/get-json.py amazon-tab-config-actions"
+        },
+        {
+          "Id": "Refresh",
+          "Title": "Refresh Games List",
+          "Type": "Refresh",
+          "Command": "./scripts/skeletonkey.sh Amazon refresh"
+        },
+        {
+          "Id": "UmuIdUpdate",
+          "Title": "Update UMU Id",
+          "Type": "Executable",
+          "Command": "./scripts/skeletonkey.sh Amazon update-umu-id"
+        }
+      ]
+    }
+  }
+}

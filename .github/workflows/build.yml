@@ -1,0 +1,49 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build plugin
+        run: pnpm run build
+
+      # Same layout as the installed plugin (decky-cli zip: defaults/ content
+      # at the plugin root) so the in-place updater can unpack it directly.
+      - name: Package plugin
+        run: |
+          mkdir -p out/SkeletonKey/dist out/SkeletonKey/py_modules
+          cp dist/index.js out/SkeletonKey/dist/
+          cp main.py updater.py plugin.json package.json LICENSE README.md out/SkeletonKey/
+          cp -r defaults/scripts out/SkeletonKey/scripts
+          cp -r defaults/conf_schemas out/SkeletonKey/conf_schemas
+          cp defaults/init.json out/SkeletonKey/
+          touch out/SkeletonKey/py_modules/.keep
+          cd out
+          zip -r ../SkeletonKey.zip SkeletonKey/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SkeletonKey.zip
+          generate_release_notes: true
