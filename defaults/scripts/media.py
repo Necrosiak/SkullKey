@@ -365,6 +365,7 @@ def b64_file(path):
 
 def action_getgames(cat, filter_str="", installed="false"):
     state = load_state()
+    refresh_installed_launch_scripts(state)
     games = []
     for app in APPS.values():
         if app["cat"] != cat:
@@ -474,15 +475,40 @@ def write_launch_script(app):
     SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
     path = SCRIPTS_DIR / f"{app['shortname']}.sh"
     if app["kind"] == "flatpak":
-        cmd = f'exec flatpak run {app["ref"]} "$@"'
+        inner = f'flatpak run {app["ref"]} "$@"'
     elif app["kind"] == "ssl":
-        cmd = f'exec "{SSL_APPIMAGE}" --appname={app["ref"]} --no-sandbox'
+        inner = f'"{SSL_APPIMAGE}" --appname={app["ref"]} --no-sandbox'
     else:
         dest = APPS_DIR / f"{app['title'].replace(' ', '')}.AppImage"
-        cmd = f'exec "{dest}" --no-sandbox'
-    path.write_text(f"#!/usr/bin/env bash\n{cmd}\n")
+        inner = f'"{dest}" --no-sandbox'
+    # Run the media app directly, in Game Mode and on the desktop alike. We used
+    # to wrap it in a nested gamescope (gamescope-in-gamescope) so the Steam
+    # on-screen keyboard (STEAM+X) would attach to these native / flatpak /
+    # Chromium apps. On the BC-250 that nesting is broken both ways: with the
+    # FROG WSI layer enabled, the parent session's ENABLE_GAMESCOPE_WSI=1 makes
+    # the nested gamescope throw a blocking "Gamescope WSI Layer Error" popup;
+    # disabling the layer (DISABLE_GAMESCOPE_WSI=1) on the gamescope process
+    # kills the popup but then the nested gamescope can't sustain presentation to
+    # the parent Steam session and the app dies a few seconds after launch.
+    # Neither variant is usable, so we drop the nesting entirely. Trade-off: no
+    # STEAM+X on-screen keyboard inside these apps.
+    body = "#!/usr/bin/env bash\n" f"exec {inner}\n"
+    path.write_text(body)
     os.chmod(path, 0o755)
     return path
+
+
+def refresh_installed_launch_scripts(state):
+    # Rewrite the launch scripts of already-installed apps (cheap, idempotent) so
+    # any change to write_launch_script — e.g. dropping the nested-gamescope
+    # wrapper — is picked up live, without the user having to reinstall the app.
+    for shortname, st in state.get("apps", {}).items():
+        app = APPS.get(shortname)
+        if app and st.get("installed"):
+            try:
+                write_launch_script(app)
+            except Exception:
+                pass
 
 
 def action_download(shortname):
@@ -604,6 +630,7 @@ def worker_autoupdate():
 
 def action_init():
     state = load_state()
+    refresh_installed_launch_scripts(state)
     if time.time() - state.get("last_check", 0) > 86400 and any(
             st.get("installed") for st in state["apps"].values()):
         subprocess.Popen([PYEXE, os.path.abspath(__file__), "autoupdate"],
