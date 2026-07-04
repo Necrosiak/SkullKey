@@ -35,9 +35,17 @@ function install() {
     "${VENV}/bin/nile" --version && echo "nile installed OK"
 }
 
+function check() {
+    # Cheap, offline presence check used by the boot-time auto-provision.
+    # Exit 0 = deps present, non-zero = missing (triggers install).
+    [ -x "${VENV}/bin/nile" ]
+}
+
 if [ "$1" == "uninstall" ]; then
     echo "Uninstalling dependencies: Amazon extension"
     uninstall
+elif [ "$1" == "check" ]; then
+    check
 else
     echo "Installing dependencies: Amazon extension"
     install

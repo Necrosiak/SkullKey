@@ -14,6 +14,7 @@ import shutil
 import ssl
 import subprocess
 import tempfile
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -111,6 +112,18 @@ async def check() -> dict:
     try:
         loop = asyncio.get_running_loop()
         latest = await loop.run_in_executor(None, _fetch_latest_blocking)
+    except urllib.error.HTTPError as e:
+        # 404 is expected while the repo is still private (GitHub hides private
+        # repos from anonymous API calls) or before the first published release.
+        # It's not an error worth alarming about — auto-update simply pauses
+        # until the repo is public. Anything else is a real warning.
+        if e.code == 404:
+            logger.info("[updater] releases API 404 — repo is private or has no "
+                        "published release yet; auto-update paused.")
+        else:
+            logger.warning(f"[updater] check failed: HTTP {e.code} {e.reason}")
+        return {"current": current, "latest": None, "update_available": False,
+                "url": "", "notes": "", "error": f"HTTP {e.code}"}
     except Exception as e:
         logger.warning(f"[updater] check failed: {e}")
         return {"current": current, "latest": None, "update_available": False,

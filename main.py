@@ -44,6 +44,31 @@ async def _auto_update_check():
         decky_plugin.logger.error(f"[updater] auto-check error: {e}")
 
 
+async def _ensure_deps():
+    """Boot-time self-heal: install any MISSING GOG/Amazon store deps (small,
+    self-contained venvs) so a fresh machine is ready without the user pressing
+    "Install dependencies". Detached from Helper.lock so a first-run install
+    never blocks the UI; the presence check is a cheap `test -x`, so on every
+    later boot this is a quick no-op. Epic's heavier flatpak deps stay manual."""
+    try:
+        await asyncio.sleep(30)  # let the plugin finish coming up first
+        log_path = os.path.join(decky_plugin.DECKY_PLUGIN_LOG_DIR, "ensure_deps.log")
+        with open(log_path, "a") as log:
+            proc = await asyncio.create_subprocess_shell(
+                "./scripts/install_deps.sh ensure",
+                stdout=log,
+                stderr=log,
+                stdin=asyncio.subprocess.DEVNULL,
+                cwd=Helper.working_directory,
+                env=Helper.get_environment(),
+                start_new_session=True,
+            )
+            await proc.wait()
+        decky_plugin.logger.info("[deps] ensure finished")
+    except Exception as e:
+        decky_plugin.logger.error(f"[deps] ensure error: {e}")
+
+
 class Helper:
     websocket_port = 8765
     action_cache = {}
@@ -484,6 +509,7 @@ class Plugin:
             # decky's method dispatch doesn't bind `self` for a task created
             # from inside _main, so keep it self-free.
             asyncio.create_task(_auto_update_check())
+            asyncio.create_task(_ensure_deps())
 
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")

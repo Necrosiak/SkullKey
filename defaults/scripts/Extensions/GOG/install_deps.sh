@@ -28,9 +28,17 @@ function install() {
     "${VENV}/bin/gogdl" --version && echo "gogdl installed OK"
 }
 
+function check() {
+    # Cheap, offline presence check used by the boot-time auto-provision.
+    # Exit 0 = deps present, non-zero = missing (triggers install).
+    [ -x "${VENV}/bin/gogdl" ]
+}
+
 if [ "$1" == "uninstall" ]; then
     echo "Uninstalling dependencies: GOG extension"
     uninstall
+elif [ "$1" == "check" ]; then
+    check
 else
     echo "Installing dependencies: GOG extension"
     install

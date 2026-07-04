@@ -31,9 +31,34 @@ function uninstall(){
     echo "==================================="
 }
 
+function ensure(){
+    # Boot-time auto-provision: install ONLY the missing store deps, quietly.
+    # Scoped to GOG + Amazon — their deps are small self-contained venvs, safe to
+    # install unattended. Epic's heavier flatpak deps stay manual (deps button).
+    echo "==================================="
+    echo "  Ensuring store dependencies (GOG, Amazon)"
+    echo "==================================="
+    for ext in GOG Amazon; do
+        script="./scripts/Extensions/${ext}/install_deps.sh"
+        [ -f "$script" ] || script="${HOME}/homebrew/data/SkeletonKey/scripts/Extensions/${ext}/install_deps.sh"
+        [ -f "$script" ] || { echo "  ${ext}: install_deps.sh not found, skipping"; continue; }
+        if bash "$script" check; then
+            echo "  ${ext}: dependencies already present ✓"
+        else
+            echo "  ${ext}: dependencies missing → installing"
+            bash "$script"
+        fi
+    done
+    echo "==================================="
+    echo "  Dependency ensure complete"
+    echo "==================================="
+}
+
 if [ "$1" == "uninstall" ]; then
     echo "Uninstalling dependencies"
     uninstall
+elif [ "$1" == "ensure" ]; then
+    ensure
 else
     echo "Installing dependencies"
     install
