@@ -56,11 +56,19 @@ function GOG_getplatformconfig(){
 function GOG_download(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     GAME_DIR=$($GOGCONF --get-game-dir "${1}" --dbfile $DBFILE)
-    mkdir -p "${GAME_DIR}"
+    # gogdl always creates its own <folder_name> subdir inside --path. GAME_DIR
+    # already ends in that folder name, so pass the parent to avoid a doubly
+    # nested "<folder>/<folder>/" install that get_primary_task can't find.
+    DEST_DIR=$(dirname "${GAME_DIR}")
+    mkdir -p "${DEST_DIR}"
     (
-        updategamedetailsaftergogcmd $1 $GOGDL download $1 --platform windows --path "${GAME_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" > "${DECKY_PLUGIN_LOG_DIR}/${1}.output" 2> $PROGRESS_LOG
+        updategamedetailsaftergogcmd $1 $GOGDL download $1 --platform windows --path "${DEST_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" > "${DECKY_PLUGIN_LOG_DIR}/${1}.output" 2> $PROGRESS_LOG
         echo "===GOGDL_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Downloading\"}}"
 }
@@ -68,10 +76,15 @@ function GOG_download(){
 function GOG_update(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     GAME_DIR=$($GOGCONF --get-game-dir "${1}" --dbfile $DBFILE)
+    DEST_DIR=$(dirname "${GAME_DIR}")
     (
-        updategamedetailsaftergogcmd $1 $GOGDL update $1 --platform windows --path "${GAME_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
+        updategamedetailsaftergogcmd $1 $GOGDL update $1 --platform windows --path "${DEST_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
         echo "===GOGDL_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Updating\"}}"
 }
@@ -83,10 +96,15 @@ function GOG_verify(){
 function GOG_repair(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     GAME_DIR=$($GOGCONF --get-game-dir "${1}" --dbfile $DBFILE)
+    DEST_DIR=$(dirname "${GAME_DIR}")
     (
-        updategamedetailsaftergogcmd $1 $GOGDL repair $1 --platform windows --path "${GAME_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
+        updategamedetailsaftergogcmd $1 $GOGDL repair $1 --platform windows --path "${DEST_DIR}" --skip-dlcs --lang "${GOG_LANGUAGE}" >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
         echo "===GOGDL_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Updating\"}}"
 }

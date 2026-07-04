@@ -59,7 +59,11 @@ function Amazon_download(){
     (
         updategamedetailsafteramazoncmd $1 $NILE install $1 --base-path "${INSTALL_DIR}" > "${DECKY_PLUGIN_LOG_DIR}/${1}.output" 2> $PROGRESS_LOG
         echo "===NILE_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Downloading\"}}"
 }
@@ -69,7 +73,11 @@ function Amazon_update(){
     (
         updategamedetailsafteramazoncmd $1 $NILE update $1 >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
         echo "===NILE_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Updating\"}}"
 }
@@ -79,7 +87,11 @@ function Amazon_verify(){
     (
         updategamedetailsafteramazoncmd $1 $NILE verify $1 >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2> $PROGRESS_LOG
         echo "===NILE_EXIT:$?===" >> $PROGRESS_LOG
-    ) &
+    # Detach the backgrounded subshell's stdio from the caller's pipe. Otherwise
+    # it keeps the script's stdout open, the plugin's script runner blocks
+    # reading until the whole download finishes, and the "Downloading" reply that
+    # starts the frontend progress bar only comes back once it's already done.
+    ) </dev/null >/dev/null 2>&1 &
     echo $! > "${DECKY_PLUGIN_LOG_DIR}/${1}.pid"
     echo "{\"Type\": \"Progress\", \"Content\": {\"Message\": \"Updating\"}}"
 }

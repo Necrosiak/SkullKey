@@ -234,8 +234,23 @@ class Gog(GamesDb.GamesDb):
         else:
             try:
                 info = self.execute_shell(f"{self.gogdl_cmd} info {game_id} --platform windows")
-                disk = info.get('disk_size')
-                download = info.get('download_size')
+                sizes = info.get('size')
+                if isinstance(sizes, dict):
+                    # gogdl 1.2.x nests sizes per language, e.g.
+                    # {"*": {...}, "en-US": {"download_size": .., "disk_size": ..}}.
+                    # The real footprint is the base ("*") plus the chosen language.
+                    lang = os.environ.get('GOG_LANGUAGE', 'en-US')
+                    disk = download = 0
+                    for key in ('*', lang):
+                        entry = sizes.get(key) or {}
+                        disk += entry.get('disk_size') or 0
+                        download += entry.get('download_size') or 0
+                    disk = disk or None
+                    download = download or None
+                else:
+                    # older gogdl exposed the fields at the top level
+                    disk = info.get('disk_size')
+                    download = info.get('download_size')
                 disk_str = f"Install Size: {self.convert_bytes(disk)}" if disk else ""
                 dl_str = f"Download Size: {self.convert_bytes(download)}" if download else ""
                 size = disk_str + (f" ({dl_str})" if dl_str and disk_str else dl_str)
