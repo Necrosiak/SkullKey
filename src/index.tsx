@@ -6,7 +6,7 @@ import {
   staticClasses,
   useParams
 } from "decky-frontend-lib";
-import { FaKey } from "react-icons/fa";
+import { FaSkull } from "react-icons/fa";
 
 import { Content } from "./ContentTabs";
 import { About } from "./About";
@@ -53,7 +53,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     })
 
   serverApi.routerHook.addRoute(
-    "/skeletonkey-content/:initActionSet/:initAction/:category?",
+    "/skullkey-content/:initActionSet/:initAction/:category?",
     () => {
       const { initActionSet, initAction, category } = useParams<{ initActionSet: string; initAction: string; category?: string }>();
       return <Content key={initActionSet + "_" + initAction + "_" + (category ?? "")} serverAPI={serverApi} initActionSet={initActionSet} initAction={initAction} category={category} />;
@@ -63,7 +63,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   );
   serverApi.routerHook.addRoute(
-    "/about-skeletonkey",
+    "/about-skullkey",
     () => {
       return <About serverAPI={serverApi} />
     },
@@ -73,12 +73,12 @@ export default definePlugin((serverApi: ServerAPI) => {
   );
 
   return {
-    title: <div className={staticClasses.Title}>SkeletonKey</div>,
+    title: <div className={staticClasses.Title}>SkullKey</div>,
     content: <Content serverAPI={serverApi} initActionSet="init" initAction="InitActions" />,
-    icon: <FaKey />,
+    icon: <FaSkull />,
     onDismount() {
-      serverApi.routerHook.removeRoute("/skeletonkey-content/:initActionSet/:initAction/:category?");
-      serverApi.routerHook.removeRoute("/about-skeletonkey");
+      serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
+      serverApi.routerHook.removeRoute("/about-skullkey");
       unregister.unregister();
     },
   };

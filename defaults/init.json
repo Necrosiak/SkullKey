@@ -3,7 +3,7 @@
     "Id": "init",
     "Title": "Store",
     "Type": "Init",
-    "Command": "./scripts/skeletonkey.sh init"
+    "Command": "./scripts/skullkey.sh init"
   },
   {
     "Id": "InitActions",

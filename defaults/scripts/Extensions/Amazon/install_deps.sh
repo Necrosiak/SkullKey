@@ -3,7 +3,7 @@
 # installed in a dedicated venv built with the Homebrew python.
 # nile's pyproject lacks a packages config (fails with modern setuptools), so
 # we clone, patch and install from the local copy.
-VENV="${HOME}/.local/share/skeletonkey-nile"
+VENV="${HOME}/.local/share/skullkey-nile"
 BREW_PY="/home/linuxbrew/.linuxbrew/bin/python3"
 NILE_REPO="https://github.com/imLinguin/nile"
 

@@ -32,18 +32,18 @@ jobs:
       # at the plugin root) so the in-place updater can unpack it directly.
       - name: Package plugin
         run: |
-          mkdir -p out/SkeletonKey/dist out/SkeletonKey/py_modules
-          cp dist/index.js out/SkeletonKey/dist/
-          cp main.py updater.py plugin.json package.json LICENSE README.md out/SkeletonKey/
-          cp -r defaults/scripts out/SkeletonKey/scripts
-          cp -r defaults/conf_schemas out/SkeletonKey/conf_schemas
-          cp defaults/init.json out/SkeletonKey/
-          touch out/SkeletonKey/py_modules/.keep
+          mkdir -p out/SkullKey/dist out/SkullKey/py_modules
+          cp dist/index.js out/SkullKey/dist/
+          cp main.py updater.py plugin.json package.json LICENSE README.md out/SkullKey/
+          cp -r defaults/scripts out/SkullKey/scripts
+          cp -r defaults/conf_schemas out/SkullKey/conf_schemas
+          cp defaults/init.json out/SkullKey/
+          touch out/SkullKey/py_modules/.keep
           cd out
-          zip -r ../SkeletonKey.zip SkeletonKey/
+          zip -r ../SkullKey.zip SkullKey/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: SkeletonKey.zip
+          files: SkullKey.zip
           generate_release_notes: true

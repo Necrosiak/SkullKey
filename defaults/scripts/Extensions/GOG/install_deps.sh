@@ -2,7 +2,7 @@
 # GOG extension dependencies: gogdl (the GOG download client used by Heroic),
 # installed in a dedicated venv built with the Homebrew python (the system
 # python on Bazzite/SteamOS images has no headers to compile gogdl's C ext).
-VENV="${HOME}/.local/share/skeletonkey-gogdl"
+VENV="${HOME}/.local/share/skullkey-gogdl"
 BREW_PY="/home/linuxbrew/.linuxbrew/bin/python3"
 GOGDL_SRC="git+https://github.com/Heroic-Games-Launcher/heroic-gogdl"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 AMAZONCONF="${DECKY_PLUGIN_DIR}/scripts/amazon-config.py"
-export NILE="${HOME}/.local/share/skeletonkey-nile/bin/nile"
+export NILE="${HOME}/.local/share/skullkey-nile/bin/nile"
 # keep nile's config (tokens, installed.json, manifests) inside the plugin data dir
 export NILE_CONFIG_PATH="${DECKY_PLUGIN_RUNTIME_DIR}"
 PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"

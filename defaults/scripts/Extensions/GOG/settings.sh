@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 GOGCONF="${DECKY_PLUGIN_DIR}/scripts/gog-config.py"
-GOGDL_BIN="${HOME}/.local/share/skeletonkey-gogdl/bin/gogdl"
+GOGDL_BIN="${HOME}/.local/share/skullkey-gogdl/bin/gogdl"
 GOG_AUTH_FILE="${DECKY_PLUGIN_RUNTIME_DIR}/gog_auth.json"
 export GOGDL="${GOGDL_BIN} --auth-config-path ${GOG_AUTH_FILE}"
 PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"

@@ -1,5 +1,5 @@
 {
-  "skeletonkey-actions": {
+  "skullkey-actions": {
     "Type": "ActionSet",
     "Content": {
       "Actions": [
@@ -25,7 +25,7 @@
       ]
     }
   },
-  "skeletonkey-tabs": {
+  "skullkey-tabs": {
     "Type": "StoreTabs",
     "Content": {
       "Tabs": [
@@ -42,37 +42,37 @@
           "Id": "Login",
           "Title": "Login",
           "Type": "Login",
-          "Command": "./scripts/skeletonkey.sh Amazon login"
+          "Command": "./scripts/skullkey.sh Amazon login"
         },
         {
           "Id": "LoginLaunchOptions",
           "Title": "Login",
           "Type": "Login",
-          "Command": "./scripts/skeletonkey.sh Amazon login-launch-options"
+          "Command": "./scripts/skullkey.sh Amazon login-launch-options"
         },
         {
           "Id": "Logout",
           "Title": "Logout",
           "Type": "Logout",
-          "Command": "./scripts/skeletonkey.sh Amazon logout"
+          "Command": "./scripts/skullkey.sh Amazon logout"
         },
         {
           "Id": "GetContent",
           "Title": "Status",
           "Type": "Status",
-          "Command": "./scripts/skeletonkey.sh Amazon loginstatus"
+          "Command": "./scripts/skullkey.sh Amazon loginstatus"
         },
         {
           "Id": "GetSetting",
           "Title": "Get settings",
           "Type": "GetSettings",
-          "Command": "./scripts/skeletonkey.sh Amazon getsetting"
+          "Command": "./scripts/skullkey.sh Amazon getsetting"
         },
         {
           "Id": "SaveSetting",
           "Title": "Set settings",
           "Type": "SaveSettings",
-          "Command": "./scripts/skeletonkey.sh Amazon savesetting"
+          "Command": "./scripts/skullkey.sh Amazon savesetting"
         }
       ]
     }
@@ -130,13 +130,13 @@
           "Id": "RunBinary",
           "Title": "Run executable in game folder",
           "Type": "ScriptAction",
-          "Command": "./scripts/skeletonkey.sh Amazon run-exe"
+          "Command": "./scripts/skullkey.sh Amazon run-exe"
         },
         {
           "Id": "GetContent",
           "Title": "Get executable list",
           "Type": "Content",
-          "Command": "./scripts/skeletonkey.sh Amazon get-exe-list"
+          "Command": "./scripts/skullkey.sh Amazon get-exe-list"
         }
       ]
     }
@@ -150,13 +150,13 @@
           "Id": "GetContent",
           "Title": "Get the ini files as json",
           "Type": "IniEditor",
-          "Command": "./scripts/skeletonkey.sh Amazon getplatformconfig"
+          "Command": "./scripts/skullkey.sh Amazon getplatformconfig"
         },
         {
           "Id": "SaveContent",
           "Title": "Save the ini files as json",
           "Type": "IniEditor",
-          "Command": "./scripts/skeletonkey.sh Amazon saveplatformconfig"
+          "Command": "./scripts/skullkey.sh Amazon saveplatformconfig"
         }
       ]
     }
@@ -170,13 +170,13 @@
           "Id": "GetContent",
           "Title": "Get the ini files as json",
           "Type": "IniEditor",
-          "Command": "./scripts/skeletonkey.sh Amazon gettabconfig"
+          "Command": "./scripts/skullkey.sh Amazon gettabconfig"
         },
         {
           "Id": "SaveContent",
           "Title": "Save the ini files as json",
           "Type": "IniEditor",
-          "Command": "./scripts/skeletonkey.sh Amazon savetabconfig"
+          "Command": "./scripts/skullkey.sh Amazon savetabconfig"
         }
       ]
     }
@@ -190,85 +190,85 @@
           "Id": "GetContent",
           "Title": "Get Amazon games list",
           "Type": "GameGrid",
-          "Command": "./scripts/skeletonkey.sh Amazon getgames"
+          "Command": "./scripts/skullkey.sh Amazon getgames"
         },
         {
           "Id": "GetGameSize",
           "Title": "Get game size",
           "Type": "GameSize",
-          "Command": "./scripts/skeletonkey.sh Amazon getgamesize"
+          "Command": "./scripts/skullkey.sh Amazon getgamesize"
         },
         {
           "Id": "GetDetails",
           "Title": "Get game details",
           "Type": "GameDetails",
-          "Command": "./scripts/skeletonkey.sh Amazon getgamedetails"
+          "Command": "./scripts/skullkey.sh Amazon getgamedetails"
         },
         {
           "Id": "GetJsonImages",
           "Title": "Get game images as json",
           "Type": "GameImages",
-          "Command": "./scripts/skeletonkey.sh Amazon getjsonimages"
+          "Command": "./scripts/skullkey.sh Amazon getjsonimages"
         },
         {
           "Id": "Install",
           "Title": "Install game",
           "Type": "Install",
-          "Command": "./scripts/skeletonkey.sh Amazon install"
+          "Command": "./scripts/skullkey.sh Amazon install"
         },
         {
           "Id": "Download",
           "Title": "Download game",
           "Type": "Download",
-          "Command": "./scripts/skeletonkey.sh Amazon download"
+          "Command": "./scripts/skullkey.sh Amazon download"
         },
         {
           "Id": "Update",
           "Title": "Update game",
           "Type": "Update",
-          "Command": "./scripts/skeletonkey.sh Amazon update"
+          "Command": "./scripts/skullkey.sh Amazon update"
         },
         {
           "Id": "Repair",
           "Title": "Repair game",
           "Type": "Update",
-          "Command": "./scripts/skeletonkey.sh Amazon repair"
+          "Command": "./scripts/skullkey.sh Amazon repair"
         },
         {
           "Id": "RepairUpdate",
           "Title": "Repair and Update game",
           "Type": "Update",
-          "Command": "./scripts/skeletonkey.sh Amazon repair_and_update"
+          "Command": "./scripts/skullkey.sh Amazon repair_and_update"
         },
         {
           "Id": "Verify",
           "Title": "Verify game",
           "Type": "Verify",
-          "Command": "./scripts/skeletonkey.sh Amazon verify"
+          "Command": "./scripts/skullkey.sh Amazon verify"
         },
         {
           "Id": "Uninstall",
           "Title": "Uninstall game",
           "Type": "Uninstall",
-          "Command": "./scripts/skeletonkey.sh Amazon uninstall"
+          "Command": "./scripts/skullkey.sh Amazon uninstall"
         },
         {
           "Id": "ProtonTricks",
           "Title": "Proton Tricks",
           "Type": "Executable",
-          "Command": "./scripts/skeletonkey.sh Amazon protontricks"
+          "Command": "./scripts/skullkey.sh Amazon protontricks"
         },
         {
           "Id": "GetProgress",
           "Title": "Get install progress",
           "Type": "GetProgress",
-          "Command": "./scripts/skeletonkey.sh Amazon getprogress"
+          "Command": "./scripts/skullkey.sh Amazon getprogress"
         },
         {
           "Id": "CancelInstall",
           "Title": "Cancel install",
           "Type": "CancelInstall",
-          "Command": "./scripts/skeletonkey.sh Amazon cancelinstall"
+          "Command": "./scripts/skullkey.sh Amazon cancelinstall"
         },
         {
           "Id": "GetLoginActions",
@@ -280,7 +280,7 @@
           "Id": "GetLaunchOptions",
           "Title": "Get launch options",
           "Type": "GetLaunchOptions",
-          "Command": "./scripts/skeletonkey.sh Amazon getlaunchoptions"
+          "Command": "./scripts/skullkey.sh Amazon getlaunchoptions"
         },
         {
           "Id": "GetExeActions",
@@ -316,13 +316,13 @@
           "Id": "Refresh",
           "Title": "Refresh Games List",
           "Type": "Refresh",
-          "Command": "./scripts/skeletonkey.sh Amazon refresh"
+          "Command": "./scripts/skullkey.sh Amazon refresh"
         },
         {
           "Id": "UmuIdUpdate",
           "Title": "Update UMU Id",
           "Type": "Executable",
-          "Command": "./scripts/skeletonkey.sh Amazon update-umu-id"
+          "Command": "./scripts/skullkey.sh Amazon update-umu-id"
         }
       ]
     }

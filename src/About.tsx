@@ -14,7 +14,7 @@ import { Developer } from "./Developer";
 import { ActionCard, ACCENT } from "./Components/Styled";
 import { t } from "./i18n";
 
-const GITHUB_URL = "https://github.com/Necrosiak/SkeletonKey";
+const GITHUB_URL = "https://github.com/Necrosiak/SkullKey";
 
 // Titled box with a colored left border — same language as the login cards.
 const Section: VFC<{ title: string; color?: string; children?: any }> = ({ title, color, children }) => (
@@ -288,7 +288,7 @@ const AboutTab: VFC = () => (
                     <div style={{ flex: 1 }}>
                         <ActionCard color="#67a3ff" center={false} onClick={() => Navigation.NavigateToExternalWeb(GITHUB_URL)}>
                             <SiGithub size={13} />
-                            <span style={{ flex: 1, textAlign: "left" }}>{t("github_line", { repo: "Necrosiak/SkeletonKey" })}</span>
+                            <span style={{ flex: 1, textAlign: "left" }}>{t("github_line", { repo: "Necrosiak/SkullKey" })}</span>
                         </ActionCard>
                     </div>
                     <div style={{ width: 52 }}>

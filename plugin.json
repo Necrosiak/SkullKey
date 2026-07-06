@@ -1,10 +1,10 @@
 {
-  "name": "SkeletonKey",
+  "name": "SkullKey",
   "author": "Necrosiak",
   "flags": [],
   "publish": {
     "tags": ["Epic", "GOG", "Amazon", "Launcher"],
     "description": "The key that opens every store. Play your Epic Games, GOG and Amazon Games libraries directly from Game Mode: login, install, Proton prefixes and Steam shortcuts with proper artwork — no desktop mode needed. Based on Junk-Store by Eben Bruyns.",
-    "image": "https://raw.githubusercontent.com/Necrosiak/SkeletonKey/main/assets/thumbnail.png"
+    "image": "https://raw.githubusercontent.com/Necrosiak/SkullKey/main/assets/thumbnail.png"
   }
 }

@@ -42,7 +42,7 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
     useEffect(() => {
         (async () => {
             try {
-                const init = await executeAction<ExecuteArgs, ActionSet>(serverApi, initActionSet, "SkeletonKeyInit", { inputData: "" });
+                const init = await executeAction<ExecuteArgs, ActionSet>(serverApi, initActionSet, "SkullKeyInit", { inputData: "" });
                 const setName = (init?.Content as ActionSet)?.SetName;
                 if (!setName) return;
                 const tabsRes = await executeAction<ExecuteArgs, ContentType>(serverApi, setName, "GetContent", { inputData: "" });
@@ -50,7 +50,7 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
                     setStoreTabs((tabsRes.Content as StoreTabsContent).Tabs ?? []);
                 }
             } catch (e) {
-                console.error("[SkeletonKey] store tabs fetch failed", e);
+                console.error("[SkullKey] store tabs fetch failed", e);
             }
         })();
     }, []);
@@ -58,7 +58,7 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
     useEffect(() => {
         if (localStorage.getItem('sk_firstlaunch') != "false") {
             Navigation.CloseSideMenus();
-            Navigation.Navigate("/about-skeletonkey");
+            Navigation.Navigate("/about-skullkey");
             localStorage.setItem('sk_firstlaunch', 'false');
         }
     }, []);
@@ -73,8 +73,8 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
                 localStorage.setItem("sk_forced_tab", String(tabIndex));
             } catch (e) { }
         }
-        const action = content.Panels?.[0]?.Actions?.[0]?.ActionId ?? "SkeletonKeyInit";
-        const base = `/skeletonkey-content/${encodeURIComponent(initActionSet)}/${encodeURIComponent(action)}`;
+        const action = content.Panels?.[0]?.Actions?.[0]?.ActionId ?? "SkullKeyInit";
+        const base = `/skullkey-content/${encodeURIComponent(initActionSet)}/${encodeURIComponent(action)}`;
         Navigation.Navigate(category ? `${base}/${encodeURIComponent(category)}` : base);
     };
 
@@ -125,7 +125,7 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
                     <ActionCard color="#67a3ff" center={false} onClick={() => {
                         Navigation.CloseSideMenus();
                         if (closeModal) closeModal();
-                        Navigation.Navigate("/about-skeletonkey");
+                        Navigation.Navigate("/about-skullkey");
                     }}>
                         <FaCog size={13} />
                         <span style={{ flex: 1, textAlign: "left" }}>{t("settings_about")}</span>

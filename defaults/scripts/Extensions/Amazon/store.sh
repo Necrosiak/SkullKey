@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Register Amazon as a platform with the skeletonkey.sh script
+# Register Amazon as a platform with the skullkey.sh script
 PLATFORMS+=("Amazon")
 
 # only source the settings if the platform is Amazon - avoids conflicts with other plugins

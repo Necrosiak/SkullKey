@@ -50,7 +50,7 @@ export async function executeAction<Arguments extends ExecuteArgs, Content exten
         const success = res.result.Content as SuccessContent;
         logger.debug("result: ", res);
         const data: ToastData = {
-            title: "SkeletonKey",
+            title: "SkullKey",
             body: success.Message,
         };
         if (success.Title) {

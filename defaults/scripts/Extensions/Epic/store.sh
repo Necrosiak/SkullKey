@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# Register actions with the skeletonkey.sh script
+# Register actions with the skullkey.sh script
 ACTIONS+=("install-overlay" "update-overlay" "remove-overlay" "registry-fix" "update-umu-id")
 
-# Register Epic as a platform with the skeletonkey.sh script
+# Register Epic as a platform with the skullkey.sh script
 PLATFORMS+=("Epic")
 
 

@@ -1,4 +1,4 @@
-"""Release-based auto-updater for the SkeletonKey Decky plugin.
+"""Release-based auto-updater for the SkullKey Decky plugin.
 
 Checks the latest GitHub Release, compares it to the installed version
 (package.json), and — if newer — downloads the release ZIP and unpacks it over
@@ -44,7 +44,7 @@ except Exception:  # pragma: no cover - fallback if decky logger unavailable
     logger = _L()
 
 # --- per-plugin configuration -------------------------------------------------
-GITHUB_REPO = "Necrosiak/SkeletonKey"
+GITHUB_REPO = "Necrosiak/SkullKey"
 # -----------------------------------------------------------------------------
 
 PLUGIN_DIR = Path(os.path.dirname(__file__))

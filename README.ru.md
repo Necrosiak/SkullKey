@@ -1,4 +1,4 @@
-# 🗝️ SkeletonKey
+# 🗝️ SkullKey
 
 > 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
@@ -18,7 +18,7 @@
 
 ## Установка
 
-Скачайте `SkeletonKey.zip` из [последнего релиза](https://github.com/Necrosiak/SkeletonKey/releases/latest) и установите через Decky Loader (режим разработчика → Установить из ZIP) или соберите из исходников:
+Скачайте `SkullKey.zip` из [последнего релиза](https://github.com/Necrosiak/SkullKey/releases/latest) и установите через Decky Loader (режим разработчика → Установить из ZIP) или соберите из исходников:
 
 ```bash
 pnpm install && pnpm run build
@@ -29,14 +29,14 @@ sudo bash install-local.sh
 
 ## Использование
 
-1. Откройте меню быстрого доступа (…) → SkeletonKey
+1. Откройте меню быстрого доступа (…) → SkullKey
 2. Выберите карточку магазина (Epic / GOG / Amazon) и войдите
 3. Установите игру — она появится в вашей библиотеке Steam с обложками, в коллекции магазина
 4. Играйте!
 
 ## Благодарности
 
-SkeletonKey — форк [Junk-Store](https://github.com/ebenbruyns/junkstore) **Эбена Брюйнса** (BSD-3-Clause) — спасибо за надёжный фундамент. Движки магазинов: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) и [nile](https://github.com/imLinguin/nile).
+SkullKey — форк [Junk-Store](https://github.com/ebenbruyns/junkstore) **Эбена Брюйнса** (BSD-3-Clause) — спасибо за надёжный фундамент. Движки магазинов: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) и [nile](https://github.com/imLinguin/nile).
 
 Независимый проект сообщества, не связанный с Junk-Store, Valve, Epic Games, GOG или Amazon.
 

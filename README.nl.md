@@ -1,4 +1,4 @@
-# 🗝️ SkeletonKey
+# 🗝️ SkullKey
 
 > 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
@@ -18,7 +18,7 @@
 
 ## Installatie
 
-Download `SkeletonKey.zip` van de [nieuwste release](https://github.com/Necrosiak/SkeletonKey/releases/latest) en installeer het via Decky Loader (ontwikkelaarsmodus → Installeren vanaf ZIP), of bouw vanaf de broncode:
+Download `SkullKey.zip` van de [nieuwste release](https://github.com/Necrosiak/SkullKey/releases/latest) en installeer het via Decky Loader (ontwikkelaarsmodus → Installeren vanaf ZIP), of bouw vanaf de broncode:
 
 ```bash
 pnpm install && pnpm run build
@@ -29,14 +29,14 @@ Open daarna de plugin en installeer de winkelafhankelijkheden via **Instellingen
 
 ## Gebruik
 
-1. Open het snelmenu (…) → SkeletonKey
+1. Open het snelmenu (…) → SkullKey
 2. Kies een winkelkaart (Epic / GOG / Amazon) en log in
 3. Installeer een game — hij verschijnt in je Steam-bibliotheek met artwork, in een collectie per winkel
 4. Spelen!
 
 ## Credits
 
-SkeletonKey is een fork van [Junk-Store](https://github.com/ebenbruyns/junkstore) van **Eben Bruyns** (BSD-3-Clause) — bedankt voor het solide fundament. Winkel-engines: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) en [nile](https://github.com/imLinguin/nile).
+SkullKey is een fork van [Junk-Store](https://github.com/ebenbruyns/junkstore) van **Eben Bruyns** (BSD-3-Clause) — bedankt voor het solide fundament. Winkel-engines: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) en [nile](https://github.com/imLinguin/nile).
 
 Onafhankelijk communityproject, niet gelieerd aan Junk-Store, Valve, Epic Games, GOG of Amazon.
 

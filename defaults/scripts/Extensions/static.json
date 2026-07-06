@@ -1,14 +1,14 @@
 {
-  "skeletonkey-actions": {
+  "skullkey-actions": {
     "Type": "ActionSet",
     "Content": {
-      "SetName": "SkeletonKeyActions",
+      "SetName": "SkullKeyActions",
       "Actions": [
         {
           "Id": "GetContent",
           "Title": "Get content",
           "Type": "TabPage",
-          "Command": "./scripts/get-json.py skeletonkey-tabs"
+          "Command": "./scripts/get-json.py skullkey-tabs"
         }
       ]
     }
@@ -27,7 +27,7 @@
       ]
     }
   },
-  "skeletonkey-tabs": {
+  "skullkey-tabs": {
     "Type": "StoreTabs",
     "Content": {
       "Tabs": []
@@ -42,7 +42,7 @@
           "Type": "Section",
           "Actions": [
             {
-              "ActionId": "SkeletonKeyInit",
+              "ActionId": "SkullKeyInit",
               "Title": "Games",
               "Type": "Page"
             }

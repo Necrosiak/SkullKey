@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Register GOG as a platform with the skeletonkey.sh script
+# Register GOG as a platform with the skullkey.sh script
 PLATFORMS+=("GOG")
 
 # only source the settings if the platform is GOG - avoids conflicts with other plugins

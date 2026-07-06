@@ -1,4 +1,4 @@
-# 🗝️ SkeletonKey
+# 🗝️ SkullKey
 
 > 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
@@ -18,7 +18,7 @@
 
 ## Installation
 
-Téléchargez `SkeletonKey.zip` depuis la [dernière release](https://github.com/Necrosiak/SkeletonKey/releases/latest) et installez-le via Decky Loader (mode développeur → Installer depuis un ZIP), ou compilez depuis les sources :
+Téléchargez `SkullKey.zip` depuis la [dernière release](https://github.com/Necrosiak/SkullKey/releases/latest) et installez-le via Decky Loader (mode développeur → Installer depuis un ZIP), ou compilez depuis les sources :
 
 ```bash
 pnpm install && pnpm run build
@@ -29,14 +29,14 @@ Ouvrez ensuite le plugin et installez les dépendances des boutiques depuis **R�
 
 ## Utilisation
 
-1. Ouvrez le menu d'accès rapide (…) → SkeletonKey
+1. Ouvrez le menu d'accès rapide (…) → SkullKey
 2. Choisissez une carte boutique (Epic / GOG / Amazon) et connectez-vous
 3. Installez un jeu — il arrive dans votre bibliothèque Steam avec son artwork, dans une collection par boutique
 4. Jouez !
 
 ## Crédits
 
-SkeletonKey est un fork de [Junk-Store](https://github.com/ebenbruyns/junkstore) d'**Eben Bruyns** (BSD-3-Clause) — merci pour les solides fondations. Moteurs de boutiques : [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) et [nile](https://github.com/imLinguin/nile).
+SkullKey est un fork de [Junk-Store](https://github.com/ebenbruyns/junkstore) d'**Eben Bruyns** (BSD-3-Clause) — merci pour les solides fondations. Moteurs de boutiques : [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) et [nile](https://github.com/imLinguin/nile).
 
 Projet communautaire indépendant, non affilié à Junk-Store, Valve, Epic Games, GOG ni Amazon.
 

@@ -361,19 +361,19 @@ class Epic(GamesDb.GamesDb):
                     last_progress_update = {
                         "Percentage": 100,
                         "Description": "Error instaling:",
-                        "Error": "This game requires Origin to be installed. This is not currently supported by SkeletonKey."
+                        "Error": "This game requires Origin to be installed. This is not currently supported by SkullKey."
                     }
                 if lines[-1].strip().startswith("[cli] ERROR: The selected title has to be installed via a third-party store: Origin"):
                     last_progress_update = {
                         "Percentage": 100,
                         "Description": "Error instaling:",
-                        "Error": "This game requires Origin to be installed. This is not currently supported by SkeletonKey."
+                        "Error": "This game requires Origin to be installed. This is not currently supported by SkullKey."
                     }
                 if lines[-1].strip().startswith("[cli] ERROR: The selected title has to be installed via a third-party store: The EA App"):
                     last_progress_update = {
                         "Percentage": 100,
                         "Description": "Error instaling:",
-                        "Error": "This game requires The EA App to be installed. This is not currently supported by SkeletonKey."
+                        "Error": "This game requires The EA App to be installed. This is not currently supported by SkullKey."
                     }
                 if lines[-1].strip() == "[cli] CRITICAL: Installation cannot proceed, exiting.":
                    

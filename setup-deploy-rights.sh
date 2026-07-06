@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # À lancer UNE FOIS avec sudo : installe le script de déploiement canonique
 # root-owned + la règle sudoers NOPASSWD, comme bc250-toolkit-deploy.
-# Migre aussi (idempotent) tout ce qui reste de l'ancien nom Junk-Store :
-# données, logs, venvs gogdl/nile, ancien plugin déployé, anciens droits.
-# Ensuite : sudo -n /usr/local/bin/skeletonkey-deploy (sans mot de passe).
+# Migre aussi (idempotent) tout ce qui reste de l'ancien nom SkeletonKey :
+# données, logs, venvs gogdl/nile, ancien plugin déployé, anciens droits —
+# en laissant des SYMLINKS de compatibilité pour que les raccourcis Steam
+# existants (chemins absolus vers …/SkeletonKey/…) continuent de marcher.
+# Ensuite : sudo -n /usr/local/bin/skullkey-deploy (sans mot de passe).
 set -euo pipefail
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -13,39 +15,43 @@ fi
 
 HOMEDIR=/var/home/bazzite
 
-# ---- Migration depuis Junk-Store (ne fait rien si déjà migré) ----
-if [ -d "$HOMEDIR/homebrew/data/Junk-Store" ] && [ ! -d "$HOMEDIR/homebrew/data/SkeletonKey" ]; then
-    mv "$HOMEDIR/homebrew/data/Junk-Store" "$HOMEDIR/homebrew/data/SkeletonKey"
-    echo "✓ Données migrées (tokens + bases de jeux)"
+# ---- Migration depuis SkeletonKey (ne fait rien si déjà migré) ----
+# Données : mv + symlink de compat (les raccourcis médias/ports pointent sur
+# homebrew/data/SkeletonKey/{media,ports}_scripts/*.sh en chemin absolu).
+if [ -d "$HOMEDIR/homebrew/data/SkeletonKey" ] && [ ! -L "$HOMEDIR/homebrew/data/SkeletonKey" ] \
+   && [ ! -d "$HOMEDIR/homebrew/data/SkullKey" ]; then
+    mv "$HOMEDIR/homebrew/data/SkeletonKey" "$HOMEDIR/homebrew/data/SkullKey"
+    ln -s SkullKey "$HOMEDIR/homebrew/data/SkeletonKey"
+    chown -h bazzite:bazzite "$HOMEDIR/homebrew/data/SkeletonKey"
+    echo "✓ Données migrées (+ symlink de compat SkeletonKey → SkullKey)"
 fi
-if [ -d "$HOMEDIR/homebrew/logs/Junk-Store" ] && [ ! -d "$HOMEDIR/homebrew/logs/SkeletonKey" ]; then
-    mv "$HOMEDIR/homebrew/logs/Junk-Store" "$HOMEDIR/homebrew/logs/SkeletonKey"
+if [ -d "$HOMEDIR/homebrew/logs/SkeletonKey" ] && [ ! -d "$HOMEDIR/homebrew/logs/SkullKey" ]; then
+    mv "$HOMEDIR/homebrew/logs/SkeletonKey" "$HOMEDIR/homebrew/logs/SkullKey"
     echo "✓ Logs migrés"
 fi
 for tool in gogdl nile; do
-    OLD="$HOMEDIR/.local/share/junkstore-$tool"
-    NEW="$HOMEDIR/.local/share/skeletonkey-$tool"
+    OLD="$HOMEDIR/.local/share/skeletonkey-$tool"
+    NEW="$HOMEDIR/.local/share/skullkey-$tool"
     [ -L "$NEW" ] && rm "$NEW"
     if [ -d "$OLD" ] && [ ! -d "$NEW" ]; then
         mv "$OLD" "$NEW"
         # un venv déplacé garde des chemins absolus dans ses scripts bin/
-        grep -rlZ "junkstore-$tool" "$NEW/bin" 2>/dev/null | xargs -0 -r sed -i "s|junkstore-$tool|skeletonkey-$tool|g"
+        grep -rlZ "skeletonkey-$tool" "$NEW/bin" 2>/dev/null | xargs -0 -r sed -i "s|skeletonkey-$tool|skullkey-$tool|g"
         echo "✓ venv $tool migré"
     fi
 done
-rm -rf "$HOMEDIR/homebrew/plugins/Junk-Store"
-rm -f /usr/local/bin/junkstore-deploy /etc/sudoers.d/junkstore-deploy
+rm -f /usr/local/bin/skeletonkey-deploy /etc/sudoers.d/skeletonkey-deploy
 
 # ---- Script de déploiement canonique ----
-cat > /usr/local/bin/skeletonkey-deploy <<'EOF'
+cat > /usr/local/bin/skullkey-deploy <<'EOF'
 #!/usr/bin/env bash
-# Déploiement SkeletonKey — script CANONIQUE root-owned, autorisé
-# passwordless via /etc/sudoers.d/skeletonkey-deploy. Copie le repo source vers
+# Déploiement SkullKey — script CANONIQUE root-owned, autorisé
+# passwordless via /etc/sudoers.d/skullkey-deploy. Copie le repo source vers
 # le plugin déployé (layout zip decky : defaults/ à la racine), puis
 # redémarre plugin_loader. Aucun argument.
 set -euo pipefail
-SRC=/var/home/bazzite/SkeletonKey
-DST=/var/home/bazzite/homebrew/plugins/SkeletonKey
+SRC=/var/home/bazzite/SkullKey
+DST=/var/home/bazzite/homebrew/plugins/SkullKey
 
 [ -f "$SRC/dist/index.js" ] || { echo "dist/index.js manquant — lance 'pnpm run build' d'abord" >&2; exit 1; }
 
@@ -62,14 +68,31 @@ chown -R bazzite:bazzite "$DST"
 chmod -R a+rX "$DST"
 find "$DST/scripts" \( -name '*.sh' -o -name '*.py' \) -exec chmod a+rx {} +
 
+# Stub de compat pour les raccourcis Steam existants : les launchers des
+# boutiques pointent en absolu sur …/plugins/SkeletonKey/scripts/… ; on garde
+# un dossier stub SANS plugin.json (ignoré par plugin_loader) dont scripts/
+# est un symlink vers les scripts SkullKey.
+OLD=/var/home/bazzite/homebrew/plugins/SkeletonKey
+if [ ! -e "$OLD/plugin.json" ]; then
+    rm -rf "$OLD"
+    mkdir -p "$OLD"
+    ln -s ../SkullKey/scripts "$OLD/scripts"
+    chown -R -h bazzite:bazzite "$OLD"
+fi
+
 systemctl restart plugin_loader
-echo "✓ SkeletonKey déployé — rouvre le QAM."
+echo "✓ SkullKey déployé — rouvre le QAM."
 EOF
-chmod 755 /usr/local/bin/skeletonkey-deploy
+chmod 755 /usr/local/bin/skullkey-deploy
 
-echo "bazzite ALL=(root) NOPASSWD: /usr/local/bin/skeletonkey-deploy" > /etc/sudoers.d/skeletonkey-deploy
-chmod 440 /etc/sudoers.d/skeletonkey-deploy
-visudo -c -f /etc/sudoers.d/skeletonkey-deploy
+echo "bazzite ALL=(root) NOPASSWD: /usr/local/bin/skullkey-deploy" > /etc/sudoers.d/skullkey-deploy
+chmod 440 /etc/sudoers.d/skullkey-deploy
+visudo -c -f /etc/sudoers.d/skullkey-deploy
 
-/usr/local/bin/skeletonkey-deploy
-echo "✓ Droits installés : 'sudo -n /usr/local/bin/skeletonkey-deploy' est maintenant passwordless."
+# L'ancien plugin déployé (avec plugin.json) laisse la place au stub de compat
+if [ -e "$HOMEDIR/homebrew/plugins/SkeletonKey/plugin.json" ]; then
+    rm -rf "$HOMEDIR/homebrew/plugins/SkeletonKey"
+fi
+
+/usr/local/bin/skullkey-deploy
+echo "✓ Droits installés : 'sudo -n /usr/local/bin/skullkey-deploy' est maintenant passwordless."

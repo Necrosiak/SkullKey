@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Installe le fork local de SkeletonKey dans Decky.
-# Usage : sudo bash ~/SkeletonKey/install-local.sh
+# Installe le fork local de SkullKey dans Decky.
+# Usage : sudo bash ~/SkullKey/install-local.sh
 # Reproduit la structure du zip decky-cli : contenu de defaults/ à la racine
 # du plugin (main.py attend scripts/, conf_schemas/ et init.json à côté de lui).
 set -euo pipefail
-SRC=/var/home/bazzite/SkeletonKey
-DST=/var/home/bazzite/homebrew/plugins/SkeletonKey
+SRC=/var/home/bazzite/SkullKey
+DST=/var/home/bazzite/homebrew/plugins/SkullKey
 
 [ -f "$SRC/dist/index.js" ] || { echo "dist/index.js manquant — lance 'pnpm run build' d'abord" >&2; exit 1; }
 
@@ -23,4 +23,4 @@ chmod -R a+rX "$DST"
 find "$DST/scripts" \( -name '*.sh' -o -name '*.py' \) -exec chmod a+rx {} +
 
 systemctl restart plugin_loader
-echo "✓ SkeletonKey (fork) installé — rouvre le QAM."
+echo "✓ SkullKey (fork) installé — rouvre le QAM."

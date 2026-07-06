@@ -1,7 +1,7 @@
 {
-  "name": "SkeletonKey",
+  "name": "SkullKey",
   "version": "1.0.0",
-  "description": "Transform your gaming experience with SkeletonKey - the ultimate solution for seamlessly integrating non-Steam games into your Steam Deck library. Say goodbye to clunky work arounds and hello to a world of endless gaming possibilities. Get ready to elevate your gaming to the next level with SkeletonKey!",
+  "description": "Transform your gaming experience with SkullKey - the ultimate solution for seamlessly integrating non-Steam games into your Steam Deck library. Say goodbye to clunky work arounds and hello to a world of endless gaming possibilities. Get ready to elevate your gaming to the next level with SkullKey!",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",
     "watch": "rollup -c -w",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Necrosiak/SkeletonKey.git"
+    "url": "git+https://github.com/Necrosiak/SkullKey.git"
   },
   "keywords": [
     "decky",
@@ -21,9 +21,9 @@
   "author": "Eben Bruyns <eben@sdk.co.nz>",
   "license": "BSD-3-Clause",
   "bugs": {
-    "url": "https://github.com/Necrosiak/SkeletonKey"
+    "url": "https://github.com/Necrosiak/SkullKey"
   },
-  "homepage": "https://github.com/Necrosiak/SkeletonKey#readme",
+  "homepage": "https://github.com/Necrosiak/SkullKey#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^21.1.0",
     "@rollup/plugin-json": "^4.1.0",
