@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0 — 2026-07-06
+
+### Added
+- **Voice-over picker** for miHoYo games. The game menu now has "Voice: English
+  / 日本語 / 中文 / 한국어 / match console language" entries — pick a dub
+  language and the pack is set and downloaded (for an installed game). Builds on
+  the voice management added in 1.5.0.
+- **Disk-space precheck.** The game size now also shows the free space on the
+  install drive, and flags a fresh install that wouldn't fit
+  ("⚠ not enough free space") before you start it.
+
 ## 1.5.0 — 2026-07-06
 
 ### Added

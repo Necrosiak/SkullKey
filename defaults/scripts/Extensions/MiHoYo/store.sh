@@ -40,6 +40,11 @@ function MiHoYo_repair_and_update(){ _mihoyo_py repair_and_update "${@}"; }
 function MiHoYo_verify()           { _mihoyo_py verify "${@}"; }
 function MiHoYo_getvoices()        { _mihoyo_py getvoices "${@}"; }
 function MiHoYo_setvoices()        { _mihoyo_py setvoices "${@}"; }
+function MiHoYo_voice-en()         { _mihoyo_py voice-en "${@}"; }
+function MiHoYo_voice-jp()         { _mihoyo_py voice-jp "${@}"; }
+function MiHoYo_voice-cn()         { _mihoyo_py voice-cn "${@}"; }
+function MiHoYo_voice-ko()         { _mihoyo_py voice-ko "${@}"; }
+function MiHoYo_voice-auto()       { _mihoyo_py voice-auto "${@}"; }
 function MiHoYo_uninstall()        { _mihoyo_py uninstall "${@}"; }
 function MiHoYo_cancelinstall()    { _mihoyo_py cancelinstall "${@}"; }
 function MiHoYo_protontricks()     { _mihoyo_py protontricks "${@}"; }

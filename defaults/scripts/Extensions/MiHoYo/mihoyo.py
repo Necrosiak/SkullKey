@@ -345,6 +345,21 @@ def action_getgamesize(biz, installed="false"):
         if dl:
             size += (f" (Download Size: {_human(dl)})" if size
                      else f"Download Size: {_human(dl)}")
+        # disk-space precheck: show free space on the install drive, and warn
+        # before a FRESH install that wouldn't fit (updates need far less, so
+        # no warning for an already-installed game).
+        try:
+            probe = _game_dir(biz)
+            while probe and not os.path.exists(probe):
+                probe = os.path.dirname(probe)
+            free = shutil.disk_usage(probe or os.path.expanduser("~")).free
+            if size:
+                size += f" — {_human(free)} free"
+                installed = load_state()["games"].get(biz, {}).get("installed")
+                if disk and not installed and free < disk:
+                    size += " — ⚠ not enough free space"
+        except Exception:
+            pass
     except Exception as e:
         print(f"mihoyo getgamesize failed: {e}", file=sys.stderr)
         size = ""
@@ -1833,6 +1848,16 @@ def main():
             out = action_getvoices(*args)
         elif action in ("set-voices", "setvoices"):
             out = action_setvoices(*args)
+        elif action.startswith("voice-"):
+            # menu buttons: voice-en/jp/cn/kr set the dub language (and download
+            # it for an installed game); voice-auto = console language.
+            code = action[len("voice-"):]
+            lm = {"en": "en-us", "jp": "ja-jp", "cn": "zh-cn", "ko": "ko-kr"}
+            biz = args[0] if args else ""
+            if code == "auto":
+                out = action_setvoices(biz, ",".join(_default_voice_langs(biz)))
+            else:
+                out = action_setvoices(biz, lm.get(code, ""))
         elif action == "ensure-jadeite":
             out = action_ensurejadeite(*args)
         elif action == "resume-pending":
