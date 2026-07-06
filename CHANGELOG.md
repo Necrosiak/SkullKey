@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1 — 2026-07-06
+
+### Changed
+- **Store dependencies now auto-detect the OS.** The GOG (gogdl) and Amazon
+  (nile) virtualenvs are built with the Python that works on the current OS:
+  the Homebrew Python on Bazzite/SteamOS (whose atomic system Python lacks dev
+  headers), or the system `python3` on Arch/CachyOS/Fedora/Debian (headers
+  available). Bazzite behaviour is unchanged.
+- `install-local.sh` derives the target user/home instead of hardcoding
+  `/var/home/bazzite`, so the maintainer install script works off
+  Fedora-atomic too.
+
 ## 1.2.0 — 2026-07-06
 
 ### Added
