@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.0 — 2026-07-06
+
+### Added
+- **Zenless Zone Zero (ZZZ) anti-cheat handled automatically.** ZZZ is not
+  supported by jadeite; instead its global build runs on Proton with no
+  anti-cheat bypass when the game's `config.ini` uses the Epic Games Store
+  channel (`channel=1`, `sub_channel=3`, `cps=pcepic`). SkullKey now merges
+  those keys into `config.ini` (preserving any other keys) at install and
+  before every launch, so ZZZ starts on Proton out of the box. A recent Proton
+  (GE-Proton recommended) is advised — the game details page says so. Community
+  fix (jadeite issue #58 → notabug.org/Krock/dawn).
+
 ## 1.3.0 — 2026-07-06
 
 ### Added

@@ -16,6 +16,10 @@ GAME_PATH=$(python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/MiHoYo/mihoyo.py" ga
 export STEAM_COMPAT_INSTALL_PATH="${GAME_PATH}"
 export PROTON_SET_GAME_DRIVE="gamedrive"
 
+# Pre-launch game config (ZZZ: EGS channel config.ini so its anti-cheat lets
+# the game run on Proton). No-op for every other game.
+python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/MiHoYo/mihoyo.py" apply-launch-config "$ID" 2>/dev/null || true
+
 QUOTED_ARGS=""
 for arg in "$@"; do
     QUOTED_ARGS+=" \"${arg}\""

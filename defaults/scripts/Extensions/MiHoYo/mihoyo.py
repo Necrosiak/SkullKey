@@ -374,6 +374,20 @@ _DETAIL_LABELS = {
            "genre": "Free-to-play — аккаунт создаётся в игре при первом запуске."},
 }
 
+# Shown on the ZZZ details page: the anti-cheat is handled automatically (EGS
+# channel config), no jadeite needed; a recent Proton is recommended.
+_ZZZ_NOTE = {
+    "en": "Anti-cheat handled automatically — no jadeite needed. Use a recent Proton (GE-Proton recommended).",
+    "fr": "Anti-triche géré automatiquement — pas besoin de jadeite. Utilisez un Proton récent (GE-Proton recommandé).",
+    "de": "Anti-Cheat wird automatisch gehandhabt — kein jadeite nötig. Verwende ein aktuelles Proton (GE-Proton empfohlen).",
+    "es": "Anti-trampas gestionado automáticamente — no hace falta jadeite. Usa un Proton reciente (GE-Proton recomendado).",
+    "it": "Anti-cheat gestito automaticamente — niente jadeite. Usa un Proton recente (GE-Proton consigliato).",
+    "pt": "Anti-cheat tratado automaticamente — sem jadeite. Use um Proton recente (GE-Proton recomendado).",
+    "nl": "Anti-cheat wordt automatisch afgehandeld — geen jadeite nodig. Gebruik een recente Proton (GE-Proton aanbevolen).",
+    "pl": "Anti-cheat obsługiwany automatycznie — jadeite niepotrzebne. Użyj najnowszego Protona (zalecany GE-Proton).",
+    "ru": "Античит обрабатывается автоматически — jadeite не нужен. Используйте свежий Proton (рекомендуется GE-Proton).",
+}
+
 # Voice-pack languages shown in their own language — universal, no i18n needed.
 _VOICE_NAMES = {"zh-cn": "中文", "en-us": "English", "ja-jp": "日本語",
                 "ko-kr": "한국어"}
@@ -409,6 +423,8 @@ def action_getgamedetails(biz):
         facts.append(f"{lab['voice']}: {', '.join(v for v in voices if v)}")
     parts.append("<br />".join(facts))
     parts.append(f"<i>{lab['genre']}</i>")
+    if biz in NEEDS_EGS_CONFIG:
+        parts.append(f"<i>{_ZZZ_NOTE.get(machine_lang_code(), _ZZZ_NOTE['en'])}</i>")
 
     desc = "<br /><br />".join(parts)
     return {
@@ -1300,6 +1316,7 @@ def worker_install(biz):
                 ensure_jadeite()
             except Exception as e:
                 print(f"jadeite fetch failed: {e}", file=sys.stderr)
+        _apply_egs_config(biz)        # ZZZ: EGS channel so it runs on Proton
         _write_progress(biz, 100, "Finished installation process", done=True)
     except Exception as e:
         _write_progress(biz, 0, "Installation Failed.", error=str(e))
@@ -1503,6 +1520,73 @@ def action_ensurejadeite(*_):
                 "Content": {"Message": f"jadeite download failed: {e}"}}
 
 
+# ── ZZZ anti-cheat: Epic Games Store channel config ──────────────────────────
+# Zenless Zone Zero (nap_global) is NOT supported by jadeite. Its GLOBAL build
+# launches on Proton with NO anti-cheat bypass at all when the game's
+# config.ini uses the Epic Games Store channel (channel=1, sub_channel=3,
+# cps=pcepic) — that build skips the check that otherwise blocks Wine. We merge
+# those keys into config.ini (keeping any other keys) at install and before
+# every launch. Community-established fix (jadeite issue #58 → notabug/Krock).
+NEEDS_EGS_CONFIG = {"nap_global"}
+
+
+def _apply_egs_config(biz):
+    """Set the EGS channel keys in the game's config.ini (ZZZ only). Idempotent
+    and non-destructive: other keys are preserved. No-op for other games."""
+    if biz not in NEEDS_EGS_CONFIG:
+        return
+    st = load_state()["games"].get(biz, {})
+    gdir = st.get("dir") or _game_dir(biz)
+    overrides = {
+        "channel": "1",
+        "sub_channel": "3",
+        "cps": "pcepic",
+        "uapc": '{"hyp":{"uapc":""},"nap_global":{"uapc":""}}',
+    }
+    if st.get("version"):
+        overrides["game_version"] = st["version"]
+    cfg = os.path.join(gdir, "config.ini")
+    try:
+        with open(cfg) as f:
+            lines = f.read().splitlines()
+    except OSError:
+        lines = []
+    if not any(x.strip().lower() == "[general]" for x in lines):
+        lines = ["[general]"] + lines
+    seen = set()
+    out = []
+    for line in lines:
+        s = line.strip()
+        key = (s.split("=", 1)[0].strip().lower()
+               if "=" in s and not s.startswith("[") else None)
+        if key in overrides:
+            out.append(f"{key}={overrides[key]}")
+            seen.add(key)
+        else:
+            out.append(line)
+    for k, v in overrides.items():
+        if k not in seen:
+            for i, line in enumerate(out):
+                if line.strip().lower() == "[general]":
+                    out.insert(i + 1, f"{k}={v}")
+                    break
+    try:
+        os.makedirs(gdir, exist_ok=True)
+        with open(cfg, "w") as f:
+            f.write("\n".join(out) + "\n")
+    except OSError as e:
+        print(f"ZZZ config.ini write failed: {e}", file=sys.stderr)
+
+
+def action_applylaunchconfig(biz):
+    """Launcher hook (plain text): apply any pre-launch game config. Currently
+    the ZZZ EGS channel config; a harmless no-op for every other game."""
+    try:
+        _apply_egs_config(biz)
+    except Exception as e:
+        print(f"apply-launch-config: {e}", file=sys.stderr)
+
+
 def action_autoupdate(*_):
     """Unattended daily update: for every installed game, compare the
     installed version with the live sophon branch tag; when it changed,
@@ -1598,6 +1682,9 @@ def main():
         return
     if action == "jadeite-path":
         action_jadeitepath(*args)
+        return
+    if action == "apply-launch-config":
+        action_applylaunchconfig(*args)
         return
 
     try:
