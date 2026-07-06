@@ -14,7 +14,18 @@ shift
 
 GAME_PATH=$(python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/MiHoYo/mihoyo.py" game-dir "$ID")
 export STEAM_COMPAT_INSTALL_PATH="${GAME_PATH}"
-export PROTON_SET_GAME_DRIVE="gamedrive"
+# Map the game's install dir to its own Proton drive letter (s:). REQUIRED on
+# immutable images (Bazzite/SteamOS): there the root '/' (composefs/ostree) is
+# read-only with 0 bytes free and Wine maps Z: -> /, so a HoYo game that checks
+# free space via Z: sees 0 free and refuses to download resources
+# ("insufficient disk space") even with hundreds of GB free on /var/home.
+# Proton creates the game drive only when BOTH the value is "1" AND
+# STEAM_COMPAT_LIBRARY_PATHS is set to a parent of the install path (its
+# try_get_game_library_dir() returns None otherwise → no drive). Steam sets
+# that var for real Steam games but not for our non-Steam shortcuts, so we set
+# it ourselves to the Games root (a substring of the install path).
+export STEAM_COMPAT_LIBRARY_PATHS="$(dirname "$(dirname "${GAME_PATH}")")"
+export PROTON_SET_GAME_DRIVE=1
 
 # Pre-launch game config (ZZZ: EGS channel config.ini so its anti-cheat lets
 # the game run on Proton). No-op for every other game.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.4.1 — 2026-07-06
+
+### Fixed
+- **miHoYo games no longer report "insufficient disk space" on immutable
+  systems** (Bazzite/SteamOS). There the root `/` (composefs/ostree) is
+  read-only with 0 bytes free and Wine maps `Z:` to `/`, so a game's in-game
+  resource downloader that checks free space via `Z:` saw 0 free and refused
+  to download — even with hundreds of GB free on `/var/home`. The launcher now
+  sets up a Proton game drive (`s:`) pointing at the games folder: it exports
+  `PROTON_SET_GAME_DRIVE=1` (the value must be exactly `1`; the previous
+  `gamedrive` was a silent no-op) **and** `STEAM_COMPAT_LIBRARY_PATHS` (a
+  parent of the install path — Proton skips the game drive without it, which
+  Steam sets for real games but not for non-Steam shortcuts). The game then
+  sees the real free space. Surfaced by Zenless Zone Zero; applies to all
+  miHoYo games.
+
 ## 1.4.0 — 2026-07-06
 
 ### Added
