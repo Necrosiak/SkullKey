@@ -3,8 +3,8 @@
 // one accent color per store, native Steam notifications.
 import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
-import { SiEpicgames, SiGogdotcom } from "react-icons/si";
-import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge } from "react-icons/fa";
+import { SiEpicgames, SiGogdotcom, SiMihoyo } from "react-icons/si";
+import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull } from "react-icons/fa";
 
 const Btn = DialogButton as any;
 
@@ -23,6 +23,10 @@ export function storeTheme(name?: string): StoreTheme {
     if (n.includes("epic")) return { color: "#26bbff", icon: SiEpicgames };
     if (n.includes("gog")) return { color: "#a24bfa", icon: SiGogdotcom };
     if (n.includes("amazon")) return { color: "#ff9900", icon: FaAmazon };
+    if (n.includes("mihoyo") || n.includes("hoyo")) return { color: "#4d8dff", icon: SiMihoyo };
+    // "Classics Reborn" tab (title) / PortsActions (SetName): revived console
+    // classics — skull icon to match the SkullKey theme.
+    if (n.includes("ports") || n.includes("classic")) return { color: "#c8a24b", icon: FaSkull };
     // media sections — match SetName ("mediatvactions") and tab title
     if (n.includes("mediatv") || n.startsWith("tv")) return { color: "#e5484d", icon: FaTv };
     if (n.includes("mediamusic") || n.startsWith("music")) return { color: "#30a46c", icon: FaMusic };
@@ -44,10 +48,10 @@ export function notify(data: { title?: string; body: string; duration?: number }
         if (!steamid) return;
         (window as any).SteamClient?.ClientNotifications?.DisplayClientNotification?.(
             1,
-            JSON.stringify({ title: data.title || "SkeletonKey", body: data.body, state: "active", steamid }),
+            JSON.stringify({ title: data.title || "SkullKey", body: data.body, state: "active", steamid }),
             () => { },
         );
-    } catch (e) { console.error("[SkeletonKey] notify failed", e); }
+    } catch (e) { console.error("[SkullKey] notify failed", e); }
 }
 
 // Clickable card: colored background when active, white halo + colored glow

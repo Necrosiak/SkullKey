@@ -1,0 +1,127 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetPortsActions",
+     "Title": "Get Ports actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ports-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Classics Reborn",
+     "Type": "GameGrid",
+     "ActionId": "GetPortsActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "ports-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": [
+    {
+     "ActionId": "Update",
+     "Title": "Update / Reinstall",
+     "Type": "ScriptAction",
+     "InstalledOnly": "True"
+    }
+   ]
+  }
+ },
+ "ports-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "ports-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "PortsActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get ports list",
+     "Type": "GameGrid",
+     "Command": "./scripts/ports.py getgames ports"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "Get size",
+     "Type": "GameSize",
+     "Command": "./scripts/ports.py getgamesize"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "Get details",
+     "Type": "GameDetails",
+     "Command": "./scripts/ports.py getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "Get images",
+     "Type": "GameImages",
+     "Command": "./scripts/ports.py getjsonimages"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install",
+     "Type": "Install",
+     "Command": "./scripts/ports.py install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download",
+     "Type": "Download",
+     "Command": "./scripts/ports.py download"
+    },
+    {
+     "Id": "Update",
+     "Title": "Update",
+     "Type": "Update",
+     "Command": "./scripts/ports.py download"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall",
+     "Type": "Uninstall",
+     "Command": "./scripts/ports.py uninstall"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "Progress",
+     "Type": "GetProgress",
+     "Command": "./scripts/ports.py getprogress"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel",
+     "Type": "CancelInstall",
+     "Command": "./scripts/ports.py cancelinstall"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ports-game-script-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ports-script-actions"
+    }
+   ]
+  }
+ }
+}
