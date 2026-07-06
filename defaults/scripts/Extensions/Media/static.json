@@ -1,5 +1,5 @@
 {
-  "skeletonkey-actions": {
+  "skullkey-actions": {
     "Type": "ActionSet",
     "Content": {
       "Actions": [
@@ -30,7 +30,7 @@
       ]
     }
   },
-  "skeletonkey-tabs": {
+  "skullkey-tabs": {
     "Type": "StoreTabs",
     "Content": {
       "Tabs": [

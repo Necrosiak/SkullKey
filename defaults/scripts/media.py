@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SkeletonKey Media extension backend.
+"""SkullKey Media extension backend.
 
 Curated catalog of streaming / media / cloud-gaming / utility apps installable
 from Game Mode, mirroring what Bazzite's `ujust get-media-app` offers and more:
@@ -27,6 +27,15 @@ import urllib.request
 from io import BytesIO
 from pathlib import Path
 
+# Rich localized descriptions + controller-support lines (sibling module,
+# deployed next to this file). Soft dependency: fall back to the short
+# CATALOG descs if it's ever missing.
+try:
+    from media_i18n import desc_for, pad_line
+except ImportError:
+    desc_for = lambda app: app.get("desc", "")   # noqa: E731
+    pad_line = lambda app: ""                     # noqa: E731
+
 # The plugin runs subprocesses with a minimal env (no PATH). Restore a sane
 # PATH so flatpak / the AppImages resolve, whether launched by the backend or
 # by hand.
@@ -46,7 +55,7 @@ import shutil
 PYEXE = sys.executable or shutil.which("python3") or "/usr/bin/python3"
 
 HOME = Path(os.path.expanduser("~"))
-RUNTIME_DIR = Path(os.environ.get("DECKY_PLUGIN_RUNTIME_DIR", str(HOME / "homebrew/data/SkeletonKey")))
+RUNTIME_DIR = Path(os.environ.get("DECKY_PLUGIN_RUNTIME_DIR", str(HOME / "homebrew/data/SkullKey")))
 STATE_FILE = RUNTIME_DIR / "media_state.json"
 ART_DIR = RUNTIME_DIR / "media_art"
 PROGRESS_DIR = RUNTIME_DIR / "media_progress"
@@ -56,7 +65,7 @@ APPS_DIR = HOME / "Applications"
 SSL_REPO = "aarron-lee/StreamingServiceLauncher"
 SSL_APPIMAGE = APPS_DIR / "StreamingServiceLauncher.AppImage"
 
-UA = {"User-Agent": "SkeletonKey-media/1.0"}
+UA = {"User-Agent": "SkullKey-media/1.0"}
 WM = "https://commons.wikimedia.org/wiki/Special:FilePath"
 FH = "https://dl.flathub.org/repo/appstream/x86_64/icons/128x128"
 GFAV = "https://www.google.com/s2/favicons?domain={d}&sz=256"
@@ -394,7 +403,11 @@ def action_getgamedetails(shortname):
                   "flatpak": f"Flatpak — {app['ref']}",
                   "appimage": "AppImage (GitHub release)"}[app["kind"]]
     tag = st.get("tag") or state.get("ssl_tag") if app["kind"] in ("ssl", "appimage") else ""
-    desc = f"{app['desc']}<br><br><i>{kind_label}</i>"
+    desc = desc_for(app)
+    pad = pad_line(app)
+    if pad:
+        desc += f"<br><br>{pad}"
+    desc += f"<br><br><i>{kind_label}</i>"
     if tag and is_installed(state, app):
         desc += f"<br><i>Build: {tag}</i>"
     print(json.dumps({"Type": "GameDetails", "Content": {

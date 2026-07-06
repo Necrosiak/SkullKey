@@ -85,6 +85,34 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                 return;
             }
             setSteamClientID(gameDetailsResponse.Content.SteamClientID);
+            const sid = parseInt(String(gameDetailsResponse.Content.SteamClientID ?? ""));
+            if (sid) {
+                const alive = appStore.allApps.some((app: any) => app.appid == sid);
+                if (alive) {
+                    // fire-and-forget: refresh the shortcut's artwork from the
+                    // backend cache so old shortcuts pick up artwork fixes
+                    applyArtwork(sid).catch((e) => logger.error("artwork refresh", e));
+                } else {
+                    // The saved id no longer matches a shortcut (it was
+                    // recreated under a new appid): artwork/launch-option
+                    // updates were going to a dead id — the Genshin
+                    // double-logo hero came from exactly this. Re-attach to
+                    // the real shortcut found by name, persist the id, and
+                    // refresh its artwork.
+                    const name = gameDetailsResponse.Content.Name;
+                    const match = appStore.allApps.find((app: any) =>
+                        app.display_name == name && app.app_type == 1073741824);
+                    if (match) {
+                        logger.log(`stale SteamClientID ${sid} → re-attaching to shortcut ${match.appid}`);
+                        setSteamClientID(match.appid.toString());
+                        executeAction(serverAPI, initActionSet, "Install", {
+                            shortname: shortname,
+                            steamClientID: match.appid.toString()
+                        }).then(() => applyArtwork(match.appid))
+                            .catch((e) => logger.error("shortcut re-attach", e));
+                    }
+                }
+            }
             logger.debug("onInit finished");
             const scriptActionResponse = await executeAction<ExecuteGetGameDetailsArgs, ScriptActions>(
                 serverAPI,
@@ -101,6 +129,24 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
             logger.debug("onInit scriptActions", scriptActionResponse.Content);
             setGameData(gameDetailsResponse);
             setScriptActions(scriptActionResponse.Content.Actions);
+            // Downloads run in detached backend workers, so they keep going
+            // when this page (or the whole plugin UI) is closed. If one is
+            // still running for this game, re-attach the progress bar to it.
+            const probe = await executeAction<ExecuteGetGameDetailsArgs, ProgressUpdate>(
+                serverAPI,
+                initActionSet,
+                "GetProgress",
+                {
+                    shortname: shortname
+                }
+            );
+            const running = probe?.Content;
+            if (running && running.Error == null
+                && running.Percentage > 0 && running.Percentage < 100) {
+                logger.log("onInit: install in progress, re-attaching bar");
+                setShouldUpdateShortcut(true);
+                setInstalling(true);
+            }
         } catch (error) {
             logger.error(error);
         }
@@ -213,6 +259,9 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
         const result = await executeAction<ExecuteGetGameDetailsArgs, ContentType>(serverAPI, actionSet, actionId, args, onExeExit);
 
         if (result?.Type == "Progress") {
+            // Update/Repair menu actions: refresh the shortcut (launch options
+            // + artwork) once they finish, like a fresh install does.
+            setShouldUpdateShortcut(true);
             setInstalling(true);
         }
 
@@ -332,13 +381,22 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                 SteamClient.Apps.SpecifyCompatTool(id, "");
             }
             setInstalling(false);
-            notify({ title: "SkeletonKey", body: t("launch_options_set") });
+            notify({ title: "SkullKey", body: t("launch_options_set") });
             await appDetailsCache.FetchDataForApp(id)
             await appDetailsStore.RequestAppDetails(id);
             setSteamClientID(id.toString());
             await addToStoreCollection(id);
 
         }
+        await applyArtwork(id);
+
+    };
+
+    // Fetch the four artwork slots from the backend (disk-cached) and apply
+    // them to the shortcut. Called after install AND on every page open so a
+    // stale artwork (e.g. the old hero with the logo baked in, doubled by the
+    // Logo slot Steam overlays) heals itself without a reinstall.
+    const applyArtwork = async (id: number) => {
         const imageResult = await executeAction<ExecuteGetGameDetailsArgs, GameImages>(
             serverAPI,
             initActionSet,
@@ -370,7 +428,6 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
             await SteamClient.Apps.SetCustomArtworkForApp(id, images.GridH, "png", 3);
         }
         //await appDetailsStore.RequestAppDetails(id);
-
     };
 
     const cleanupIds = () => {

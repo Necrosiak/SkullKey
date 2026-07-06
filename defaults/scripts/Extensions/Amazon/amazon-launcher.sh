@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # These need to be exported because it does not get executed in the context of the plugin.
-export DECKY_PLUGIN_RUNTIME_DIR="${HOME}/homebrew/data/SkeletonKey"
-export DECKY_PLUGIN_DIR="${HOME}/homebrew/plugins/SkeletonKey"
-export DECKY_PLUGIN_LOG_DIR="${HOME}/homebrew/logs/SkeletonKey"
+export DECKY_PLUGIN_RUNTIME_DIR="${HOME}/homebrew/data/SkullKey"
+export DECKY_PLUGIN_DIR="${HOME}/homebrew/plugins/SkullKey"
+export DECKY_PLUGIN_LOG_DIR="${HOME}/homebrew/logs/SkullKey"
 export WORKING_DIR=$DECKY_PLUGIN_DIR
 export Extensions="Extensions"
 ID=$1
@@ -59,8 +59,12 @@ if [[ "${RUNTIMES_BATTLEYE}" == "true"  ]]; then
     export PROTON_BATTLEYE_RUNTIME="${HOME}/.steam/root/steamapps/common/Proton BattlEye Runtime/"
 fi
 
-if [ -z "${RUNTIMES_PULSE_LATENCY_MSEC}" ]; then
+# Only export when the user actually set a latency. Exporting an EMPTY
+# PULSE_LATENCY_MSEC makes wine's PulseAudio driver use latency 0 → no sound.
+if [ -n "${RUNTIMES_PULSE_LATENCY_MSEC}" ]; then
     export PULSE_LATENCY_MSEC=$RUNTIMES_PULSE_LATENCY_MSEC
+else
+    unset PULSE_LATENCY_MSEC
 fi
 if [[ "${RUNTIMES_RADV_PERFTEST}" == "" ]]; then
     unset RADV_PERFTEST

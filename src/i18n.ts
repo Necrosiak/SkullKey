@@ -1,4 +1,4 @@
-// i18n — SkeletonKey
+// i18n — SkullKey
 // Languages: en, fr, de, es, it, pt, nl, pl, ru
 // Auto-detected from Steam LocalizationManager, fallback to navigator.language
 
@@ -429,6 +429,7 @@ const TAB_LABELS: Record<string, Record<Locale, string>> = {
   "Music": { en: "Music", fr: "Musique", de: "Musik", es: "Música", it: "Musica", pt: "Música", nl: "Muziek", pl: "Muzyka", ru: "Музыка" },
   "Cloud Gaming": { en: "Cloud Gaming", fr: "Jeu cloud", de: "Cloud-Gaming", es: "Juego en la nube", it: "Cloud gaming", pt: "Jogo na nuvem", nl: "Cloudgaming", pl: "Granie w chmurze", ru: "Облачный гейминг" },
   "Apps & Tools": { en: "Apps & Tools", fr: "Applis & outils", de: "Apps & Tools", es: "Apps y herramientas", it: "App e strumenti", pt: "Apps e ferramentas", nl: "Apps & tools", pl: "Aplikacje i narzędzia", ru: "Приложения и утилиты" },
+  "Classics Reborn": { en: "Classics Reborn", fr: "Classiques ressuscités", de: "Klassiker neu belebt", es: "Clásicos resucitados", it: "Classici resuscitati", pt: "Clássicos ressuscitados", nl: "Herrezen klassiekers", pl: "Wskrzeszone klasyki", ru: "Воскрешённая классика" },
 };
 
 export function tabLabel(title: string): string {

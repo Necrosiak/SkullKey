@@ -2,6 +2,7 @@ import asyncio
 import os
 import json
 import sys
+import time
 
 from aiohttp import web
 import shlex
@@ -18,7 +19,7 @@ import concurrent.futures
 # explicitly by path, under a unique name, to avoid the collision.
 import importlib.util as _ilu
 _uspec = _ilu.spec_from_file_location(
-    "skeletonkey_updater", os.path.join(os.path.dirname(os.path.abspath(__file__)), "updater.py")
+    "skullkey_updater", os.path.join(os.path.dirname(os.path.abspath(__file__)), "updater.py")
 )
 updater = _ilu.module_from_spec(_uspec)
 _uspec.loader.exec_module(updater)
@@ -67,6 +68,69 @@ async def _ensure_deps():
         decky_plugin.logger.info("[deps] ensure finished")
     except Exception as e:
         decky_plugin.logger.error(f"[deps] ensure error: {e}")
+
+
+async def _resume_downloads():
+    """Boot-time resume: respawn miHoYo install workers that a reboot/crash
+    interrupted mid-download. The worker restarts from the already-finished
+    segments and the idempotence guard makes this a no-op for completed
+    installs, so it is always safe."""
+    try:
+        await asyncio.sleep(35)  # let the plugin finish coming up first
+        log_path = os.path.join(decky_plugin.DECKY_PLUGIN_LOG_DIR,
+                                "resume_downloads.log")
+        with open(log_path, "a") as log:
+            proc = await asyncio.create_subprocess_shell(
+                "python3 ./scripts/Extensions/MiHoYo/mihoyo.py resume-pending",
+                stdout=log,
+                stderr=log,
+                stdin=asyncio.subprocess.DEVNULL,
+                cwd=Helper.working_directory,
+                env=Helper.get_environment(),
+                start_new_session=True,
+            )
+            await proc.wait()
+        decky_plugin.logger.info("[resume] pending-downloads check finished")
+    except Exception as e:
+        decky_plugin.logger.error(f"[resume] error: {e}")
+
+
+async def _games_autoupdate():
+    """Unattended game updates for every store, at most once a day, without
+    the user ever opening the plugin UI. The orchestrator
+    (scripts/autoupdate_games.py) does per-store detection and dispatches the
+    same Update actions the UI uses."""
+    stamp_path = os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR,
+                              "autoupdate_games.json")
+    try:
+        await asyncio.sleep(180)  # after boot tasks (deps/resume/update)
+        while True:
+            last = 0
+            try:
+                with open(stamp_path) as f:
+                    last = json.load(f).get("last", 0)
+            except Exception:
+                pass
+            if time.time() - last >= 86400:
+                log_path = os.path.join(decky_plugin.DECKY_PLUGIN_LOG_DIR,
+                                        "autoupdate_games.log")
+                with open(log_path, "a") as log:
+                    proc = await asyncio.create_subprocess_shell(
+                        "python3 ./scripts/autoupdate_games.py",
+                        stdout=log,
+                        stderr=log,
+                        stdin=asyncio.subprocess.DEVNULL,
+                        cwd=Helper.working_directory,
+                        env=Helper.get_environment(),
+                        start_new_session=True,
+                    )
+                    await proc.wait()
+                with open(stamp_path, "w") as f:
+                    json.dump({"last": time.time()}, f)
+                decky_plugin.logger.info("[gamesupd] daily run finished")
+            await asyncio.sleep(6 * 3600)  # re-check a few times a day
+    except Exception as e:
+        decky_plugin.logger.error(f"[gamesupd] error: {e}")
 
 
 class Helper:
@@ -194,7 +258,7 @@ class Helper:
             "DECKY_HOME": decky_plugin.DECKY_HOME,
             "DECKY_PLUGIN_DIR": decky_plugin.DECKY_PLUGIN_DIR,
             "DECKY_PLUGIN_LOG_DIR": decky_plugin.DECKY_PLUGIN_LOG_DIR,
-            "DECKY_PLUGIN_NAME": "skeletonkey",
+            "DECKY_PLUGIN_NAME": "skullkey",
             "DECKY_PLUGIN_RUNTIME_DIR": decky_plugin.DECKY_PLUGIN_RUNTIME_DIR,
             "DECKY_PLUGIN_SETTINGS_DIR": decky_plugin.DECKY_PLUGIN_SETTINGS_DIR,
             "WORKING_DIR": Helper.working_directory,
@@ -484,7 +548,7 @@ class Helper:
 
 class Plugin:
     async def _main(self):
-        decky_plugin.logger.info("SkeletonKey starting up...")
+        decky_plugin.logger.info("SkullKey starting up...")
         try:
             Helper.action_cache = {}
             if os.path.exists(
@@ -498,18 +562,20 @@ class Plugin:
                 f"plugin: {decky_plugin.DECKY_PLUGIN_NAME} dir: {decky_plugin.DECKY_PLUGIN_RUNTIME_DIR}"
             )
             # pass cmd argument to _call_script method
-            decky_plugin.logger.info("SkeletonKey initializing")
+            decky_plugin.logger.info("SkullKey initializing")
             result = await Helper.execute_action("init", "init")
-            decky_plugin.logger.info("SkeletonKey initialized")
+            decky_plugin.logger.info("SkullKey initialized")
             if Helper.verbose:
                 decky_plugin.logger.info(f"init result: {result}")
             await Helper.start_ws_server()
-            decky_plugin.logger.info("SkeletonKey started")
+            decky_plugin.logger.info("SkullKey started")
             # Schedule the silent auto-update as a module-level coroutine —
             # decky's method dispatch doesn't bind `self` for a task created
             # from inside _main, so keep it self-free.
             asyncio.create_task(_auto_update_check())
             asyncio.create_task(_ensure_deps())
+            asyncio.create_task(_resume_downloads())
+            asyncio.create_task(_games_autoupdate())
 
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")
@@ -697,12 +763,12 @@ class Plugin:
             # Clear the action cache
             Helper.action_cache.clear()
 
-            decky_plugin.logger.info("SkeletonKey out!")
+            decky_plugin.logger.info("SkullKey out!")
         except Exception as e:
             decky_plugin.logger.error(f"Error during unload: {e}")
 
     async def _migration(self):
-        plugin_dir = "SkeletonKey"
+        plugin_dir = "SkullKey"
         decky_plugin.logger.info("Migrating")
         # Here's a migration example for logs:
         # - `~/.config/decky-template/template.log` will be migrated to `decky_plugin.DECKY_PLUGIN_LOG_DIR/template.log`
