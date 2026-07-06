@@ -374,6 +374,21 @@ _DETAIL_LABELS = {
            "genre": "Free-to-play — аккаунт создаётся в игре при первом запуске."},
 }
 
+# Shown on every miHoYo game's details page (before install): the login/
+# gateway screen is mouse-driven (inherent to HoYo games), so navigate it with
+# keyboard/mouse, then enable the controller config in-game once logged in.
+_CONTROLLER_NOTE = {
+    "en": "🎮 At launch, navigate the login screen with keyboard/mouse; once logged in and in-game, enable the controller layout in the settings.",
+    "fr": "🎮 Au lancement, navigue l'écran de connexion au clavier/souris ; une fois connecté et en jeu, active la configuration manette dans les paramètres.",
+    "de": "🎮 Navigiere den Login-Bildschirm beim Start mit Tastatur/Maus; sobald du eingeloggt und im Spiel bist, aktiviere das Controller-Layout in den Einstellungen.",
+    "es": "🎮 Al iniciar, navega la pantalla de inicio de sesión con teclado/ratón; una vez dentro del juego, activa la configuración de mando en los ajustes.",
+    "it": "🎮 All'avvio, naviga la schermata di accesso con tastiera/mouse; una volta effettuato l'accesso e in gioco, attiva la configurazione del controller nelle impostazioni.",
+    "pt": "🎮 Ao iniciar, navegue o ecrã de login com teclado/rato; depois de entrar no jogo, ative a configuração de comando nas definições.",
+    "nl": "🎮 Navigeer bij het opstarten het inlogscherm met toetsenbord/muis; zodra je bent ingelogd en in het spel bent, schakel je de controllerindeling in de instellingen in.",
+    "pl": "🎮 Przy uruchomieniu poruszaj się po ekranie logowania klawiaturą/myszą; po zalogowaniu i w grze włącz konfigurację pada w ustawieniach.",
+    "ru": "🎮 При запуске перемещайтесь по экрану входа мышью/клавиатурой; после входа и в самой игре включите настройку геймпада в параметрах.",
+}
+
 # Shown on the ZZZ details page: the anti-cheat is handled automatically (EGS
 # channel config), no jadeite needed; a recent Proton is recommended.
 _ZZZ_NOTE = {
@@ -423,6 +438,7 @@ def action_getgamedetails(biz):
         facts.append(f"{lab['voice']}: {', '.join(v for v in voices if v)}")
     parts.append("<br />".join(facts))
     parts.append(f"<i>{lab['genre']}</i>")
+    parts.append(f"<i>{_CONTROLLER_NOTE.get(machine_lang_code(), _CONTROLLER_NOTE['en'])}</i>")
     if biz in NEEDS_EGS_CONFIG:
         parts.append(f"<i>{_ZZZ_NOTE.get(machine_lang_code(), _ZZZ_NOTE['en'])}</i>")
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.2 — 2026-07-06
+
+### Changed
+- miHoYo game details now include a **controller note** (9 languages): the HoYo
+  login screen is mouse-driven, so navigate it with keyboard/mouse and enable
+  the controller layout in-game once logged in.
+
 ## 1.4.1 — 2026-07-06
 
 ### Fixed
