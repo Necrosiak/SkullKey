@@ -971,7 +971,11 @@ def _try_delta_patch(biz, source_ver, target_ver):
     hpz = ensure_hpatchz()
     if not hpz:
         return 0
-    build = _sophon_patch_build(biz)
+    try:
+        build = _sophon_patch_build(biz)
+    except Exception as e:            # API/network error → skip delta cleanly
+        print(f"getPatchBuild failed, full download: {e}", file=sys.stderr)
+        return 0
     if not build or not build.get("manifests"):
         return 0
 
