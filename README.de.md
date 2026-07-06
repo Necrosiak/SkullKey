@@ -7,7 +7,11 @@
 ## Funktionen
 
 - 🎮 **100 % Gaming-Modus** — stöbern, anmelden, installieren und spielen, ohne den Desktop zu berühren
-- 🏪 **Drei Shops, kostenlos** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)) und Amazon Games ([nile](https://github.com/imLinguin/nile))
+- 🏪 **Vier Stores, kostenlos** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) und **miHoYo/HoYoverse**
+- ✨ **miHoYo-Store** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero und Honkai Impact 3rd, installiert über HoYoverses offiziellen *sophon*-Kanal: parallele Chunk-Downloads (~100 MB/s), Updates laden nur geänderte Dateien, Fortsetzen nach Neustart, Anti-Cheat automatisch geregelt (jadeite) für HI3/HSR
+- 🏛️ **Classics Reborn** — 39 native Open-Source-Ports & Rekompilierungen von Klassikern (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), installiert aus den offiziellen Releases jedes Projekts, mit klaren Anleitungen für deine Original-Spieldateien (9 Sprachen)
+- 👥 **Ein Store-Bereich pro Steam-Konto (Multi-Account)** — jeder Steam-Nutzer der Maschine hat eigene Epic/GOG/Amazon-Logins und Bibliotheken; der Wechsel des Steam-Kontos schaltet alles automatisch um (bestehende Logins bleiben beim beim ersten Start aktiven Konto)
+- 📦 **Auto-Update der Spiele** — ein täglicher Hintergrund-Durchlauf hält alle installierten Spiele aktuell, in jedem Store und für jedes Konto
 - 📺 **Medien & Apps** — zusätzliche Bereiche für TV & Video, Musik, Cloud-Gaming und Apps & Tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 kuratierte Apps), automatisch aktuell gehalten
 - 🖼️ **Nativ aussehende Verknüpfungen** — installierte Spiele erhalten automatisch Steams offizielles Artwork (vertikale Kapsel, Hero, Logo), mit GOGs gamesdb als Fallback
 - 📚 **Steam-Sammlungen** — installierte Spiele werden pro Shop („Epic", „GOG", „Amazon") in deiner Bibliothek gruppiert
@@ -15,6 +19,7 @@
 - 🔄 **Auto-Update** — neue Versionen installieren sich still im Hintergrund (in den Einstellungen abschaltbar)
 - 🌐 **9 Sprachen** — die Oberfläche folgt automatisch der Konsolensprache (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Schnellzugriff** — farbige Shop-Karten im QAM, optionale L3+R3-Verknüpfung zum Öffnen des Shops von überall
+- 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen
 
 ## Installation
 

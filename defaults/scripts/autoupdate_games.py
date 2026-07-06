@@ -37,12 +37,33 @@ def log(msg):
     print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
 
-def dispatch(store, verb, *args):
-    """Fire a store action through the normal dispatcher (detached workers)."""
+def dispatch(store, verb, *args, account=""):
+    """Fire a store action through the normal dispatcher (detached workers).
+    `account` forces the multi-account context (SK_ACCOUNT_OVERRIDE, read by
+    steam-account.sh) so every Steam account's games get their update, not
+    just the currently logged-in one."""
+    env = dict(os.environ)
+    if account:
+        env["SK_ACCOUNT_OVERRIDE"] = account
     cmd = ["bash", "./scripts/skullkey.sh", store, verb, *args]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
+                       env=env)
     out = (r.stdout or "").strip()
-    log(f"{store} {verb} {' '.join(args)} → {out[:200]}")
+    who = f" [{account}]" if account else ""
+    log(f"{store} {verb} {' '.join(args)}{who} → {out[:200]}")
+
+
+def _account_dirs():
+    """(accountid, dir) for every per-Steam-account store space, or the
+    legacy runtime root when multi-account has not migrated yet."""
+    root = os.path.join(RUNTIME, "accounts")
+    if os.path.isdir(root):
+        dirs = [(name, os.path.join(root, name))
+                for name in sorted(os.listdir(root))
+                if os.path.isdir(os.path.join(root, name))]
+        if dirs:
+            return dirs
+    return [("", RUNTIME)]
 
 
 def mihoyo():
@@ -60,22 +81,23 @@ def ports():
 
 
 def amazon():
-    env = dict(os.environ, NILE_CONFIG_PATH=RUNTIME)
-    r = subprocess.run([NILE, "list-updates", "--json"],
-                       capture_output=True, text=True, timeout=120, env=env)
-    try:
-        ids = json.loads(r.stdout or "[]")
-    except Exception:
-        log(f"Amazon list-updates unparseable: {r.stdout[:120]!r}")
-        return
-    if not ids:
-        log("Amazon: all up to date")
-        return
-    for gid in ids:
-        gid = gid if isinstance(gid, str) else gid.get("id", "")
-        if gid:
-            dispatch("Amazon", "update", gid)
-            time.sleep(STAGGER)
+    for account, adir in _account_dirs():
+        env = dict(os.environ, NILE_CONFIG_PATH=adir)
+        r = subprocess.run([NILE, "list-updates", "--json"],
+                           capture_output=True, text=True, timeout=120, env=env)
+        try:
+            ids = json.loads(r.stdout or "[]")
+        except Exception:
+            log(f"Amazon[{account}] list-updates unparseable: {r.stdout[:120]!r}")
+            continue
+        if not ids:
+            log(f"Amazon[{account}]: all up to date")
+            continue
+        for gid in ids:
+            gid = gid if isinstance(gid, str) else gid.get("id", "")
+            if gid:
+                dispatch("Amazon", "update", gid, account=account)
+                time.sleep(STAGGER)
 
 
 def _installed_from_db(dbfile):
@@ -92,19 +114,21 @@ def _installed_from_db(dbfile):
 
 
 def epic():
-    ids = _installed_from_db(os.path.join(RUNTIME, "epic.db"))
-    log(f"Epic: {len(ids)} installed")
-    for gid in ids:
-        dispatch("Epic", "update", gid)   # legendary no-ops when current
-        time.sleep(STAGGER)
+    for account, adir in _account_dirs():
+        ids = _installed_from_db(os.path.join(adir, "epic.db"))
+        log(f"Epic[{account}]: {len(ids)} installed")
+        for gid in ids:
+            dispatch("Epic", "update", gid, account=account)  # no-op si à jour
+            time.sleep(STAGGER)
 
 
 def gog():
-    ids = _installed_from_db(os.path.join(RUNTIME, "gog.db"))
-    log(f"GOG: {len(ids)} installed")
-    for gid in ids:
-        dispatch("GOG", "update", gid)    # gogdl is incremental/no-op
-        time.sleep(STAGGER)
+    for account, adir in _account_dirs():
+        ids = _installed_from_db(os.path.join(adir, "gog.db"))
+        log(f"GOG[{account}]: {len(ids)} installed")
+        for gid in ids:
+            dispatch("GOG", "update", gid, account=account)   # incrémental/no-op
+            time.sleep(STAGGER)
 
 
 def main():

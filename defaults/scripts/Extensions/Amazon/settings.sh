@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 AMAZONCONF="${DECKY_PLUGIN_DIR}/scripts/amazon-config.py"
 export NILE="${HOME}/.local/share/skullkey-nile/bin/nile"
-# keep nile's config (tokens, installed.json, manifests) inside the plugin data dir
-export NILE_CONFIG_PATH="${DECKY_PLUGIN_RUNTIME_DIR}"
+# keep nile's config (tokens, installed.json, manifests) inside the plugin
+# data dir — multi-comptes : dans l'espace du compte Steam actif (nile crée
+# un sous-dossier nile/ sous ce chemin)
+SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
+export NILE_CONFIG_PATH="${SK_ACCOUNT_DIR}"
 PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
 
 export LAUNCHER="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/Amazon/amazon-launcher.sh"
 export ARGS_SCRIPT="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/Amazon/get-amazon-args.sh"
 DBNAME="amazon.db"
-DBFILE="${DECKY_PLUGIN_RUNTIME_DIR}/amazon.db"
+DBFILE="${SK_ACCOUNT_DIR}/amazon.db"
 
 if [[ -f "${DECKY_PLUGIN_RUNTIME_DIR}/conf_schemas/amazontabconfig.json" ]]; then
     TEMP="${DECKY_PLUGIN_RUNTIME_DIR}/conf_schemas/amazontabconfig.json"

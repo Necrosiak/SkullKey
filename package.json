@@ -1,6 +1,6 @@
 {
   "name": "SkullKey",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Transform your gaming experience with SkullKey - the ultimate solution for seamlessly integrating non-Steam games into your Steam Deck library. Say goodbye to clunky work arounds and hello to a world of endless gaming possibilities. Get ready to elevate your gaming to the next level with SkullKey!",
   "scripts": {
     "build": "shx rm -rf dist && rollup -c",

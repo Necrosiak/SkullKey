@@ -7,7 +7,11 @@
 ## Functies
 
 - 🎮 **100% gamemodus** — bladeren, inloggen, installeren en spelen zonder de desktop aan te raken
-- 🏪 **Drie winkels, gratis** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)) en Amazon Games ([nile](https://github.com/imLinguin/nile))
+- 🏪 **Vier winkels, gratis** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) en **miHoYo/HoYoverse**
+- ✨ **miHoYo-winkel** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero en Honkai Impact 3rd, geïnstalleerd via HoYoverses officiële *sophon*-kanaal: parallelle chunk-downloads (~100 MB/s), updates die alleen gewijzigde bestanden ophalen, hervatten na herstart, anti-cheat automatisch geregeld (jadeite) voor HI3/HSR
+- 🏛️ **Classics Reborn** — 39 native opensource-ports & hercompilaties van klassiekers (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), geïnstalleerd vanaf de officiële releases van elk project, met duidelijke instructies voor je originele spelbestanden (9 talen)
+- 👥 **Eén winkelruimte per Steam-account (multi-account)** — elke Steam-gebruiker van de machine heeft eigen Epic/GOG/Amazon-logins en bibliotheken; wisselen van Steam-account schakelt alles automatisch om (bestaande logins blijven bij het account dat bij het eerste gebruik actief is)
+- 📦 **Auto-update van games** — een dagelijkse achtergrondronde houdt alle geïnstalleerde games actueel, in elke winkel en voor elk account
 - 📺 **Media & apps** — extra secties voor Tv & video, Muziek, Cloudgaming en Apps & tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 geselecteerde apps), automatisch up-to-date gehouden
 - 🖼️ **Native ogende snelkoppelingen** — geïnstalleerde games krijgen automatisch Steams officiële artwork (verticale capsule, hero, logo), met GOGs gamesdb als terugval
 - 📚 **Steam-collecties** — geïnstalleerde games worden per winkel („Epic", „GOG", „Amazon") gegroepeerd in je bibliotheek
@@ -15,6 +19,7 @@
 - 🔄 **Auto-update** — nieuwe versies installeren zichzelf stil op de achtergrond (uit te schakelen in Instellingen)
 - 🌐 **9 talen** — de interface volgt automatisch de taal van je console (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Snelle toegang** — gekleurde winkelkaarten in het QAM, optionele L3+R3-sneltoets om de winkel overal te openen
+- 🐧 **Compatibiliteit** — we werken er actief aan om elk OS te ondersteunen dat Steam in gamemodus / Big Picture kan draaien (voorlopig Linux): portable detectie, geen distributiespecifieke aannames
 
 ## Installatie
 

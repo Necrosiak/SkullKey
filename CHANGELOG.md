@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0 — 2026-07-06
+
+### Added
+- **Multi-account** — every Steam account on the machine now has its own
+  store space: Epic/GOG/Amazon logins, libraries, settings and Steam-shortcut
+  mappings are per-account (`accounts/<accountid>/` in the plugin data dir),
+  while installed game files stay shared on disk. The active account is
+  resolved on every backend call (portable detection: `registry.vdf`
+  ActiveUser, then `loginusers.vdf` MostRecent), so switching the Steam user
+  takes effect immediately — no watcher, no restart. Existing logins are
+  adopted by the account active at first run. Epic (legendary) is a flatpak
+  that forces its XDG paths, so its per-account config is selected by
+  atomically retargeting the `config/legendary` symlink.
+- The daily games auto-update now iterates over **every account's** installed
+  games (Epic/GOG/Amazon), not just the active one.
+
+### Notes
+- Repository made public — plugin auto-update (release-based) now works for
+  everyone.
+
 ## 1.1.0 — 2026-07-06
 
 ### Renamed

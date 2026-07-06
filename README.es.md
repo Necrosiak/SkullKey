@@ -7,7 +7,11 @@
 ## Características
 
 - 🎮 **100 % modo juego** — explora, inicia sesión, instala y juega sin tocar el escritorio
-- 🏪 **Tres tiendas, gratis** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)) y Amazon Games ([nile](https://github.com/imLinguin/nile))
+- 🏪 **Cuatro tiendas, gratis** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) y **miHoYo/HoYoverse**
+- ✨ **Tienda miHoYo** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero y Honkai Impact 3rd, instalados desde el canal oficial *sophon* de HoYoverse: descargas por chunks en paralelo (~100 MB/s), actualizaciones que solo bajan los archivos modificados, reanudación tras reinicio, anti-cheat gestionado automáticamente (jadeite) para HI3/HSR
+- 🏛️ **Classics Reborn** — 39 ports nativos open source y recompilaciones de clásicos (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), instalados desde las releases oficiales de cada proyecto, con instrucciones claras para tus archivos de juego originales (9 idiomas)
+- 👥 **Un espacio de tiendas por cuenta de Steam (multicuenta)** — cada usuario de Steam de la máquina tiene sus propios logins y bibliotecas de Epic/GOG/Amazon; cambiar de cuenta de Steam lo cambia todo automáticamente (los logins existentes quedan con la cuenta activa en el primer uso)
+- 📦 **Actualización automática de juegos** — una pasada diaria en segundo plano mantiene al día todos los juegos instalados, en todas las tiendas y para todas las cuentas
 - 📺 **Multimedia y apps** — secciones extra de TV y Vídeo, Música, Juego en la nube y Apps y herramientas (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 apps seleccionadas), actualizadas automáticamente
 - 🖼️ **Accesos directos de aspecto nativo** — los juegos instalados reciben automáticamente el artwork oficial de Steam (cápsula vertical, hero, logo), con la gamesdb de GOG como respaldo
 - 📚 **Colecciones de Steam** — los juegos instalados se agrupan por tienda («Epic», «GOG», «Amazon») en tu biblioteca
@@ -15,6 +19,7 @@
 - 🔄 **Actualización automática** — las nuevas versiones se instalan silenciosamente en segundo plano (desactivable en Ajustes)
 - 🌐 **9 idiomas** — la interfaz sigue automáticamente el idioma de tu consola (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Acceso rápido** — tarjetas de colores por tienda en el QAM, atajo opcional L3+R3 para abrir la tienda en cualquier lugar
+- 🐧 **Compatibilidad** — trabajamos activamente para soportar todos los SO capaces de ejecutar Steam en modo juego / Big Picture (Linux por ahora): detección portable, sin suposiciones específicas de distribución
 
 ## Instalación
 

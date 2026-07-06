@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 GOGCONF="${DECKY_PLUGIN_DIR}/scripts/gog-config.py"
 GOGDL_BIN="${HOME}/.local/share/skullkey-gogdl/bin/gogdl"
-GOG_AUTH_FILE="${DECKY_PLUGIN_RUNTIME_DIR}/gog_auth.json"
+# multi-comptes : token GOG + DB dans l'espace du compte Steam actif
+SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
+GOG_AUTH_FILE="${SK_ACCOUNT_DIR}/gog_auth.json"
 export GOGDL="${GOGDL_BIN} --auth-config-path ${GOG_AUTH_FILE}"
 PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
@@ -9,7 +11,7 @@ export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/sh
 export LAUNCHER="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/GOG/gog-launcher.sh"
 export ARGS_SCRIPT="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/GOG/get-gog-args.sh"
 DBNAME="gog.db"
-DBFILE="${DECKY_PLUGIN_RUNTIME_DIR}/gog.db"
+DBFILE="${SK_ACCOUNT_DIR}/gog.db"
 
 if [[ -f "${DECKY_PLUGIN_RUNTIME_DIR}/conf_schemas/gogtabconfig.json" ]]; then
     TEMP="${DECKY_PLUGIN_RUNTIME_DIR}/conf_schemas/gogtabconfig.json"
