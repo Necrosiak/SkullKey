@@ -3,8 +3,26 @@
 # installed in a dedicated venv built with the Homebrew python (the system
 # python on Bazzite/SteamOS images has no headers to compile gogdl's C ext).
 VENV="${HOME}/.local/share/skullkey-gogdl"
-BREW_PY="/home/linuxbrew/.linuxbrew/bin/python3"
 GOGDL_SRC="git+https://github.com/Heroic-Games-Launcher/heroic-gogdl"
+
+# Auto-détection du python pour builder le venv, SELON L'OS :
+#  - Bazzite/SteamOS : le python SYSTÈME n'a pas les headers de dev (image
+#    atomique) → on prend celui de Homebrew (préinstallé sur ces images).
+#  - Arch/CachyOS/Fedora/Debian : le python système a les headers (paquet
+#    -devel/-dev dispo) → on l'utilise directement, pas besoin de Homebrew.
+PY=""
+pick_python() {
+    local brew_py="/home/linuxbrew/.linuxbrew/bin/python3"
+    if [ -x "${brew_py}" ]; then PY="${brew_py}"; return 0; fi
+    if command -v python3 >/dev/null 2>&1 && python3 -c "import venv" 2>/dev/null; then
+        PY="$(command -v python3)"; return 0
+    fi
+    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+        /home/linuxbrew/.linuxbrew/bin/brew install python && PY="${brew_py}" && return 0
+    fi
+    echo "ERROR: aucun python3 utilisable (headers de dev ou Homebrew requis) pour builder gogdl"
+    return 1
+}
 
 function uninstall() {
     echo "Removing gogdl venv"
@@ -12,17 +30,9 @@ function uninstall() {
 }
 
 function install() {
-    if [ ! -x "${BREW_PY}" ]; then
-        echo "Homebrew python not found, installing via brew..."
-        if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-            /home/linuxbrew/.linuxbrew/bin/brew install python
-        else
-            echo "ERROR: Homebrew not available, cannot install gogdl"
-            return 1
-        fi
-    fi
+    pick_python || return 1
     if [ ! -x "${VENV}/bin/pip" ]; then
-        "${BREW_PY}" -m venv "${VENV}"
+        "${PY}" -m venv "${VENV}"
     fi
     CC=gcc "${VENV}/bin/pip" install --upgrade "${GOGDL_SRC}"
     "${VENV}/bin/gogdl" --version && echo "gogdl installed OK"

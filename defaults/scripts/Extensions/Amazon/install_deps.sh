@@ -4,8 +4,24 @@
 # nile's pyproject lacks a packages config (fails with modern setuptools), so
 # we clone, patch and install from the local copy.
 VENV="${HOME}/.local/share/skullkey-nile"
-BREW_PY="/home/linuxbrew/.linuxbrew/bin/python3"
 NILE_REPO="https://github.com/imLinguin/nile"
+
+# Auto-détection du python pour builder le venv, SELON L'OS (cf GOG) :
+# Homebrew sur Bazzite/SteamOS (python système sans headers), sinon python
+# système sur Arch/CachyOS/Fedora/Debian (headers dispo).
+PY=""
+pick_python() {
+    local brew_py="/home/linuxbrew/.linuxbrew/bin/python3"
+    if [ -x "${brew_py}" ]; then PY="${brew_py}"; return 0; fi
+    if command -v python3 >/dev/null 2>&1 && python3 -c "import venv" 2>/dev/null; then
+        PY="$(command -v python3)"; return 0
+    fi
+    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+        /home/linuxbrew/.linuxbrew/bin/brew install python && PY="${brew_py}" && return 0
+    fi
+    echo "ERROR: aucun python3 utilisable (headers de dev ou Homebrew requis) pour builder nile"
+    return 1
+}
 
 function uninstall() {
     echo "Removing nile venv"
@@ -13,17 +29,9 @@ function uninstall() {
 }
 
 function install() {
-    if [ ! -x "${BREW_PY}" ]; then
-        echo "Homebrew python not found, installing via brew..."
-        if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-            /home/linuxbrew/.linuxbrew/bin/brew install python
-        else
-            echo "ERROR: Homebrew not available, cannot install nile"
-            return 1
-        fi
-    fi
+    pick_python || return 1
     if [ ! -x "${VENV}/bin/pip" ]; then
-        "${BREW_PY}" -m venv "${VENV}"
+        "${PY}" -m venv "${VENV}"
     fi
     "${VENV}/bin/pip" install --upgrade setuptools wheel requests protobuf pycryptodome zstandard json5 platformdirs
     TMP_SRC=$(mktemp -d)
