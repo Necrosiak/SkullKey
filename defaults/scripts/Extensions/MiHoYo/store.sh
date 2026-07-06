@@ -38,6 +38,8 @@ function MiHoYo_update()           { _mihoyo_py update "${@}"; }
 function MiHoYo_repair()           { _mihoyo_py repair "${@}"; }
 function MiHoYo_repair_and_update(){ _mihoyo_py repair_and_update "${@}"; }
 function MiHoYo_verify()           { _mihoyo_py verify "${@}"; }
+function MiHoYo_getvoices()        { _mihoyo_py getvoices "${@}"; }
+function MiHoYo_setvoices()        { _mihoyo_py setvoices "${@}"; }
 function MiHoYo_uninstall()        { _mihoyo_py uninstall "${@}"; }
 function MiHoYo_cancelinstall()    { _mihoyo_py cancelinstall "${@}"; }
 function MiHoYo_protontricks()     { _mihoyo_py protontricks "${@}"; }

@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.5.0 — 2026-07-06
+
+### Added
+- **Verify & Repair for miHoYo games.** The "Verify / Repair" button now does a
+  real integrity check: every file is re-hashed against the manifest (the
+  trust-the-registry shortcut is bypassed) and only the corrupted or missing
+  files are re-downloaded. Useful after a crash, power loss or a bad update.
+- **Voice-over pack management for miHoYo games.** A fresh install now
+  auto-selects the dub language pack matching the console language (English
+  fallback for languages without a native VO) instead of leaving it to the
+  in-game downloader. The selection is stored per game; `get-voices` /
+  `set-voices` backend actions expose available packs and let the choice change
+  (a picker UI can build on them). Existing installs are left untouched — no
+  surprise multi-GB voice download.
+
 ## 1.4.2 — 2026-07-06
 
 ### Changed

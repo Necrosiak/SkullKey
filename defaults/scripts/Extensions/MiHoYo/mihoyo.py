@@ -417,9 +417,10 @@ def action_getgamedetails(biz):
     version, voices = "", []
     try:
         version = (_branch_info(biz) or {}).get("tag", "")
-        voices = [_VOICE_NAMES[m["matching_field"]]
-                  for m in (_sophon_build(biz) or {}).get("manifests", [])
-                  if m.get("matching_field") in _VOICE_NAMES]
+        # show the SELECTED voice packs (what SkullKey installs); fall back to
+        # the packs available for the game when none is selected yet.
+        show = _selected_voices(biz) or _voice_fields(biz)
+        voices = [_VOICE_NAMES[f] for f in show if f in _VOICE_NAMES]
     except Exception:
         pass
 
@@ -544,7 +545,46 @@ def _install_fields(biz):
         if (f and cat.get("type") == "CATEGORY_TYPE_RESOURCE"
                 and "CATEGORY_SCENARIO_FULL" in (cat.get("scenarios") or [])):
             fields.append(f)
-    return fields or ["game"]
+    return (fields or ["game"]) + _selected_voices(biz)
+
+
+# ── voice-over packs (CATEGORY_TYPE_AUDIO) ───────────────────────────────────
+# Optional per-game dub language packs (zh-cn/en-us/ja-jp/ko-kr, ~12-16 GB
+# each). A fresh install auto-selects the pack matching the console language;
+# the selection is stored in state and can be changed via set-voices, so voice
+# packs are managed by SkullKey instead of downloaded in-game.
+_LANG_TO_VOICE = {"ja": "ja-jp", "ko": "ko-kr", "zh": "zh-cn", "en": "en-us"}
+
+
+def _voice_fields(biz):
+    """Voice-over matching_fields available for this game."""
+    out = []
+    for cat in (_branch_info(biz) or {}).get("categories", []):
+        f = cat.get("matching_field", "")
+        if (f and cat.get("type") == "CATEGORY_TYPE_AUDIO"
+                and f in _VOICE_NAMES):
+            out.append(f)
+    return out
+
+
+def _default_voice_langs(biz):
+    """One pack matching the console language (English fallback for languages
+    with no native VO)."""
+    want = _LANG_TO_VOICE.get(machine_lang_code(), "en-us")
+    avail = _voice_fields(biz)
+    if want in avail:
+        return [want]
+    return ["en-us"] if "en-us" in avail else (avail[:1])
+
+
+def _selected_voices(biz):
+    """Voice packs the user chose to install (empty = none; existing installs
+    stay untouched until the user opts in)."""
+    sel = load_state()["games"].get(biz, {}).get("voice_langs")
+    if not sel:
+        return []
+    avail = set(_voice_fields(biz))
+    return [v for v in sel if v in avail]
 
 
 def _sophon_build(biz):
@@ -1102,12 +1142,17 @@ def _try_delta_patch(biz, source_ver, target_ver):
     return patched[0]
 
 
-def worker_install(biz):
+def worker_install(biz, mode=""):
     """Detached worker: fetch the sophon manifest, download the chunks of
     every missing/changed file in parallel, assemble+verify in place. Reruns
     (resume after a reboot, or a version update) only fetch what changed.
     On a version bump it first tries DELTA patches (getPatchBuild + hpatchz)
-    from the installed version, so only the diff is downloaded."""
+    from the installed version, so only the diff is downloaded.
+
+    mode="verify": integrity check + repair — every file is re-hashed against
+    the manifest (the trust-the-registry shortcut is bypassed) and only the
+    files whose md5 is wrong or missing are re-downloaded."""
+    verify = (mode == "verify")
     try:
         game = _game_by_biz(biz) or {}
         name = (game.get("display", {}) or {}).get("name", biz)
@@ -1122,7 +1167,7 @@ def worker_install(biz):
         # exe still on disk → nothing to do (a second click on "Install" or a
         # boot-time resume of a finished download must stay a no-op).
         st0 = load_state()["games"].get(biz, {})
-        if (st0.get("installed") and st0.get("exe")
+        if (not verify and st0.get("installed") and st0.get("exe")
                 and os.path.exists(st0["exe"])
                 and st0.get("version") == version):
             _write_progress(biz, 100, "Finished installation process",
@@ -1135,7 +1180,7 @@ def worker_install(biz):
         #    has to fetch what wasn't (or couldn't be) patched. ──────────────
         installed_ver = st0.get("version")
         diff_tags = (binfo or {}).get("diff_tags", [])
-        if (st0.get("installed") and installed_ver
+        if (not verify and st0.get("installed") and installed_ver
                 and installed_ver != version and installed_ver in diff_tags):
             try:
                 n = _try_delta_patch(biz, installed_ver, version)
@@ -1186,11 +1231,14 @@ def worker_install(biz):
             comp = sum(c["csize"] for c in a["chunks"])
             good = False
             if os.path.isfile(target) and os.path.getsize(target) == a["size"]:
-                if reg.get(a["name"]) == a["md5"]:
+                # verify: never trust the registry — always re-hash the file.
+                if not verify and reg.get(a["name"]) == a["md5"]:
                     good = True
                 elif _md5_file(target) == a["md5"]:
                     good = True
                     reg[a["name"]] = a["md5"]
+                elif verify:
+                    reg.pop(a["name"], None)   # corrupted → drop stale trust
             if good:
                 done_comp += comp
             else:
@@ -1198,9 +1246,11 @@ def worker_install(biz):
             now = time.time()
             if now - lastw >= 1.0:
                 lastw = now
-                _write_progress(biz, 99.0 * done_comp / total_comp,
-                                f"Checking existing files — "
-                                f"{_human(done_comp)} reusable")
+                _write_progress(
+                    biz, 99.0 * done_comp / total_comp,
+                    (f"Verifying files — {_human(done_comp)} OK" if verify
+                     else f"Checking existing files — "
+                          f"{_human(done_comp)} reusable"))
         _save_files_reg(biz, reg)
 
         free = shutil.disk_usage(out_root).free
@@ -1338,11 +1388,13 @@ def worker_install(biz):
         _write_progress(biz, 0, "Installation Failed.", error=str(e))
 
 
-def _spawn_worker(biz):
+def _spawn_worker(biz, mode=""):
     log = open(os.path.join(LOG_DIR, f"mihoyo_{biz}.log"), "ab")
+    cmd = [PYEXE, os.path.abspath(__file__), "worker-install", biz]
+    if mode:
+        cmd.append(mode)
     proc = subprocess.Popen(
-        [PYEXE, os.path.abspath(__file__), "worker-install", biz],
-        stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+        cmd, stdin=subprocess.DEVNULL, stdout=log, stderr=log,
         start_new_session=True, cwd=os.path.dirname(os.path.abspath(__file__)))
     return proc.pid
 
@@ -1353,10 +1405,43 @@ def action_download(biz, *_):
     if cur and not cur.get("done") and not cur.get("error") \
             and cur.get("pid") and _pid_alive(cur["pid"]):
         return {"Type": "Progress", "Content": {"Message": "Downloading"}}
+    # Fresh install: default the voice pack to the console language (existing
+    # installs keep whatever they have — never force a big voice download).
+    state = load_state()
+    st = state["games"].setdefault(biz, {})
+    if not st.get("installed") and "voice_langs" not in st:
+        try:
+            st["voice_langs"] = _default_voice_langs(biz)
+            save_state(state)
+        except Exception:
+            pass
     _write_progress(biz, 0, "Starting download…", pid=0)
     pid = _spawn_worker(biz)
     _write_progress(biz, 0, "Starting download…", pid=pid)
     return {"Type": "Progress", "Content": {"Message": "Downloading"}}
+
+
+def action_getvoices(biz, *_):
+    """Available and selected voice-over packs (for a picker / the details)."""
+    sel = set(_selected_voices(biz))
+    packs = [{"Id": f, "Name": _VOICE_NAMES.get(f, f),
+              "Selected": f in sel} for f in _voice_fields(biz)]
+    return {"Type": "VoicePacks", "Content": {"Packs": packs}}
+
+
+def action_setvoices(biz, langs="", *_):
+    """Set the voice packs to keep installed (comma-separated matching_fields),
+    then run an install pass to download any newly selected ones."""
+    avail = set(_voice_fields(biz))
+    chosen = [x for x in (langs.split(",") if langs else []) if x in avail]
+    state = load_state()
+    st = state["games"].setdefault(biz, {})
+    st["voice_langs"] = chosen
+    save_state(state)
+    if st.get("installed"):
+        return action_download(biz)
+    return {"Type": "Success",
+            "Content": {"Message": f"Voice packs set: {', '.join(chosen) or 'none'}"}}
 
 
 def _pid_alive(pid):
@@ -1477,6 +1562,20 @@ def action_update(biz, *_):
     # An update is a re-run of the install worker: the file registry makes it
     # only download the files whose md5 changed in the new manifest.
     return action_download(biz)
+
+
+def action_verify(biz, *_):
+    """Integrity check + repair: re-hash every file against the manifest and
+    re-download only the corrupted/missing ones (ignores the registry trust)."""
+    os.makedirs(LOG_DIR, exist_ok=True)
+    cur = _read_progress(biz)
+    if cur and not cur.get("done") and not cur.get("error") \
+            and cur.get("pid") and _pid_alive(cur["pid"]):
+        return {"Type": "Progress", "Content": {"Message": "Busy"}}
+    _write_progress(biz, 0, "Verifying game files…", pid=0)
+    pid = _spawn_worker(biz, mode="verify")
+    _write_progress(biz, 0, "Verifying game files…", pid=pid)
+    return {"Type": "Progress", "Content": {"Message": "Verifying"}}
 
 
 def action_gamedir(biz):
@@ -1726,8 +1825,14 @@ def main():
             out = action_cancelinstall(*args)
         elif action == "uninstall":
             out = action_uninstall(*args)
-        elif action in ("update", "repair", "repair_and_update", "verify"):
+        elif action == "update":
             out = action_update(*args)
+        elif action in ("verify", "repair", "repair_and_update"):
+            out = action_verify(*args)
+        elif action in ("get-voices", "getvoices"):
+            out = action_getvoices(*args)
+        elif action in ("set-voices", "setvoices"):
+            out = action_setvoices(*args)
         elif action == "ensure-jadeite":
             out = action_ensurejadeite(*args)
         elif action == "resume-pending":
