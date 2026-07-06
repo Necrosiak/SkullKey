@@ -20,6 +20,7 @@ import http.client
 import io
 import json
 import os
+import platform
 import re
 import shutil
 import signal
@@ -547,6 +548,144 @@ def _build_category(build, field="game"):
     return None
 
 
+# ── delta patches (sophon getPatchBuild + hpatchz) ───────────────────────────
+# A version update normally re-downloads every changed file in full. HoYo also
+# ships DELTA patches: getPatchBuild returns, per category, a manifest listing
+# for each file a tiny hdiff patch (HDiffPatch "HDIFF13" format) that turns the
+# OLD file into the NEW one. Patches for many files are packed into shared
+# "diff blobs" (each file = a [offset, offset+len) slice of a blob). Applying
+# them with hpatchz downloads only the diff (~16 GB) instead of the changed
+# files in full (~74 GB) for a Genshin version bump. Reverse-engineered live;
+# schema documented in the mihoyo-sophon-patch memory. Fully additive: whatever
+# can't be patched (new files, missing source, any failure) falls back to the
+# normal chunk download, so the result is always a correct install.
+PATCH_API = ("https://sg-public-api.hoyoverse.com/downloader/sophon_chunk"
+             "/api/getPatchBuild")
+HPATCHZ_DIR = os.path.join(RUNTIME_DIR, "hpatchz")
+HDIFFPATCH_REL = ("https://github.com/sisong/HDiffPatch/releases/download/"
+                  "v5.0.1/hdiffpatch_v5.0.1_bin_{arch}.zip")
+
+
+def _hdiff_arch():
+    m = (platform.machine() or "").lower()
+    if m in ("aarch64", "arm64"):
+        return "linux_arm64", "linux_arm64/hpatchz"
+    if m in ("armv7l", "armv7", "arm"):
+        return "linux_arm32", "linux_arm32/hpatchz"
+    return "linux64", "linux64/hpatchz"      # x86_64 default
+
+
+def ensure_hpatchz():
+    """Provision the static hpatchz binary (HDiffPatch) for this CPU arch, so
+    delta patching works on any distro. Cached in RUNTIME_DIR. Returns the path
+    or None if it couldn't be obtained (caller falls back to full download)."""
+    exe = os.path.join(HPATCHZ_DIR, "hpatchz")
+    if os.path.exists(exe) and os.access(exe, os.X_OK):
+        return exe
+    arch, inner = _hdiff_arch()
+    try:
+        zbytes = _download_bytes(HDIFFPATCH_REL.format(arch=arch))
+    except Exception as e:
+        print(f"hpatchz download failed: {e}", file=sys.stderr)
+        return None
+    os.makedirs(HPATCHZ_DIR, exist_ok=True)
+    with zipfile.ZipFile(io.BytesIO(zbytes)) as z:
+        with z.open(inner) as src, open(exe, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+    os.chmod(exe, 0o755)
+    return exe if os.path.exists(exe) else None
+
+
+def _sophon_patch_build(biz):
+    """getPatchBuild response (patch manifests per category) for the game's
+    current target version, cached per tag. POST + JSON body (GET → 405)."""
+    info = _branch_info(biz)
+    if not info or not info.get("tag"):
+        return None
+    cache = os.path.join(RUNTIME_DIR, f"mihoyo_patch_{biz}.json")
+    try:
+        with open(cache) as f:
+            c = json.load(f)
+        if c.get("tag") == info["tag"]:
+            return c["build"]
+    except Exception:
+        pass
+    body = json.dumps({"branch": "main", "package_id": info["package_id"],
+                       "password": info["password"], "tag": info["tag"]}
+                      ).encode()
+    req = urllib.request.Request(
+        PATCH_API, data=body, method="POST",
+        headers={"User-Agent": "SkullKey-MiHoYo",
+                 "Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=25, context=_ssl_context()) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    if data.get("retcode") != 0:
+        raise RuntimeError(f"getPatchBuild: {data.get('message')}")
+    build = data.get("data") or {}
+    os.makedirs(RUNTIME_DIR, exist_ok=True)
+    with open(cache, "w") as f:
+        json.dump({"tag": info["tag"], "build": build}, f)
+    return build
+
+
+def _parse_patch_manifest(pb, source_ver):
+    """Patch manifest protobuf → {target_path: diff} for files patchable from
+    `source_ver`. Schema (reverse-engineered):
+      entry(field 1): 1=target_path 2=new_size 3=new_md5
+                      4=diff(repeated, per source version):
+                          1=source_ver  2=descriptor{
+                              1=blob_name 4=blob_size 5=blob_md5
+                              6=offset(def 0) 7=length
+                              8=src_path 9=src_size 10=src_md5}"""
+    out = {}
+    for fno, _, raw in _pb_fields(pb):
+        if fno != 1:
+            continue
+        path = new_size = new_md5 = None
+        diffs = []
+        for f2, _, v in _pb_fields(raw):
+            if f2 == 1:
+                path = v.decode()
+            elif f2 == 2:
+                new_size = v
+            elif f2 == 3:
+                new_md5 = v.decode().lower()
+            elif f2 == 4:
+                diffs.append(v)
+        if path is None:
+            continue
+        for dv in diffs:
+            sv = None
+            desc = None
+            for f3, _, w in _pb_fields(dv):
+                if f3 == 1:
+                    sv = w.decode()
+                elif f3 == 2:
+                    desc = w
+            if sv != source_ver or desc is None:
+                continue
+            d = {"blob": "", "blob_size": 0, "offset": 0, "length": 0,
+                 "src_size": 0, "src_md5": "", "new_size": new_size,
+                 "new_md5": new_md5}
+            for f4, _, x in _pb_fields(desc):
+                if f4 == 1:
+                    d["blob"] = x.decode()
+                elif f4 == 4:
+                    d["blob_size"] = x
+                elif f4 == 6:
+                    d["offset"] = x
+                elif f4 == 7:
+                    d["length"] = x
+                elif f4 == 9:
+                    d["src_size"] = x
+                elif f4 == 10:
+                    d["src_md5"] = x.decode().lower()
+            if d["blob"] and d["length"]:
+                out[path] = d
+            break
+    return out
+
+
 def _zstd_decompress(data):
     if _zstd:
         return _zstd.decompress(data)
@@ -802,10 +941,137 @@ class _Part:
         self.fetcher = fetcher            # each category has its own CDN dir
 
 
+def _patch_manifest_bytes(biz, man):
+    """Fetch + zstd-decompress a patch category manifest (cached in _pkg)."""
+    mid = man["manifest"]["id"]
+    path = os.path.join(_pkg_dir(biz), "patch_" + mid + ".pb")
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return f.read()
+    raw = _download_bytes(man["manifest_download"]["url_prefix"] + "/" + mid)
+    pb = _zstd_decompress(raw)
+    want = (man["manifest"].get("checksum") or "").lower()
+    if want and want not in (hashlib.md5(pb).hexdigest(),
+                             hashlib.md5(raw).hexdigest()):
+        raise RuntimeError("patch manifest checksum mismatch")
+    os.makedirs(_pkg_dir(biz), exist_ok=True)
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as f:
+        f.write(pb)
+    os.replace(tmp, path)
+    return pb
+
+
+def _try_delta_patch(biz, source_ver, target_ver):
+    """Patch changed files from the INSTALLED version instead of re-downloading
+    them. Additive + best-effort: every file it can't patch (new file, missing
+    or mismatched source, any error) is simply left for the full chunk pipeline
+    that runs afterwards, which sees the registry and skips whatever this phase
+    already produced. Returns the number of files successfully patched."""
+    hpz = ensure_hpatchz()
+    if not hpz:
+        return 0
+    build = _sophon_patch_build(biz)
+    if not build or not build.get("manifests"):
+        return 0
+
+    out_root = _game_dir(biz)
+    root_prefix = os.path.normpath(out_root) + os.sep
+    # Collect patchable files across every install category.
+    jobs_by_blob = {}          # (prefix, blob, blob_size) -> [(path, diff)]
+    for field in _install_fields(biz):
+        man = _build_category(build, field)
+        if not man:
+            continue
+        try:
+            diffs = _parse_patch_manifest(
+                _patch_manifest_bytes(biz, man), source_ver)
+        except Exception as e:
+            print(f"patch manifest {field}: {e}", file=sys.stderr)
+            continue
+        prefix = man["diff_download"]["url_prefix"]
+        for path, d in diffs.items():
+            target = os.path.normpath(
+                os.path.join(out_root, path.replace("\\", "/")))
+            if not target.startswith(root_prefix):
+                continue
+            # The OLD file must be on disk and match the patch's source md5.
+            if not (os.path.isfile(target)
+                    and os.path.getsize(target) == d["src_size"]
+                    and (not d["src_md5"] or _md5_file(target) == d["src_md5"])):
+                continue
+            jobs_by_blob.setdefault(
+                (prefix, d["blob"], d["blob_size"]), []).append(
+                    (target, path, d))
+    if not jobs_by_blob:
+        return 0
+
+    reg = _load_files_reg(biz)
+    reg_lock = threading.Lock()
+    total = sum(d["new_size"] for lst in jobs_by_blob.values()
+                for _, _, d in lst) or 1
+    done = [0]
+    patched = [0]
+    plock = threading.Lock()
+    game = _game_by_biz(biz) or {}
+    name = (game.get("display", {}) or {}).get("name", biz)
+
+    def do_blob(key, files):
+        prefix, blob, _bsize = key
+        # Download the shared blob once (its files are contiguous slices) and
+        # slice it in memory — HoYo blobs are chunk-sized (~64-100 MB).
+        data = _download_bytes(prefix + "/" + blob)
+        for target, path, d in files:
+            slice_ = data[d["offset"]:d["offset"] + d["length"]]
+            if len(slice_) != d["length"]:
+                continue
+            pf = target + ".skpatch"
+            nf = target + ".sknew"
+            try:
+                with open(pf, "wb") as f:
+                    f.write(slice_)
+                r = subprocess.run([hpz, target, pf, nf],
+                                   capture_output=True, timeout=300)
+                if (r.returncode == 0 and os.path.exists(nf)
+                        and (not d["new_md5"]
+                             or _md5_file(nf) == d["new_md5"])):
+                    os.replace(nf, target)
+                    with reg_lock:
+                        reg[path] = d["new_md5"]
+                    with plock:
+                        patched[0] += 1
+            finally:
+                for p in (pf, nf):
+                    try:
+                        os.path.exists(p) and os.remove(p)
+                    except OSError:
+                        pass
+                with plock:
+                    done[0] += d["new_size"]
+                    _write_progress(
+                        biz, 40.0 * done[0] / total,
+                        f"Patching {name} ({source_ver}→{target_ver}) — "
+                        f"{_human(done[0])}/{_human(total)}")
+
+    _write_progress(biz, 0, f"Delta update {source_ver}→{target_ver}…")
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futs = [pool.submit(do_blob, k, v) for k, v in jobs_by_blob.items()]
+        for fut in as_completed(futs):
+            try:
+                fut.result()
+            except Exception as e:
+                print(f"delta blob error: {e}", file=sys.stderr)
+    with reg_lock:
+        _save_files_reg(biz, reg)
+    return patched[0]
+
+
 def worker_install(biz):
     """Detached worker: fetch the sophon manifest, download the chunks of
     every missing/changed file in parallel, assemble+verify in place. Reruns
-    (resume after a reboot, or a version update) only fetch what changed."""
+    (resume after a reboot, or a version update) only fetch what changed.
+    On a version bump it first tries DELTA patches (getPatchBuild + hpatchz)
+    from the installed version, so only the diff is downloaded."""
     try:
         game = _game_by_biz(biz) or {}
         name = (game.get("display", {}) or {}).get("name", biz)
@@ -826,6 +1092,22 @@ def worker_install(biz):
             _write_progress(biz, 100, "Finished installation process",
                             done=True)
             return
+
+        # ── delta phase: on a version bump, patch changed files from the
+        #    installed version (getPatchBuild + hpatchz) so only the diff is
+        #    downloaded. Purely additive — the full pipeline below then only
+        #    has to fetch what wasn't (or couldn't be) patched. ──────────────
+        installed_ver = st0.get("version")
+        diff_tags = (binfo or {}).get("diff_tags", [])
+        if (st0.get("installed") and installed_ver
+                and installed_ver != version and installed_ver in diff_tags):
+            try:
+                n = _try_delta_patch(biz, installed_ver, version)
+                if n:
+                    print(f"delta: patched {n} files "
+                          f"{installed_ver}→{version}", file=sys.stderr)
+            except Exception as e:
+                print(f"delta patch skipped: {e}", file=sys.stderr)
 
         _write_progress(biz, 0, f"Fetching manifests ({version})…")
         build = _sophon_build(biz)

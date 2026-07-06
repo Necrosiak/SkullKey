@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.0 — 2026-07-06
+
+### Added
+- **Delta updates for miHoYo games.** A version bump now downloads only the
+  *difference* between your installed version and the new one, instead of
+  re-fetching every changed file in full. It uses HoYo's official sophon patch
+  channel (`getPatchBuild`) and applies the per-file hdiff patches with
+  `hpatchz` (HDiffPatch), auto-provisioned for your CPU architecture. For a
+  Genshin version bump this is on the order of ~16 GB instead of ~74 GB.
+  Fully additive and safe: any file that can't be patched (new file, a source
+  file that doesn't match, or any error) automatically falls back to the
+  normal chunk download, so the result is always a correct, verified install.
+
 ## 1.2.1 — 2026-07-06
 
 ### Changed
