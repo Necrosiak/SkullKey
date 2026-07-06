@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0 — 2026-07-06
+
+### Added
+- **Classics Reborn grows to 47 ports** — 8 more open-source native ports &
+  recompilations of classics: OpenTESArena (The Elder Scrolls: Arena),
+  Arx Libertatis (Arx Fatalis), BStone (Blake Stone), OpenJazz (Jazz
+  Jackrabbit), OpenBOR (Beats of Rage engine), OpenRA: Tiberian Dawn (C&C) and
+  OpenRA: Dune 2000, and Warzone 2100. Official Linux release binaries, with
+  original-files instructions in 9 languages.
+
 ## 1.6.0 — 2026-07-06
 
 ### Added
