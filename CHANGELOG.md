@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.1 — 2026-07-09
+
+### Fixed
+- **Update failures are now visible.** When installing an update fails (for
+  example on a root-owned local install: Permission denied), the About panel
+  shows the error instead of staying on "updating…" forever.
+
 ## 1.8.0 — 2026-07-09
 
 ### Changed

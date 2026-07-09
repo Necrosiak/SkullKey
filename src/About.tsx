@@ -79,8 +79,22 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
 
     const install = async () => {
         setUpdating(true);
-        try { await serverAPI.callPluginMethod<{ url: string }, boolean>("apply_update", { url: updUrl }); } catch (e) { }
-        // plugin_loader restarts right after — the QAM reloads by itself
+        // On success plugin_loader restarts right after — the QAM reloads by
+        // itself. On failure the backend returns {ok:false, error}: show it
+        // instead of hanging on "updating…" forever.
+        try {
+            const r = await serverAPI.callPluginMethod<{ url: string }, any>("apply_update", { url: updUrl });
+            const res: any = r?.result;
+            if (!(res === true || res?.ok)) {
+                setUpdating(false);
+                setUpdUrl("");
+                setUpdLabel("⚠️ " + ((res && res.error) || t("update_error")));
+            }
+        } catch (e) {
+            setUpdating(false);
+            setUpdUrl("");
+            setUpdLabel(t("update_error"));
+        }
     };
 
     return (
