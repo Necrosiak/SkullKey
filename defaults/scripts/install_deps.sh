@@ -33,12 +33,13 @@ function uninstall(){
 
 function ensure(){
     # Boot-time auto-provision: install ONLY the missing store deps, quietly.
-    # Scoped to GOG + Amazon — their deps are small self-contained venvs, safe to
-    # install unattended. Epic's heavier flatpak deps stay manual (deps button).
+    # GOG + Amazon + Epic : small self-contained venvs, safe to install
+    # unattended (Epic = legendary venv depuis le passage stand-alone ; un
+    # flatpak legendary existant satisfait le check → rien n'est réinstallé).
     echo "==================================="
-    echo "  Ensuring store dependencies (GOG, Amazon)"
+    echo "  Ensuring store dependencies (GOG, Amazon, Epic)"
     echo "==================================="
-    for ext in GOG Amazon; do
+    for ext in GOG Amazon Epic; do
         script="./scripts/Extensions/${ext}/install_deps.sh"
         [ -f "$script" ] || script="${HOME}/homebrew/data/SkullKey/scripts/Extensions/${ext}/install_deps.sh"
         [ -f "$script" ] || { echo "  ${ext}: install_deps.sh not found, skipping"; continue; }

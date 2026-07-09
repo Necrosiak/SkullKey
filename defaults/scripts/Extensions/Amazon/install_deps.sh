@@ -29,6 +29,11 @@ function uninstall() {
 }
 
 function install() {
+    # nile est installé depuis un clone local (pyproject à patcher) → git requis.
+    if ! command -v git >/dev/null 2>&1; then
+        echo "ERROR: git manquant (requis pour installer nile) — installe-le via ton gestionnaire de paquets (ex: pacman -S git)"
+        return 1
+    fi
     pick_python || return 1
     if [ ! -x "${VENV}/bin/pip" ]; then
         "${PY}" -m venv "${VENV}"

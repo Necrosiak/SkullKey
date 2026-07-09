@@ -224,13 +224,31 @@ function loginlaunchoptions () {
     echo $JSON
 }
 
+# stand-alone : la fenêtre de login Amazon a besoin de GTK3 + WebKit2 (bindings
+# python-gobject système, présents sur Bazzite mais PAS sur CachyOS/Arch de
+# base). Vérifié AVANT de lancer → message avec la commande exacte pour cet OS
+# au lieu d'une fenêtre qui ne s'ouvre jamais.
+function Amazon_check_login_deps(){
+    /usr/bin/env python3 -c 'import gi; gi.require_version("Gtk","3.0"); gi.require_version("WebKit2","4.1")' 2>/dev/null
+}
+
 function Amazon_login(){
     get_steam_env
+    if ! Amazon_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"Amazon login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     launchoptions "${DECKY_PLUGIN_DIR}/scripts/Extensions/Amazon/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "Amazon Games Login"
 }
 
 function Amazon_login-launch-options(){
     get_steam_env
+    if ! Amazon_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"Amazon login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     loginlaunchoptions "${DECKY_PLUGIN_DIR}/scripts/Extensions/Amazon/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "Amazon Games Login"
 }
 

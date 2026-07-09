@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 EPICCONF="${DECKY_PLUGIN_DIR}/scripts/epic-config.py"
-export LEGENDARY="/bin/flatpak run com.github.derrod.legendary"
 
-# multi-comptes : legendary est un flatpak → il force ses chemins XDG vers
-# ~/.var/app/… (--env inopérant, même piège que Vesktop dans Steamcord). Le
-# login Epic du compte Steam actif est donc sélectionné en retargetant le
-# symlink config/legendary vers l'espace du compte. Le VRAI dossier existant
-# (session du propriétaire) est adopté par le premier compte vu ; un dossier
-# réel recréé par un run manuel est parqué, jamais supprimé.
+# stand-alone : legendary = flatpak si déjà installé (installs historiques
+# Bazzite/SteamOS), sinon venv pip ~/.local/share/skullkey-legendary construit
+# par install_deps.sh (CachyOS/Arch/Fedora/Debian n'ont pas forcément flatpak).
+# Les deux backends lisent la MÊME config : le vrai dossier vit dans l'espace
+# du compte Steam (multi-comptes) et le chemin candidat est symlinké dessus.
+_LEG_VENV="${HOME}/.local/share/skullkey-legendary/bin/legendary"
+if command -v flatpak >/dev/null 2>&1 && flatpak info com.github.derrod.legendary &>/dev/null; then
+    export LEGENDARY="$(command -v flatpak) run com.github.derrod.legendary"
+    # flatpak force ses chemins XDG vers ~/.var/app/… (--env inopérant, même
+    # piège que Vesktop dans Steamcord) → retarget dans l'app dir du flatpak.
+    _LEG_BASE="${HOME}/.var/app/com.github.derrod.legendary/config"
+else
+    export LEGENDARY="${_LEG_VENV}"
+    # le legendary venv lit ~/.config/legendary → même retargeting, autre base.
+    _LEG_BASE="${HOME}/.config"
+    mkdir -p "${_LEG_BASE}"
+fi
+
+# multi-comptes : le login Epic du compte Steam actif est sélectionné en
+# retargetant le symlink <base>/legendary vers l'espace du compte. Le VRAI
+# dossier existant (session du propriétaire) est adopté par le premier compte
+# vu ; un dossier réel recréé par un run manuel est parqué, jamais supprimé.
 SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
-_LEG_BASE="${HOME}/.var/app/com.github.derrod.legendary/config"
 _LEG_TARGET="${SK_ACCOUNT_DIR}/legendary"
 if [[ -d "${_LEG_BASE}" ]]; then
     if [[ -d "${_LEG_BASE}/legendary" && ! -L "${_LEG_BASE}/legendary" ]]; then
@@ -24,7 +38,12 @@ if [[ -d "${_LEG_BASE}" ]]; then
         ln -sfn "${_LEG_TARGET}" "${_LEG_BASE}/legendary"
     fi
 fi
-PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+# stand-alone : protontricks natif d'abord (pacman/dnf/apt), flatpak en secours
+if command -v protontricks >/dev/null 2>&1; then
+    PROTON_TRICKS="$(command -v protontricks)"
+else
+    PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+fi
 # the launcher script to use in steam
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
 

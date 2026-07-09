@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.8.0 — 2026-07-09
+
+### Changed
+- **Stand-alone across distros — one build that checks what the machine has.**
+  Nothing is assumed installed anymore: every external tool is detected at
+  runtime, and when something is missing the plugin shows the exact install
+  command for the detected OS (pacman / rpm-ostree / dnf / apt).
+- **Epic no longer requires flatpak.** legendary now installs into a dedicated
+  pip venv (same model as GOG/Amazon) when the legendary flatpak is not
+  present; an existing flatpak install keeps working and stays preferred.
+  Both backends share the same per-Steam-account login, so switching is
+  seamless. Fixes the Epic tab erroring out on CachyOS/Arch installs without
+  flatpak.
+- **Epic dependencies now auto-provision at boot** like GOG and Amazon (small
+  self-contained venv, silent).
+- **protontricks**: the native binary is preferred when present; the flatpak
+  remains the fallback.
+
+### Added
+- **Amazon login pre-check.** The login window needs the system GTK3 + WebKit2
+  python bindings (present on Bazzite, not on stock Arch). The login button now
+  checks them first and shows the exact package command for your OS instead of
+  silently never opening a window.
+- **git presence check** before installing nile (it is built from a local
+  clone), with a clear message when missing.
+
 ## 1.7.0 — 2026-07-06
 
 ### Added

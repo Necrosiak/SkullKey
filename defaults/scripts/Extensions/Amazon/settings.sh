@@ -6,7 +6,12 @@ export NILE="${HOME}/.local/share/skullkey-nile/bin/nile"
 # un sous-dossier nile/ sous ce chemin)
 SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
 export NILE_CONFIG_PATH="${SK_ACCOUNT_DIR}"
-PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+# stand-alone : protontricks natif d'abord (pacman/dnf/apt), flatpak en secours
+if command -v protontricks >/dev/null 2>&1; then
+    PROTON_TRICKS="$(command -v protontricks)"
+else
+    PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+fi
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
 
 export LAUNCHER="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/Amazon/amazon-launcher.sh"

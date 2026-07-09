@@ -3,7 +3,7 @@ PLATFORM=Epic
 export DECKY_PLUGIN_RUNTIME_DIR="${HOME}/homebrew/data/SkullKey"
 export DECKY_PLUGIN_DIR="${HOME}/homebrew/plugins/SkullKey"
 export DECKY_PLUGIN_LOG_DIR="${HOME}/homebrew/logs/SkullKey"
-export LEGENDARY="/bin/flatpak run com.github.derrod.legendary"
+# LEGENDARY est choisi (flatpak vs venv) par settings.sh sourcé plus bas.
 
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
 

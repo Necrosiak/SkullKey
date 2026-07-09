@@ -5,7 +5,12 @@ GOGDL_BIN="${HOME}/.local/share/skullkey-gogdl/bin/gogdl"
 SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
 GOG_AUTH_FILE="${SK_ACCOUNT_DIR}/gog_auth.json"
 export GOGDL="${GOGDL_BIN} --auth-config-path ${GOG_AUTH_FILE}"
-PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+# stand-alone : protontricks natif d'abord (pacman/dnf/apt), flatpak en secours
+if command -v protontricks >/dev/null 2>&1; then
+    PROTON_TRICKS="$(command -v protontricks)"
+else
+    PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+fi
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
 
 export LAUNCHER="${DECKY_PLUGIN_DIR}/scripts/${Extensions}/GOG/gog-launcher.sh"

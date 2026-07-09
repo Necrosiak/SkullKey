@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# stand-alone : commande d'installation adaptée à l'OS détecté (une seule
+# version du plugin pour tous les OS — on vérifie ce que la machine a et on
+# dit exactement quoi installer sinon). $1=paquets Arch $2=Fedora $3=Debian.
+function sk_pkg_hint(){
+    if command -v pacman >/dev/null 2>&1; then echo "sudo pacman -S ${1}"
+    elif command -v rpm-ostree >/dev/null 2>&1; then echo "rpm-ostree install ${2}"
+    elif command -v dnf >/dev/null 2>&1; then echo "sudo dnf install ${2}"
+    elif command -v apt >/dev/null 2>&1; then echo "sudo apt install ${3}"
+    else echo "install: ${1}"
+    fi
+}
+
 function init() {
     for platform in "${PLATFORMS[@]}"; do
        
@@ -279,12 +291,20 @@ function launchoptions () {
     }}"
     echo $JSON
 }
+# stand-alone : $LEGENDARY (settings.sh) = « /usr/bin/flatpak run … » OU le
+# binaire du venv → découpe premier mot = Exe, reste = préfixe des options.
+function _legendary_login_cmd(){
+    read -r LOGIN_EXE LOGIN_ARGS <<< "${LEGENDARY}"
+    LOGIN_OPTS="${LOGIN_ARGS:+${LOGIN_ARGS} }auth"
+}
 function login(){
     get_steam_env
-    launchoptions "/bin/flatpak" "run com.github.derrod.legendary auth" "" "Epic Games Login" "Epic"
+    _legendary_login_cmd
+    launchoptions "${LOGIN_EXE}" "${LOGIN_OPTS}" "" "Epic Games Login" "Epic"
 }
 function login_launch_options(){
-    TEMP=$($DOSCONF --launchoptions "/bin/flatpak" "run com.github.derrod.legendary auth" "" "Epic Games Login" --dbfile $DBFILE)
+    _legendary_login_cmd
+    TEMP=$($DOSCONF --launchoptions "${LOGIN_EXE}" "${LOGIN_OPTS}" "" "Epic Games Login" --dbfile $DBFILE)
     echo $TEMP
 }
 
