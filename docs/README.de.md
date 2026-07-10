@@ -1,6 +1,6 @@
 # 🗝️ SkullKey
 
-> 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
+> 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **Der Schlüssel, der jeden Shop öffnet.** Spiele deine Epic-Games-, GOG- und Amazon-Games-Bibliotheken direkt im Gaming-Modus auf SteamOS / Bazzite — anmelden, installieren, starten. Ganz ohne Desktop-Modus.
 
@@ -20,21 +20,21 @@
 - 🔄 **Auto-Update** — neue Versionen installieren sich still im Hintergrund (in den Einstellungen abschaltbar)
 - 🌐 **9 Sprachen** — die Oberfläche folgt automatisch der Konsolensprache (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Schnellzugriff** — farbige Shop-Karten im QAM, optionale L3+R3-Verknüpfung zum Öffnen des Shops von überall
-- 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen Hinweise pro Distribution: [docs/OS-NOTES.md](docs/OS-NOTES.md).
+- 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen Hinweise pro Distribution: [docs/OS-NOTES.md](OS-NOTES.md).
 
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="docs/img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
-  <img src="docs/img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
+  <img src="img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
+  <img src="img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
 </p>
 <p align="center">
-  <img src="docs/img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
-  <img src="docs/img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
+  <img src="img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
+  <img src="img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
 </p>
 <p align="center">
-  <img src="docs/img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
-  <img src="docs/img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
+  <img src="img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
+  <img src="img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
 </p>
 
 ## Installation
@@ -85,4 +85,4 @@ Unabhängiges Community-Projekt, nicht verbunden mit Junk-Store, Valve, Epic Gam
 
 ## Lizenz
 
-BSD-3-Clause — siehe [LICENSE](LICENSE).
+BSD-3-Clause — siehe [LICENSE](../LICENSE).

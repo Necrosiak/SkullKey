@@ -1,6 +1,6 @@
 # 🗝️ SkullKey
 
-> 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
+> 🌐 [EN](README.md) · [FR](docs/README.fr.md) · [DE](docs/README.de.md) · [ES](docs/README.es.md) · [IT](docs/README.it.md) · [PT](docs/README.pt.md) · [NL](docs/README.nl.md) · [PL](docs/README.pl.md) · [RU](docs/README.ru.md)
 
 **The key that opens every store.** Play your Epic Games, GOG and Amazon Games libraries directly from Game Mode on SteamOS / Bazzite — login, install, launch. No desktop mode needed.
 

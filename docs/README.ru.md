@@ -1,6 +1,6 @@
 # 🗝️ SkullKey
 
-> 🌐 [EN](README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
+> 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **Ключ, открывающий все магазины.** Играйте в библиотеки Epic Games, GOG и Amazon Games прямо из игрового режима на SteamOS / Bazzite — вход, установка, запуск. Без рабочего стола.
 
@@ -20,21 +20,21 @@
 - 🔄 **Автообновление** — новые версии устанавливаются тихо в фоне (отключается в Настройках)
 - 🌐 **9 языков** — интерфейс автоматически следует языку консоли (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Быстрый доступ** — цветные карточки магазинов в QAM, опциональный шорткат L3+R3 для открытия магазина где угодно
-- 🐧 **Совместимость** — мы активно работаем над поддержкой любой ОС, способной запускать Steam в игровом режиме / Big Picture (пока Linux): переносимое определение, никаких допущений под конкретный дистрибутив Заметки по дистрибутивам: [docs/OS-NOTES.md](docs/OS-NOTES.md).
+- 🐧 **Совместимость** — мы активно работаем над поддержкой любой ОС, способной запускать Steam в игровом режиме / Big Picture (пока Linux): переносимое определение, никаких допущений под конкретный дистрибутив Заметки по дистрибутивам: [docs/OS-NOTES.md](OS-NOTES.md).
 
 ## 📸 Скриншоты
 
 <p align="center">
-  <img src="docs/img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
-  <img src="docs/img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
+  <img src="img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
+  <img src="img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
 </p>
 <p align="center">
-  <img src="docs/img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
-  <img src="docs/img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
+  <img src="img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
+  <img src="img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
 </p>
 <p align="center">
-  <img src="docs/img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
-  <img src="docs/img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
+  <img src="img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
+  <img src="img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
 </p>
 
 ## Установка
@@ -85,4 +85,4 @@ SkullKey — форк [Junk-Store](https://github.com/ebenbruyns/junkstore) **Э
 
 ## Лицензия
 
-BSD-3-Clause — см. [LICENSE](LICENSE).
+BSD-3-Clause — см. [LICENSE](../LICENSE).
