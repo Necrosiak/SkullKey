@@ -24,7 +24,14 @@
 
 ## Installatie
 
-Download `SkullKey.zip` van de [nieuwste release](https://github.com/Necrosiak/SkullKey/releases/latest) en installeer het via Decky Loader (ontwikkelaarsmodus → Installeren vanaf ZIP), of bouw vanaf de broncode:
+Via Decky Loader, zonder desktop:
+
+1. Installeer [Decky Loader](https://decky.xyz/)
+2. Zet de **ontwikkelaarsmodus** aan in Decky's algemene instellingen
+3. Decky-instellingen → **Ontwikkelaar** → *Plugin installeren vanaf URL*:
+   `https://github.com/Necrosiak/SkullKey/releases/latest/download/SkullKey.zip`
+
+Of bouw vanaf de broncode:
 
 ```bash
 pnpm install && pnpm run build

@@ -24,7 +24,14 @@
 
 ## Installazione
 
-Scarica `SkullKey.zip` dall'[ultima release](https://github.com/Necrosiak/SkullKey/releases/latest) e installalo tramite Decky Loader (modalità sviluppatore → Installa da ZIP), oppure compila dai sorgenti:
+Via Decky Loader, senza passare dal desktop:
+
+1. Installate [Decky Loader](https://decky.xyz/)
+2. Attivate la **modalità sviluppatore** nelle impostazioni generali di Decky
+3. Impostazioni Decky → **Sviluppatore** → *Installa plugin da URL*:
+   `https://github.com/Necrosiak/SkullKey/releases/latest/download/SkullKey.zip`
+
+Oppure compilate dai sorgenti:
 
 ```bash
 pnpm install && pnpm run build
