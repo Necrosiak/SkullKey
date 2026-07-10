@@ -22,6 +22,21 @@
 - 🕹️ **Snelle toegang** — gekleurde winkelkaarten in het QAM, optionele L3+R3-sneltoets om de winkel overal te openen
 - 🐧 **Compatibiliteit** — we werken er actief aan om elk OS te ondersteunen dat Steam in gamemodus / Big Picture kan draaien (voorlopig Linux): portable detectie, geen distributiespecifieke aannames Notities per distributie: [docs/OS-NOTES.md](docs/OS-NOTES.md).
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
+  <img src="docs/img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
+</p>
+<p align="center">
+  <img src="docs/img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
+  <img src="docs/img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
+</p>
+<p align="center">
+  <img src="docs/img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
+  <img src="docs/img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
+</p>
+
 ## Installatie
 
 Via Decky Loader, zonder desktop:

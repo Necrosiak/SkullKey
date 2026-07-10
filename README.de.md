@@ -22,6 +22,21 @@
 - 🕹️ **Schnellzugriff** — farbige Shop-Karten im QAM, optionale L3+R3-Verknüpfung zum Öffnen des Shops von überall
 - 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen Hinweise pro Distribution: [docs/OS-NOTES.md](docs/OS-NOTES.md).
 
+## 📸 Screenshots
+
+<p align="center">
+  <img src="docs/img/skullkey-epic.jpg" width="49%" alt="Epic Games library"/>
+  <img src="docs/img/skullkey-mihoyo.jpg" width="49%" alt="miHoYo tab"/>
+</p>
+<p align="center">
+  <img src="docs/img/skullkey-classics.jpg" width="49%" alt="Classics Reborn"/>
+  <img src="docs/img/skullkey-game-details.jpg" width="49%" alt="Game details"/>
+</p>
+<p align="center">
+  <img src="docs/img/skullkey-steam-collection.jpg" width="49%" alt="Steam collection"/>
+  <img src="docs/img/skullkey-steam-game-page.jpg" width="49%" alt="Installed game in Steam"/>
+</p>
+
 ## Installation
 
 Via Decky Loader, ganz ohne Desktop:
