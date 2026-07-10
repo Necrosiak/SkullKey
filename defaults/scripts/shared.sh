@@ -7,6 +7,7 @@ function sk_pkg_hint(){
     if command -v pacman >/dev/null 2>&1; then echo "sudo pacman -S ${1}"
     elif command -v rpm-ostree >/dev/null 2>&1; then echo "rpm-ostree install ${2}"
     elif command -v dnf >/dev/null 2>&1; then echo "sudo dnf install ${2}"
+    elif command -v zypper >/dev/null 2>&1; then echo "sudo zypper install ${2}"
     elif command -v apt >/dev/null 2>&1; then echo "sudo apt install ${3}"
     else echo "install: ${1}"
     fi
@@ -94,6 +95,10 @@ function repair(){
 }
 
 function protontricks(){
+    if [[ -z "${PROTON_TRICKS}" ]]; then
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"protontricks is not installed — install the protontricks package (or flatpak + com.github.Matoking.protontricks), then reopen this menu.\"}}"
+        return
+    fi
     get_steam_env
     unset STEAM_RUNTIME_LIBRARY_PATH
     export PROTONTRICKS_GUI=yad

@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.2 — 2026-07-10
+
+### Fixed
+- **Debian/Ubuntu: store dependencies now install correctly — or say exactly
+  why not.** Stock Debian/Ubuntu passes the old `import venv` probe but cannot
+  actually create a virtualenv (`ensurepip` is stripped from the base python
+  package), so the Epic/GOG/Amazon clients silently failed to build. The probe
+  now tests `ensurepip`, and when no usable python is found the log shows the
+  exact install command for the detected OS
+  (`sudo apt install python3 python3-venv`, `sudo pacman -S python`, …).
+- **Protontricks button: clear error instead of a dead path.** Without a
+  native protontricks and without flatpak, the button used to point at a
+  nonexistent `/bin/flatpak` and fail silently; it now shows what to install.
+
+### Added
+- openSUSE (`zypper`) is now covered by the OS-specific install hints.
+
 ## 1.8.1 — 2026-07-09
 
 ### Fixed

@@ -178,6 +178,10 @@ function GOG_loginstatus(){
 }
 
 function GOG_protontricks(){
+    if [[ -z "${PROTON_TRICKS}" ]]; then
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"protontricks is not installed — install the protontricks package (or flatpak + com.github.Matoking.protontricks), then reopen this menu.\"}}"
+        return
+    fi
     get_steam_env
     unset STEAM_RUNTIME_LIBRARY_PATH
     export PROTONTRICKS_GUI=yad

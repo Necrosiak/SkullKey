@@ -13,13 +13,22 @@ PY=""
 pick_python() {
     local brew_py="/home/linuxbrew/.linuxbrew/bin/python3"
     if [ -x "${brew_py}" ]; then PY="${brew_py}"; return 0; fi
-    if command -v python3 >/dev/null 2>&1 && python3 -c "import venv" 2>/dev/null; then
+    # Debian/Ubuntu : `import venv` passe mais la CRÉATION échoue (ensurepip
+    # strippé du paquet de base, il faut python3-venv) → tester ensurepip.
+    if command -v python3 >/dev/null 2>&1 && python3 -c "import ensurepip" 2>/dev/null; then
         PY="$(command -v python3)"; return 0
     fi
     if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
         /home/linuxbrew/.linuxbrew/bin/brew install python && PY="${brew_py}" && return 0
     fi
-    echo "ERROR: aucun python3 utilisable (headers de dev ou Homebrew requis) pour builder nile"
+    local HINT="install python3 (with venv/ensurepip)"
+    if command -v pacman >/dev/null 2>&1; then HINT="sudo pacman -S python"
+    elif command -v rpm-ostree >/dev/null 2>&1; then HINT="rpm-ostree install python3"
+    elif command -v dnf >/dev/null 2>&1; then HINT="sudo dnf install python3"
+    elif command -v zypper >/dev/null 2>&1; then HINT="sudo zypper install python3"
+    elif command -v apt >/dev/null 2>&1; then HINT="sudo apt install python3 python3-venv"
+    fi
+    echo "ERROR: no usable python3 to build the nile venv — run: ${HINT}"
     return 1
 }
 

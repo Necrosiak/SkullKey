@@ -41,8 +41,11 @@ fi
 # stand-alone : protontricks natif d'abord (pacman/dnf/apt), flatpak en secours
 if command -v protontricks >/dev/null 2>&1; then
     PROTON_TRICKS="$(command -v protontricks)"
+elif command -v flatpak >/dev/null 2>&1; then
+    PROTON_TRICKS="$(command -v flatpak) run com.github.Matoking.protontricks"
 else
-    PROTON_TRICKS="/bin/flatpak run com.github.Matoking.protontricks"
+    # ni natif ni flatpak → vide ; le bouton Protontricks affiche une erreur
+    PROTON_TRICKS=""
 fi
 # the launcher script to use in steam
 export PYTHONPATH="${DECKY_PLUGIN_DIR}/scripts/":"${DECKY_PLUGIN_DIR}/scripts/shared/":$PYTHONPATH
