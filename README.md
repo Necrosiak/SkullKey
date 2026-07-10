@@ -10,7 +10,7 @@
 - 🏪 **Four stores, free** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) and **miHoYo/HoYoverse**
 - ✨ **miHoYo store** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero and Honkai Impact 3rd, installed from HoYoverse's official *sophon* channel: parallel chunk downloads (~100 MB/s), updates that only fetch changed files, resume after reboot, anti-cheat handled automatically (jadeite) for HI3/HSR
 - 🩹 **miHoYo extras** — delta updates (download only the diff, ~4× smaller), voice-over language picker, integrity **check & repair**, and Zenless Zone Zero anti-cheat handled automatically
-- 🏛️ **Classics Reborn** — 47 open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
+- 🏛️ **Classics Reborn** — 52 open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
 - 👥 **One store space per Steam account (multi-account)** — every Steam user of the machine gets their own Epic/GOG/Amazon logins and library; switching the Steam account switches everything automatically (existing logins are kept by the account active at first run)
 - 📦 **Games auto-update** — a daily background pass keeps every installed game current, on every store and for every account
 - 📺 **Media & apps** — extra sections for TV & Video, Music, Cloud Gaming and Apps & Tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 curated apps), auto-kept up to date
@@ -20,7 +20,7 @@
 - 🔄 **Auto-update** — new releases install silently in the background (can be disabled in Settings)
 - 🌐 **9 languages** — the interface automatically follows your console language (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Quick access** — colored store cards in the QAM, optional L3+R3 shortcut to open the store anywhere
-- 🐧 **Compatibility** — we actively work to support every OS that can run Steam in Gaming Mode / Big Picture (Linux for now): portable detection, no distro-specific assumptions
+- 🐧 **Compatibility** — we actively work to support every OS that can run Steam in Gaming Mode / Big Picture (Linux for now): portable detection, no distro-specific assumptions Per-distro package notes: [docs/OS-NOTES.md](docs/OS-NOTES.md).
 
 ## Installation
 
@@ -39,6 +39,21 @@ Then open the plugin and install the store dependencies from **Settings → Depe
 2. Pick a store card (Epic / GOG / Amazon) and log in
 3. Install a game — it lands in your Steam library with proper artwork, in a per-store collection
 4. Play!
+
+## 🐛 Issues & ideas — don't hesitate!
+
+Found a bug, a rough edge, something misbehaving on your distro? Have an idea?
+**Please open an [issue](https://github.com/Necrosiak/SkullKey/issues)** —
+every report directly shapes what gets built next, and no report is too small.
+To help us fix it fast, include if you can:
+
+- your distro & version (Bazzite 42, CachyOS, Ubuntu 24.04…) and how Steam runs (Gaming Mode / Big Picture / desktop)
+- the plugin version (Settings → About) and the store/tab involved
+- what you did, what you expected, what happened instead
+- logs: `~/homebrew/logs/SkullKey/` (dependency problems: `ensure_deps.log`)
+
+Feature requests and "it works!" reports on unusual setups are just as
+valuable — they tell us what to support next.
 
 ## Credits
 

@@ -402,6 +402,44 @@ PORTS = [
          logo="https://github.com/Warzone2100.png?size=256",
          color="#5a7a3a",
          needs=("free", "", "")),
+    dict(shortname="fs2open", title="Freespace 2 (FSO)",
+         repo="scp-fs2open/fs2open.github.com", kind="archive",
+         asset=r"builds-Linux-x86_64\.tar\.gz$",
+         exe="fs2_open_*_x64_sse2.appimage",
+         logo="https://github.com/scp-fs2open.png?size=256",
+         color="#2f4f8f",
+         needs=("files", "Freespace 2",
+                "root_fs2.vp + *.vp — GOG/Steam")),
+    dict(shortname="oldunreal-ut", title="Unreal Tournament (OldUnreal)",
+         repo="OldUnreal/UnrealTournamentPatches", kind="archive",
+         asset=r"Linux-amd64\.tar\.bz2$", exe="ut-bin",
+         logo="https://github.com/OldUnreal.png?size=256",
+         color="#b03030",
+         needs=("files", "Unreal Tournament (1999)",
+                "Maps/ + Music/ + Sounds/ + Textures/ — GOG/Steam")),
+    dict(shortname="isle", title="LEGO Island (isle-portable)",
+         repo="isledecomp/isle-portable", kind="appimage",
+         asset=r"x86_64\.AppImage$", exe="",
+         logo="https://github.com/isledecomp.png?size=256",
+         color="#c4281c",
+         needs=("files", "LEGO Island (1997)",
+                "LEGO/ — CD-ROM/installation")),
+    dict(shortname="librelancer", title="Librelancer (Freelancer)",
+         repo="Librelancer/Librelancer", kind="archive",
+         asset=r"^librelancer-[0-9][^ ]*-ubuntu-amd64\.tar\.gz$",
+         exe="lancer",
+         logo="https://github.com/Librelancer.png?size=256",
+         color="#c08030",
+         needs=("files", "Freelancer",
+                "DATA/ + EXE/ — installation/CD")),
+    dict(shortname="openenroth", title="OpenEnroth (Might & Magic VI–VIII)",
+         repo="OpenEnroth/OpenEnroth", kind="archive",
+         asset=r"^Linux_nightly_RelWithDebInfo_x86_64\.zip$",
+         exe="openenroth",
+         logo="https://github.com/OpenEnroth.png?size=256",
+         color="#8f6f2f",
+         needs=("files", "Might and Magic VI–VIII",
+                "ANIMS/ + DATA/ + SOUNDS/ — GOG")),
 ]
 
 APPS = {p["shortname"]: p for p in PORTS}
@@ -535,11 +573,13 @@ def find_exe(port):
     root = port_dir(port)
     hint = (port.get("exe") or "").lower()
     appimages, elfs = [], []
+    from fnmatch import fnmatch
     for p in Path(root).rglob("*"):
         if not p.is_file():
             continue
         low = p.name.lower()
-        if hint and low == hint:
+        # exact d'abord ; glob accepté (binaires au nom versionné, ex. FS2)
+        if hint and (low == hint or ("*" in hint and fnmatch(low, hint))):
             return p
         if low.endswith(".appimage"):
             appimages.append(p)

@@ -10,7 +10,7 @@
 - 🏪 **Cuatro tiendas, gratis** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) y **miHoYo/HoYoverse**
 - ✨ **Tienda miHoYo** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero y Honkai Impact 3rd, instalados desde el canal oficial *sophon* de HoYoverse: descargas por chunks en paralelo (~100 MB/s), actualizaciones que solo bajan los archivos modificados, reanudación tras reinicio, anti-cheat gestionado automáticamente (jadeite) para HI3/HSR
 - 🩹 **Extras miHoYo** — actualizaciones delta (solo el diff, ~4× más pequeñas), selector de idioma de doblaje, **verificación y reparación** de integridad, y anti-trampas de Zenless Zone Zero gestionado automáticamente
-- 🏛️ **Classics Reborn** — 47 ports nativos open source y recompilaciones de clásicos (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), instalados desde las releases oficiales de cada proyecto, con instrucciones claras para tus archivos de juego originales (9 idiomas)
+- 🏛️ **Classics Reborn** — 52 ports nativos open source y recompilaciones de clásicos (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), instalados desde las releases oficiales de cada proyecto, con instrucciones claras para tus archivos de juego originales (9 idiomas)
 - 👥 **Un espacio de tiendas por cuenta de Steam (multicuenta)** — cada usuario de Steam de la máquina tiene sus propios logins y bibliotecas de Epic/GOG/Amazon; cambiar de cuenta de Steam lo cambia todo automáticamente (los logins existentes quedan con la cuenta activa en el primer uso)
 - 📦 **Actualización automática de juegos** — una pasada diaria en segundo plano mantiene al día todos los juegos instalados, en todas las tiendas y para todas las cuentas
 - 📺 **Multimedia y apps** — secciones extra de TV y Vídeo, Música, Juego en la nube y Apps y herramientas (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 apps seleccionadas), actualizadas automáticamente
@@ -20,7 +20,7 @@
 - 🔄 **Actualización automática** — las nuevas versiones se instalan silenciosamente en segundo plano (desactivable en Ajustes)
 - 🌐 **9 idiomas** — la interfaz sigue automáticamente el idioma de tu consola (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Acceso rápido** — tarjetas de colores por tienda en el QAM, atajo opcional L3+R3 para abrir la tienda en cualquier lugar
-- 🐧 **Compatibilidad** — trabajamos activamente para soportar todos los SO capaces de ejecutar Steam en modo juego / Big Picture (Linux por ahora): detección portable, sin suposiciones específicas de distribución
+- 🐧 **Compatibilidad** — trabajamos activamente para soportar todos los SO capaces de ejecutar Steam en modo juego / Big Picture (Linux por ahora): detección portable, sin suposiciones específicas de distribución Notas por distribución: [docs/OS-NOTES.md](docs/OS-NOTES.md).
 
 ## Instalación
 
@@ -39,6 +39,22 @@ Después abre el plugin e instala las dependencias de las tiendas desde **Ajuste
 2. Elige una tarjeta de tienda (Epic / GOG / Amazon) e inicia sesión
 3. Instala un juego: llegará a tu biblioteca de Steam con su artwork, en una colección por tienda
 4. ¡A jugar!
+
+## 🐛 Issues e ideas — ¡no lo dudes!
+
+¿Un bug, algo que chirría, un comportamiento raro en tu distribución? ¿Una
+idea? **Abre una [issue](https://github.com/Necrosiak/SkullKey/issues)** —
+cada informe orienta directamente lo que se construye después, y ningún
+informe es demasiado pequeño. Para ayudarnos a arreglarlo rápido, incluye si
+puedes:
+
+- tu distribución y versión (Bazzite 42, CachyOS, Ubuntu 24.04…) y cómo corre Steam (modo juego / Big Picture / escritorio)
+- la versión del plugin (Ajustes → Acerca de) y la tienda/pestaña afectada
+- qué hiciste, qué esperabas, qué pasó en su lugar
+- logs: `~/homebrew/logs/SkullKey/` (problemas de dependencias: `ensure_deps.log`)
+
+Las peticiones de funciones y los informes de «¡funciona!» en configuraciones
+inusuales valen igual — nos dicen qué soportar después.
 
 ## Créditos
 

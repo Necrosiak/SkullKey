@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.9.0 — 2026-07-10
+
+### Added
+- **Classics Reborn grows to 52 ports** — 5 more legendary classics:
+  **Freespace 2** (FreeSpace Open engine), **Unreal Tournament (1999)**
+  (OldUnreal patch 469, native 64-bit Linux client), **LEGO Island**
+  (isle-portable decompilation), **Freelancer** (Librelancer engine) and
+  **Might and Magic VI–VIII** (OpenEnroth). Official Linux release binaries
+  only, descriptions and original-files instructions in 9 languages.
+- **docs/OS-NOTES.md** — per-distro package notes (Arch/CachyOS, Fedora,
+  Bazzite/SteamOS, Debian/Ubuntu, openSUSE) for every feature that touches
+  the system, linked from the READMEs.
+
+### Changed
+- The port executable finder now accepts glob hints (needed when the binary
+  name is versioned, like Freespace 2's AppImage).
+- READMEs (9 languages) refreshed: new "Issues & ideas — don't hesitate!"
+  section explaining exactly what to include in a report, updated Classics
+  count and the per-distro notes link.
+
 ## 1.8.2 — 2026-07-10
 
 ### Fixed

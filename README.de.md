@@ -10,7 +10,7 @@
 - 🏪 **Vier Stores, kostenlos** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) und **miHoYo/HoYoverse**
 - ✨ **miHoYo-Store** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero und Honkai Impact 3rd, installiert über HoYoverses offiziellen *sophon*-Kanal: parallele Chunk-Downloads (~100 MB/s), Updates laden nur geänderte Dateien, Fortsetzen nach Neustart, Anti-Cheat automatisch geregelt (jadeite) für HI3/HSR
 - 🩹 **miHoYo-Extras** — Delta-Updates (nur der Diff, ~4× kleiner), Sprachauswahl für die Vertonung, Integritäts-**Prüfung & Reparatur** und automatisch gehandhabter Zenless-Zone-Zero-Anti-Cheat
-- 🏛️ **Classics Reborn** — 39 native Open-Source-Ports & Rekompilierungen von Klassikern (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed…), installiert aus den offiziellen Releases jedes Projekts, mit klaren Anleitungen für deine Original-Spieldateien (9 Sprachen)
+- 🏛️ **Classics Reborn** — 52 native Open-Source-Ports & Rekompilierungen von Klassikern (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installiert aus den offiziellen Releases jedes Projekts, mit klaren Anleitungen für deine Original-Spieldateien (9 Sprachen)
 - 👥 **Ein Store-Bereich pro Steam-Konto (Multi-Account)** — jeder Steam-Nutzer der Maschine hat eigene Epic/GOG/Amazon-Logins und Bibliotheken; der Wechsel des Steam-Kontos schaltet alles automatisch um (bestehende Logins bleiben beim beim ersten Start aktiven Konto)
 - 📦 **Auto-Update der Spiele** — ein täglicher Hintergrund-Durchlauf hält alle installierten Spiele aktuell, in jedem Store und für jedes Konto
 - 📺 **Medien & Apps** — zusätzliche Bereiche für TV & Video, Musik, Cloud-Gaming und Apps & Tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 kuratierte Apps), automatisch aktuell gehalten
@@ -20,7 +20,7 @@
 - 🔄 **Auto-Update** — neue Versionen installieren sich still im Hintergrund (in den Einstellungen abschaltbar)
 - 🌐 **9 Sprachen** — die Oberfläche folgt automatisch der Konsolensprache (EN/FR/DE/ES/IT/PT/NL/PL/RU)
 - 🕹️ **Schnellzugriff** — farbige Shop-Karten im QAM, optionale L3+R3-Verknüpfung zum Öffnen des Shops von überall
-- 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen
+- 🐧 **Kompatibilität** — wir arbeiten aktiv daran, jedes OS zu unterstützen, das Steam im Gaming Mode / Big Picture ausführen kann (derzeit Linux): portable Erkennung, keine distributionsspezifischen Annahmen Hinweise pro Distribution: [docs/OS-NOTES.md](docs/OS-NOTES.md).
 
 ## Installation
 
@@ -39,6 +39,21 @@ sudo bash install-local.sh
 2. Wähle eine Shop-Karte (Epic / GOG / Amazon) und melde dich an
 3. Installiere ein Spiel — es landet mit Artwork in deiner Steam-Bibliothek, in einer Sammlung pro Shop
 4. Spielen!
+
+## 🐛 Issues & Ideen — nur her damit!
+
+Ein Bug, eine Ecke, die hakt, etwas Seltsames auf deiner Distribution? Eine
+Idee? **Bitte eröffne ein [Issue](https://github.com/Necrosiak/SkullKey/issues)**
+— jede Meldung bestimmt direkt mit, was als Nächstes gebaut wird, und keine
+Meldung ist zu klein. Damit wir schnell fixen können, gib wenn möglich an:
+
+- deine Distribution & Version (Bazzite 42, CachyOS, Ubuntu 24.04…) und wie Steam läuft (Gaming Mode / Big Picture / Desktop)
+- die Plugin-Version (Einstellungen → Über) und den betroffenen Store/Tab
+- was du getan hast, was du erwartet hast, was stattdessen passiert ist
+- Logs: `~/homebrew/logs/SkullKey/` (Abhängigkeitsprobleme: `ensure_deps.log`)
+
+Feature-Wünsche und „läuft!“-Meldungen von ungewöhnlichen Setups sind genauso
+wertvoll — sie sagen uns, was wir als Nächstes unterstützen sollen.
 
 ## Danksagungen
 
