@@ -13,6 +13,7 @@
 - 🏛️ **Classics Reborn** — 52 native opensource-ports & hercompilaties van klassiekers (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), geïnstalleerd vanaf de officiële releases van elk project, met duidelijke instructies voor je originele spelbestanden (9 talen)
 - 👥 **Eén winkelruimte per Steam-account (multi-account)** — elke Steam-gebruiker van de machine heeft eigen Epic/GOG/Amazon-logins en bibliotheken; wisselen van Steam-account schakelt alles automatisch om (bestaande logins blijven bij het account dat bij het eerste gebruik actief is)
 - 📦 **Auto-update van games** — een dagelijkse achtergrondronde houdt alle geïnstalleerde games actueel, in elke winkel en voor elk account
+- 💾 **Back-up & herstel van saves** — maak met één actie vanaf de spelpagina een back-up van de voortgang (via [ludusavi](https://github.com/mtkennerly/ludusavi), automatisch voorzien) en herstel die op verzoek — Epic-, GOG- en Amazon-games, back-ups in `~/.local/share/skullkey-saves`
 - 📺 **Media & apps** — extra secties voor Tv & video, Muziek, Cloudgaming en Apps & tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 geselecteerde apps), automatisch up-to-date gehouden
 - 🖼️ **Native ogende snelkoppelingen** — geïnstalleerde games krijgen automatisch Steams officiële artwork (verticale capsule, hero, logo), met GOGs gamesdb als terugval
 - 📚 **Steam-collecties** — geïnstalleerde games worden per winkel („Epic", „GOG", „Amazon") gegroepeerd in je bibliotheek

@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.10.0 — 2026-07-12
+
+### Added
+- **💾 Save backup & restore** — two new actions in the game menu of the
+  Epic, GOG and Amazon stores (installed games only):
+  - **Backup saves** snapshots the game's progression into
+    `~/.local/share/skullkey-saves`;
+  - **Restore saves** (with confirmation) puts the files back at their
+    original locations.
+  Powered by [ludusavi](https://github.com/mtkennerly/ludusavi): a native
+  binary from `PATH` is used when present, otherwise the latest release is
+  downloaded automatically into an isolated directory (isolated XDG dirs —
+  your own ludusavi setup is never touched). The game is matched against the
+  ludusavi manifest from its store title, and the backup scans the game's own
+  Proton prefix (`compatdata/<id>/pfx`), so each Steam account's saves stay
+  separate.
+  Note: a "No save files found" result can be legitimate — some games only
+  create their save folder after the first manual save.
+
 ## 1.9.0 — 2026-07-10
 
 ### Added

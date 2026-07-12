@@ -29,7 +29,12 @@
     "Type": "StoreTabs",
     "Content": {
       "Tabs": [
-        { "Title": "GOG", "Type": "GameGrid", "ActionId": "GetGOGActions", "Category": "games" }
+        {
+          "Title": "GOG",
+          "Type": "GameGrid",
+          "ActionId": "GetGOGActions",
+          "Category": "games"
+        }
       ]
     }
   },
@@ -103,6 +108,18 @@
           "ActionId": "UmuIdUpdate",
           "Title": "Update UMU Id",
           "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "ScriptActionConfirm",
           "InstalledOnly": "True"
         }
       ]
@@ -323,6 +340,18 @@
           "Title": "Update UMU Id",
           "Type": "Executable",
           "Command": "./scripts/skullkey.sh GOG update-umu-id"
+        },
+        {
+          "Id": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh GOG backup-saves"
+        },
+        {
+          "Id": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh GOG restore-saves"
         }
       ]
     }

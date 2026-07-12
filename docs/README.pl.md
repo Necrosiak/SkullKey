@@ -13,6 +13,7 @@
 - 🏛️ **Classics Reborn** — 52 natywnych otwartych portów i rekompilacji klasyków (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), instalowanych z oficjalnych wydań każdego projektu, z jasnymi instrukcjami dla twoich oryginalnych plików gry (9 języków)
 - 👥 **Osobna przestrzeń sklepów na konto Steam (multi-konto)** — każdy użytkownik Steam na maszynie ma własne loginy i biblioteki Epic/GOG/Amazon; zmiana konta Steam przełącza wszystko automatycznie (istniejące loginy zostają przy koncie aktywnym przy pierwszym użyciu)
 - 📦 **Automatyczna aktualizacja gier** — codzienny przebieg w tle utrzymuje wszystkie zainstalowane gry w aktualnej wersji, w każdym sklepie i dla każdego konta
+- 💾 **Kopia zapasowa i przywracanie zapisów** — zrób kopię postępów gry z jej strony jedną akcją (przez [ludusavi](https://github.com/mtkennerly/ludusavi), instalowane automatycznie) i przywróć na żądanie — gry Epic, GOG i Amazon, kopie w `~/.local/share/skullkey-saves`
 - 📺 **Media i aplikacje** — dodatkowe sekcje TV i wideo, Muzyka, Granie w chmurze oraz Aplikacje i narzędzia (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 wybrane aplikacje), automatycznie aktualizowane
 - 🖼️ **Natywnie wyglądające skróty** — zainstalowane gry automatycznie otrzymują oficjalne grafiki Steam (pionowa kapsuła, hero, logo), z gamesdb GOG jako zapasem
 - 📚 **Kolekcje Steam** — zainstalowane gry są grupowane według sklepu („Epic", „GOG", „Amazon") w twojej bibliotece

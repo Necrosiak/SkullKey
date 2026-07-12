@@ -94,6 +94,16 @@ function repair(){
 
 }
 
+# saves : backup/restore de la progression via ludusavi (voir saves.py — le
+# binaire est auto-provisionné, les backups vont dans ~/.local/share/skullkey-saves).
+# $1=shortname $2=steamClientID (prefix Proton = compatdata/$2/pfx)
+function backup-saves(){
+    "$(command -v python3)" "${DECKY_PLUGIN_DIR}/scripts/saves.py" backup "${DBFILE}" "${1}" "${2}"
+}
+function restore-saves(){
+    "$(command -v python3)" "${DECKY_PLUGIN_DIR}/scripts/saves.py" restore "${DBFILE}" "${1}" "${2}"
+}
+
 function protontricks(){
     if [[ -z "${PROTON_TRICKS}" ]]; then
         echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"protontricks is not installed — install the protontricks package (or flatpak + com.github.Matoking.protontricks), then reopen this menu.\"}}"

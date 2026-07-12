@@ -13,6 +13,7 @@
 - 🏛️ **Classics Reborn** — 52 open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
 - 👥 **One store space per Steam account (multi-account)** — every Steam user of the machine gets their own Epic/GOG/Amazon logins and library; switching the Steam account switches everything automatically (existing logins are kept by the account active at first run)
 - 📦 **Games auto-update** — a daily background pass keeps every installed game current, on every store and for every account
+- 💾 **Save backup & restore** — back up a game's progression from its page in one action (via [ludusavi](https://github.com/mtkennerly/ludusavi), auto-provisioned) and restore it on demand — Epic, GOG and Amazon games, backups in `~/.local/share/skullkey-saves`
 - 📺 **Media & apps** — extra sections for TV & Video, Music, Cloud Gaming and Apps & Tools (Netflix, Jellyfin, Kodi, Moonlight, Lutris… 34 curated apps), auto-kept up to date
 - 🖼️ **Native-looking shortcuts** — installed games automatically get Steam's official artwork (vertical capsule, hero, logo), with GOG's gamesdb as fallback
 - 📚 **Steam collections** — installed games are grouped per store ("Epic", "GOG", "Amazon") in your library

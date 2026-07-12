@@ -29,7 +29,12 @@
     "Type": "StoreTabs",
     "Content": {
       "Tabs": [
-        { "Title": "Amazon", "Type": "GameGrid", "ActionId": "GetAmazonActions", "Category": "games" }
+        {
+          "Title": "Amazon",
+          "Type": "GameGrid",
+          "ActionId": "GetAmazonActions",
+          "Category": "games"
+        }
       ]
     }
   },
@@ -103,6 +108,18 @@
           "ActionId": "UmuIdUpdate",
           "Title": "Update UMU Id",
           "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "ScriptActionConfirm",
           "InstalledOnly": "True"
         }
       ]
@@ -323,6 +340,18 @@
           "Title": "Update UMU Id",
           "Type": "Executable",
           "Command": "./scripts/skullkey.sh Amazon update-umu-id"
+        },
+        {
+          "Id": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh Amazon backup-saves"
+        },
+        {
+          "Id": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh Amazon restore-saves"
         }
       ]
     }

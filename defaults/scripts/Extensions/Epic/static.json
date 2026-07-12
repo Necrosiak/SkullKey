@@ -75,7 +75,12 @@
     "Type": "StoreTabs",
     "Content": {
       "Tabs": [
-        { "Title": "Epic", "Type": "GameGrid", "ActionId": "GetEpicActions", "Category": "games" }
+        {
+          "Title": "Epic",
+          "Type": "GameGrid",
+          "ActionId": "GetEpicActions",
+          "Category": "games"
+        }
       ]
     }
   },
@@ -173,6 +178,18 @@
           "ActionId": "UmuIdUpdate",
           "Title": "Update UMU Id",
           "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "ScriptAction",
+          "InstalledOnly": "True"
+        },
+        {
+          "ActionId": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "ScriptActionConfirm",
           "InstalledOnly": "True"
         }
       ]
@@ -446,7 +463,6 @@
           "Id": "GetTabConfigActions",
           "Title": "Get epic tab config file actions",
           "Type": "Init",
-
           "Command": "./scripts/get-json.py epic-tab-config-actions"
         },
         {
@@ -456,16 +472,28 @@
           "Command": "./scripts/skullkey.sh Epic refresh"
         },
         {
-          "Id": "RegistryFix",   
+          "Id": "RegistryFix",
           "Title": "Registry Fix",
           "Type": "Executable",
           "Command": "./scripts/skullkey.sh Epic registry-fix"
         },
         {
-          "Id": "UmuIdUpdate",   
+          "Id": "UmuIdUpdate",
           "Title": "Update UMU Id",
           "Type": "Executable",
           "Command": "./scripts/skullkey.sh Epic update-umu-id"
+        },
+        {
+          "Id": "BackupSaves",
+          "Title": "Backup saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh Epic backup-saves"
+        },
+        {
+          "Id": "RestoreSaves",
+          "Title": "Restore saves",
+          "Type": "Executable",
+          "Command": "./scripts/skullkey.sh Epic restore-saves"
         }
       ]
     }
