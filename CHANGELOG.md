@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.11.0 — 2026-07-13
+
+### Added
+- **⛏️ Minecraft tab** — a new store tab with everything Minecraft,
+  installed through the legitimate launchers (owning the game is required,
+  both launchers enforce their own login):
+  - **Java Edition** through [Prism Launcher](https://prismlauncher.org)
+    (official AppImage, auto-updated). Prism arrives pre-configured —
+    language from the console locale, automatic Java download, no setup
+    wizard: the only first-launch step is the Microsoft sign-in — and a
+    "Vanilla" instance is created for you, so the Steam shortcut boots
+    straight into the game once logged in.
+  - **Bedrock Edition** through the community
+    [mcpelauncher](https://mcpelauncher.readthedocs.io) (installed from
+    Flathub, kept current daily). Sign in with a Google account that owns
+    Minecraft on Google Play; native controller support makes it the best
+    fit for Game Mode.
+  - **Modrinth modpacks** — the most-downloaded packs on display and the
+    store filter doubles as a live search over all of Modrinth. Each pack
+    installs as its own Prism instance with its own Steam shortcut: the
+    `.mrpack` index is resolved headlessly (parallel mod downloads with
+    SHA-1 verification, overrides, pack icon) — no launcher UI involved.
+  - **Prism Launcher** utility entry for managing accounts, individual
+    mods and resource packs.
+- **Version picker** — a "Version" editor in the game's Config menu (Java
+  and every modpack): keep **Latest (auto-update)** for daily silent
+  updates, or pin any exact version (every Minecraft release for Java, any
+  Modrinth version for a pack). Pinning stops auto-updates for that item
+  and re-syncs it immediately.
+- **Automatic world backups** — worlds are snapshotted before every
+  version change and before uninstalling (a downgrade can refuse or corrupt
+  worlds created on a newer Minecraft). The last 3 snapshots per instance
+  are kept in `~/.local/share/skullkey-saves/minecraft` — outside the game
+  folders, so they survive a full uninstall — and a **Restore worlds
+  backup** action in the game menu brings the newest snapshot back (the
+  current worlds are snapshotted first, so a restore never loses anything).
+
 ## 1.10.0 — 2026-07-12
 
 ### Added

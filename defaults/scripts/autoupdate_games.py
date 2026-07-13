@@ -14,6 +14,10 @@ handled with the lightest reliable mechanism it offers:
 - GOG    : gogdl's update is incremental/no-op when current → same approach.
 - Ports  : ports.py autoupdate — re-downloads a port when its GitHub release
            tag (or rolling asset date) changed; user ROMs/saves untouched.
+- Minecraft : minecraft.py autoupdate — refreshes the Prism AppImage on new
+           GitHub tag, bumps the Vanilla instance to Mojang's latest release,
+           flatpak-updates the Bedrock launcher and re-syncs Modrinth
+           modpacks when their version id changed (saves untouched).
 
 Dispatching through ./scripts/skullkey.sh reuses the exact plumbing the UI
 uses (auth env, language, DB refresh, detached progress files) — so a game
@@ -80,6 +84,13 @@ def ports():
     log(f"Ports autoupdate → {(r.stdout or '').strip()[:300]}")
 
 
+def minecraft():
+    r = subprocess.run(
+        ["python3", "./scripts/minecraft.py", "autoupdate"],
+        capture_output=True, text=True, timeout=3600)
+    log(f"Minecraft autoupdate → {(r.stdout or '').strip()[:300]}")
+
+
 def amazon():
     for account, adir in _account_dirs():
         env = dict(os.environ, NILE_CONFIG_PATH=adir)
@@ -133,7 +144,7 @@ def gog():
 
 def main():
     log("=== autoupdate_games run ===")
-    for step in (mihoyo, amazon, epic, gog, ports):
+    for step in (mihoyo, amazon, epic, gog, ports, minecraft):
         try:
             step()
         except Exception as e:

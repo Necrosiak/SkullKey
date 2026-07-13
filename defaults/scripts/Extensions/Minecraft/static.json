@@ -1,0 +1,165 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetMinecraftActions",
+     "Title": "Get Minecraft actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py minecraft-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Minecraft",
+     "Type": "GameGrid",
+     "ActionId": "GetMinecraftActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "minecraft-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": [
+    {
+     "ActionId": "Update",
+     "Title": "Update / Reinstall",
+     "Type": "ScriptAction",
+     "InstalledOnly": "True"
+    },
+    {
+     "ActionId": "RestoreSaves",
+     "Title": "Restore worlds backup",
+     "Type": "ScriptActionConfirm",
+     "InstalledOnly": "True"
+    }
+   ]
+  }
+ },
+ "minecraft-config-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "MinecraftVersionConfig",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get the version picker as json",
+     "Type": "IniEditor",
+     "Command": "./scripts/minecraft.py getversionconfig"
+    },
+    {
+     "Id": "SaveContent",
+     "Title": "Save the picked version",
+     "Type": "IniEditor",
+     "Command": "./scripts/minecraft.py saveversionconfig"
+    }
+   ]
+  }
+ },
+ "minecraft-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "minecraft-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "MinecraftActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get Minecraft list",
+     "Type": "GameGrid",
+     "Command": "./scripts/minecraft.py getgames minecraft"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "Get size",
+     "Type": "GameSize",
+     "Command": "./scripts/minecraft.py getgamesize"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "Get details",
+     "Type": "GameDetails",
+     "Command": "./scripts/minecraft.py getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "Get images",
+     "Type": "GameImages",
+     "Command": "./scripts/minecraft.py getjsonimages"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install",
+     "Type": "Install",
+     "Command": "./scripts/minecraft.py install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download",
+     "Type": "Download",
+     "Command": "./scripts/minecraft.py download"
+    },
+    {
+     "Id": "Update",
+     "Title": "Update",
+     "Type": "Update",
+     "Command": "./scripts/minecraft.py download"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall",
+     "Type": "Uninstall",
+     "Command": "./scripts/minecraft.py uninstall"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "Progress",
+     "Type": "GetProgress",
+     "Command": "./scripts/minecraft.py getprogress"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel",
+     "Type": "CancelInstall",
+     "Command": "./scripts/minecraft.py cancelinstall"
+    },
+    {
+     "Id": "RestoreSaves",
+     "Title": "Restore worlds backup",
+     "Type": "Executable",
+     "Command": "./scripts/minecraft.py restore-saves"
+    },
+    {
+     "Id": "GetVersionConfigActions",
+     "Title": "Get version config actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py minecraft-config-actions"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py minecraft-game-script-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py minecraft-script-actions"
+    }
+   ]
+  }
+ }
+}
