@@ -88,7 +88,7 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             if (!(res === true || res?.ok)) {
                 setUpdating(false);
                 setUpdUrl("");
-                setUpdLabel("⚠️ " + ((res && res.error) || t("update_error")));
+                setUpdLabel((res && res.error) || t("update_error"));
             }
         } catch (e) {
             setUpdating(false);
