@@ -181,6 +181,14 @@ def _replace_file(src: Path, dst: Path) -> None:
     so updates failed on root-owned installs. os.replace only needs write
     permission on the parent directory, and the replaced file then belongs to
     the current user, healing such installs one update at a time.
+
+    But Decky only root-owns the plugin's top-level directory and plugin.json
+    at install time (every other file gets chowned to the host user
+    recursively) — so on a real install it's the *directory* that's
+    unwritable, while dst itself, if it already exists, usually isn't.
+    tmp+rename can't work there (creating the tmp file needs directory write
+    too), but overwriting an existing file's content only needs write
+    permission on the file itself — fall back to that.
     """
     tmp_dst = dst.parent / (dst.name + ".skullkey-new")
     try:
@@ -191,12 +199,29 @@ def _replace_file(src: Path, dst: Path) -> None:
             # same EPERM trap as copy2's copystat.
             os.chmod(tmp_dst, 0o755)
         os.replace(tmp_dst, dst)
+        return
+    except PermissionError:
+        try:
+            os.unlink(tmp_dst)
+        except OSError:
+            pass
+        if not dst.exists() or not os.access(dst, os.W_OK):
+            raise
     except OSError:
         try:
             os.unlink(tmp_dst)
         except OSError:
             pass
         raise
+
+    # Non-atomic (a crash mid-write leaves dst truncated), but src was already
+    # downloaded and extracted successfully before this ever runs, and the
+    # alternative here is a guaranteed Permission denied.
+    with open(src, "rb") as s, open(dst, "wb") as d:
+        shutil.copyfileobj(s, d)
+    shutil.copymode(src, dst)
+    if dst.suffix in (".sh", ".py"):
+        os.chmod(dst, 0o755)
 
 
 async def apply(url: str) -> dict:
