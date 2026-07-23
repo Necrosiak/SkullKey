@@ -219,7 +219,7 @@ const DependenciesTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                 <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
                     {t("deps_desc")}
                 </div>
-                <Focusable style={{ display: "flex", gap: 6 }} flow-children="horizontal">
+                <Focusable style={{ display: "flex", gap: 6 }} flow-children="row">
                     <div style={{ flex: 1 }}>
                         <ActionCard color="#4caf50" disabled={isInstalling} onClick={() => sendAction("install_dependencies")}>
                             <FaDownload size={12} />
@@ -263,7 +263,7 @@ const DependenciesTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                 <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
                     {t("anticheat_desc")}
                 </div>
-                <Focusable style={{ display: "flex", gap: 6 }} flow-children="horizontal">
+                <Focusable style={{ display: "flex", gap: 6 }} flow-children="row">
                     <div style={{ flex: 1 }}>
                         <ActionCard color="#ff9800" disabled={isRuntimeInstalled("Proton EasyAntiCheat Runtime")} onClick={() => {
                             SteamClient.Installs.OpenInstallWizard([getRuntimeId("Proton EasyAntiCheat Runtime")]);
@@ -298,7 +298,7 @@ const AboutTab: VFC = () => (
                 </div>
             </Section>
             <Section title={t("sec_project")} color="#67a3ff">
-                <Focusable style={{ display: "flex", gap: 6, alignItems: "center" }} flow-children="horizontal">
+                <Focusable style={{ display: "flex", gap: 6, alignItems: "center" }} flow-children="row">
                     <div style={{ flex: 1 }}>
                         <ActionCard color="#67a3ff" center={false} onClick={() => Navigation.NavigateToExternalWeb(GITHUB_URL)}>
                             <SiGithub size={13} />
