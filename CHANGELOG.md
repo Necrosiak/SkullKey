@@ -1,5 +1,44 @@
 # Changelog
 
+## 1.11.3 — 2026-08-09
+
+### Fixed
+
+- **`RecursionError` on every plugin unload**
+  ([#2](https://github.com/Necrosiak/SkullKey/issues/2)). Whenever the plugin
+  was unloaded — Decky restarting, Steam shutting down, the plugin being
+  disabled — the backend log ended on a `RecursionError` raised deep inside
+  `Task.cancel()`. The unload routine collected the tasks to cancel with
+  `asyncio.all_tasks()`, which includes the *currently running* task, so the
+  unload coroutine cancelled itself and then waited on itself. Everything
+  after that point was skipped, including clearing the action cache. It now
+  tracks its own background tasks and cancels only those.
+
+  Nothing was visible while playing — this happens on the way out — but the
+  teardown never completed, and that is the kind of thing that turns into a
+  hang at shutdown later.
+
+- **Background tasks could be collected mid-execution.** The four tasks
+  started at boot were created without keeping a reference, and asyncio only
+  holds a weak one, so Python was free to garbage-collect a task while it was
+  still running. They are now held for their whole lifetime.
+
+- **Controller navigation in the About tab.** `flow-children="horizontal"` is
+  not a value the Steam client's focus engine accepts; it fell through to a
+  default branch that logged `Unhandled flow-children` on every render and
+  returned no flow at all. Replaced with `row` (fixed in the repository on
+  2026-07-23, but never shipped in a release until now).
+
+## 1.11.2 — 2026-07-22
+
+### Fixed
+
+- **In-plugin updates still failed on root-owned installs.** v1.11.1 replaced
+  files through a temp file and `os.replace`, which needs write permission on
+  the *directory* — and Decky owns the plugin's top-level directory itself.
+  Writing in place is now used as a fallback when the temp file cannot be
+  created but the destination exists and is writable.
+
 ## 1.11.1 — 2026-07-20
 
 ### Fixed

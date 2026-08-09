@@ -25,6 +25,20 @@ updater = _ilu.module_from_spec(_uspec)
 _uspec.loader.exec_module(updater)
 
 
+# Background tasks started by _main, kept here for two reasons: asyncio only
+# holds a weak reference to a running task, so one with no reference left can be
+# collected mid-flight, and _unload needs to know which tasks are *ours* rather
+# than cancelling everything the loop happens to be running.
+_bg_tasks: set = set()
+
+
+def _spawn(coro):
+    task = asyncio.create_task(coro)
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
+    return task
+
+
 async def _auto_update_check():
     """Silent release-based auto-update, a little after startup so the plugin
     is fully usable first. Module-level (no `self`) because decky's dispatch
@@ -572,10 +586,10 @@ class Plugin:
             # Schedule the silent auto-update as a module-level coroutine —
             # decky's method dispatch doesn't bind `self` for a task created
             # from inside _main, so keep it self-free.
-            asyncio.create_task(_auto_update_check())
-            asyncio.create_task(_ensure_deps())
-            asyncio.create_task(_resume_downloads())
-            asyncio.create_task(_games_autoupdate())
+            _spawn(_auto_update_check())
+            _spawn(_ensure_deps())
+            _spawn(_resume_downloads())
+            _spawn(_games_autoupdate())
 
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")
@@ -751,16 +765,25 @@ class Plugin:
             # Stop WebSocket server
             await Helper.stop_ws_server()
 
-            # Cancel all pending asyncio tasks
-            tasks = [task for task in asyncio.all_tasks() if not task.done()]
+            # Cancel our own background tasks — and only those.
+            # This used to sweep asyncio.all_tasks(), which has two problems:
+            # the unload coroutine is itself a running task, so it cancelled
+            # itself and recursed through Task.cancel() until Python gave up
+            # with a RecursionError (leaving everything below this line
+            # unexecuted), and the rest of the sweep hit tasks belonging to
+            # Decky's own machinery rather than to this plugin.
+            tasks = [t for t in _bg_tasks if not t.done()]
             if tasks:
                 decky_plugin.logger.info(f"Cancelling {len(tasks)} pending tasks...")
                 for task in tasks:
                     task.cancel()
-                # Wait for all tasks to complete cancellation
-                await asyncio.gather(*tasks, return_exceptions=True)
 
-            # Clear the action cache
+            # Nothing below may depend on an await resuming. Decky stops running
+            # this loop as soon as _unload suspends, so anything after a real
+            # suspension point simply never happens — which is why the old code
+            # never reached this point even before the RecursionError: its
+            # gather() on the cancelled tasks was never resumed. Cancellation
+            # itself is synchronous, so the tasks are told to stop either way.
             Helper.action_cache.clear()
 
             decky_plugin.logger.info("SkullKey out!")
