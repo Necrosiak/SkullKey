@@ -57,6 +57,12 @@ sudo bash install-local.sh
 
 Then open the plugin and install the store dependencies from **Settings → Dependencies**.
 
+> **A note on automatic updates.** Decky owns the plugin's top-level directory,
+> so the built-in updater can rewrite existing files but cannot create new ones.
+> A release that adds a file at the top level therefore has to be installed the
+> normal way — *Install plugin from URL*, above — rather than through the
+> automatic update. The release notes say so whenever that is the case.
+
 ## Usage
 
 1. Open the Quick Access Menu (…) → SkullKey
