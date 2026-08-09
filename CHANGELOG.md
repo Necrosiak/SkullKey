@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.11.4 — 2026-08-09
+
+### Fixed
+
+- **A failed automatic update was reported as a success.** `apply()` returns a
+  dict, and `{"ok": False, "error": …}` is always truthy in Python, so the
+  boot-time auto-updater restarted Decky after a failure as if the update had
+  landed — repeating on every boot, since the installed version never changed.
+  It now reads the result and logs why it gave up. (The manual update button
+  already checked it properly.)
+
 ## 1.11.3 — 2026-08-09
 
 ### Fixed

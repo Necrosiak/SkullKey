@@ -53,8 +53,17 @@ async def _auto_update_check():
         decky_plugin.logger.info(
             f"[updater] {info['latest']} available (have {info['current']}); auto-applying"
         )
-        if await updater.apply(info["url"]):
+        # apply() returns a dict: {"ok": False, "error": …} is always truthy,
+        # so a failure used to pass for a success and the loader was restarted
+        # anyway — on a loop, since the installed version had not changed.
+        # Read the field, not the truthiness of the dict.
+        res = await updater.apply(info["url"])
+        if res.get("ok"):
             updater.restart_loader()
+        else:
+            decky_plugin.logger.error(
+                f"[updater] update aborted: {res.get('error', 'unknown reason')}"
+            )
     except Exception as e:
         decky_plugin.logger.error(f"[updater] auto-check error: {e}")
 
