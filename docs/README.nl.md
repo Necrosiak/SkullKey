@@ -88,3 +88,7 @@ Onafhankelijk communityproject, niet gelieerd aan Junk-Store, Valve, Epic Games,
 ## Licentie
 
 BSD-3-Clause — zie [LICENSE](../LICENSE).
+
+## AI-vermelding
+
+Bij het maken van dit project is AI gebruikt — voor reverse engineering, ontwikkeling en documentatie. **Niet** voor beeld of creatief schrijven. Alles wat wordt gepubliceerd is door een mens nagekeken, en het resultaat blijft mijn verantwoordelijkheid. Als je daar moeite mee hebt, weet je het nu.

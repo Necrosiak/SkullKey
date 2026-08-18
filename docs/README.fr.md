@@ -89,3 +89,7 @@ Projet communautaire indépendant, non affilié à Junk-Store, Valve, Epic Games
 ## Licence
 
 BSD-3-Clause — voir [LICENSE](../LICENSE).
+
+## Mention IA
+
+L'IA a été utilisée dans la réalisation de ce projet — pour la rétro-ingénierie, le développement et la documentation. Elle n'a **pas** servi pour de l'art ni de l'écriture créative. Tout ce qui est publié est relu par un humain, et le résultat reste sous ma responsabilité. Si cela vous dérange, vous voilà informé.
