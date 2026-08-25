@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.12.2 — 2026-08-25
+
+### Fixed
+
+- **GOG could remain permanently unavailable on Python 3.14 distributions.**
+  CachyOS attempted to build gogdl 1.3.0's native xdelta3 extension during
+  first-run provisioning, but the build failed and left no executable behind.
+  SkullKey now downloads Heroic's official architecture-specific gogdl 1.3.0
+  standalone release and verifies its SHA-256 before installing it. This also
+  removes the compiler and Python-header requirement on every distribution.
+- **Dependency provisioning failures were reported as successful.** The
+  top-level ensure task now checks each installed executable, returns a failure
+  status when any store dependency is still missing, and points the backend log
+  at `ensure_deps.log` instead of writing the misleading `ensure finished` line.
+
 ## 1.12.1 — 2026-08-25
 
 ### Fixed

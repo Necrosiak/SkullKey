@@ -39,6 +39,7 @@ function ensure(){
     echo "==================================="
     echo "  Ensuring store dependencies (GOG, Amazon, Epic)"
     echo "==================================="
+    local failed=0
     for ext in GOG Amazon Epic; do
         script="./scripts/Extensions/${ext}/install_deps.sh"
         [ -f "$script" ] || script="${HOME}/homebrew/data/SkullKey/scripts/Extensions/${ext}/install_deps.sh"
@@ -47,12 +48,18 @@ function ensure(){
             echo "  ${ext}: dependencies already present ✓"
         else
             echo "  ${ext}: dependencies missing → installing"
-            bash "$script"
+            if bash "$script" && bash "$script" check; then
+                echo "  ${ext}: installation successful ✓"
+            else
+                echo "  ${ext}: ERROR: dependency installation failed"
+                failed=1
+            fi
         fi
     done
     echo "==================================="
     echo "  Dependency ensure complete"
     echo "==================================="
+    return "${failed}"
 }
 
 if [ "$1" == "uninstall" ]; then

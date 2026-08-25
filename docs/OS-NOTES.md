@@ -12,9 +12,10 @@ The plugin itself only requires **Steam + [Decky Loader](https://decky.xyz/)**
 
 ## Store clients (Epic / GOG / Amazon)
 
-The store backends (legendary, gogdl, nile) are built automatically at boot
-into small self-contained pip virtualenvs. This needs a `python3` able to
-create virtualenvs (with `ensurepip`):
+The store backends are provisioned automatically at boot. GOG uses Heroic's
+official standalone gogdl release; Legendary and nile use small self-contained
+Python virtualenvs. Those two need a `python3` able to create virtualenvs (with
+`ensurepip`):
 
 | Distro | What to do |
 |---|---|

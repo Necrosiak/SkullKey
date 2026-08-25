@@ -88,7 +88,13 @@ async def _ensure_deps():
                 start_new_session=True,
             )
             await proc.wait()
-        decky_plugin.logger.info("[deps] ensure finished")
+        if proc.returncode == 0:
+            decky_plugin.logger.info("[deps] ensure finished successfully")
+        else:
+            decky_plugin.logger.error(
+                f"[deps] ensure failed with exit code {proc.returncode}; "
+                f"see {log_path}"
+            )
     except Exception as e:
         decky_plugin.logger.error(f"[deps] ensure error: {e}")
 

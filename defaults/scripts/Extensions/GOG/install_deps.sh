@@ -1,37 +1,11 @@
 #!/usr/bin/env bash
-# GOG extension dependencies: gogdl (the GOG download client used by Heroic),
-# installed in a dedicated venv built with the Homebrew python (the system
-# python on Bazzite/SteamOS images has no headers to compile gogdl's C ext).
+# GOG extension dependency: the official gogdl standalone zipapp published by
+# Heroic.  Building gogdl from source is not reliable on rolling distributions:
+# its xdelta3 extension currently fails to compile with Python 3.14 (CachyOS).
+# The upstream zipapp contains the same code and stable-ABI extension, avoiding
+# compiler, Python headers and virtualenv compatibility entirely.
 VENV="${HOME}/.local/share/skullkey-gogdl"
-GOGDL_SRC="git+https://github.com/Heroic-Games-Launcher/heroic-gogdl"
-
-# Auto-détection du python pour builder le venv, SELON L'OS :
-#  - Bazzite/SteamOS : le python SYSTÈME n'a pas les headers de dev (image
-#    atomique) → on prend celui de Homebrew (préinstallé sur ces images).
-#  - Arch/CachyOS/Fedora/Debian : le python système a les headers (paquet
-#    -devel/-dev dispo) → on l'utilise directement, pas besoin de Homebrew.
-PY=""
-pick_python() {
-    local brew_py="/home/linuxbrew/.linuxbrew/bin/python3"
-    if [ -x "${brew_py}" ]; then PY="${brew_py}"; return 0; fi
-    # Debian/Ubuntu : `import venv` passe mais la CRÉATION échoue (ensurepip
-    # strippé du paquet de base, il faut python3-venv) → tester ensurepip.
-    if command -v python3 >/dev/null 2>&1 && python3 -c "import ensurepip" 2>/dev/null; then
-        PY="$(command -v python3)"; return 0
-    fi
-    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-        /home/linuxbrew/.linuxbrew/bin/brew install python && PY="${brew_py}" && return 0
-    fi
-    local HINT="install python3 (with venv/ensurepip)"
-    if command -v pacman >/dev/null 2>&1; then HINT="sudo pacman -S python"
-    elif command -v rpm-ostree >/dev/null 2>&1; then HINT="rpm-ostree install python3"
-    elif command -v dnf >/dev/null 2>&1; then HINT="sudo dnf install python3"
-    elif command -v zypper >/dev/null 2>&1; then HINT="sudo zypper install python3"
-    elif command -v apt >/dev/null 2>&1; then HINT="sudo apt install python3 python3-venv"
-    fi
-    echo "ERROR: no usable python3 to build the gogdl venv — run: ${HINT}"
-    return 1
-}
+GOGDL_VERSION="1.3.0"
 
 function uninstall() {
     echo "Removing gogdl venv"
@@ -39,12 +13,49 @@ function uninstall() {
 }
 
 function install() {
-    pick_python || return 1
-    if [ ! -x "${VENV}/bin/pip" ]; then
-        "${PY}" -m venv "${VENV}"
+    local arch asset checksum url tmp actual
+    arch="$(uname -m)"
+    case "${arch}" in
+        x86_64|amd64)
+            asset="gogdl_linux_x86_64"
+            checksum="cba013d42767c808237c437335ab1d56f58405d07e8f37b3324d264ea5c49655"
+            ;;
+        aarch64|arm64)
+            asset="gogdl_linux_arm64"
+            checksum="c49e1519146523ec94f33e2d21eedcc9a167004d7da218621e6d5fb84a7a0f4c"
+            ;;
+        *)
+            echo "ERROR: unsupported architecture for gogdl: ${arch}"
+            return 1
+            ;;
+    esac
+
+    url="https://github.com/Heroic-Games-Launcher/heroic-gogdl/releases/download/v${GOGDL_VERSION}/${asset}"
+    mkdir -p "${VENV}/bin"
+    tmp="${VENV}/bin/gogdl.download"
+    if command -v curl >/dev/null 2>&1; then
+        curl --fail --location --silent --show-error "${url}" --output "${tmp}" || return 1
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "${url}" -O "${tmp}" || return 1
+    else
+        echo "ERROR: curl or wget is required to download gogdl"
+        return 1
     fi
-    CC=gcc "${VENV}/bin/pip" install --upgrade "${GOGDL_SRC}"
-    "${VENV}/bin/gogdl" --version && echo "gogdl installed OK"
+
+    actual="$(sha256sum "${tmp}" | awk '{print $1}')"
+    if [[ "${actual}" != "${checksum}" ]]; then
+        echo "ERROR: gogdl checksum mismatch (expected ${checksum}, got ${actual})"
+        rm -f "${tmp}"
+        return 1
+    fi
+    chmod +x "${tmp}"
+    if ! "${tmp}" --version; then
+        echo "ERROR: downloaded gogdl executable did not start"
+        rm -f "${tmp}"
+        return 1
+    fi
+    mv -f "${tmp}" "${VENV}/bin/gogdl"
+    echo "gogdl ${GOGDL_VERSION} installed OK (official ${asset})"
 }
 
 function check() {
