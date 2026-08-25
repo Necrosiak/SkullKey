@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.12.0 — 2026-08-25
+
+### Fixed
+
+- **Store logins appeared to be lost after a Steam update — Epic, GOG and
+  Amazon alike.** You could sign in, the sign-in would succeed, and the store
+  would still say you were not connected.
+
+  SkullKey keeps each store's session under the *active Steam account*, so two
+  people sharing a console do not inherit each other's libraries. Finding that
+  account relied on two things Steam has since changed: `registry.vdf` no longer
+  publishes a numeric `ActiveUser`, and `loginusers.vdf` no longer carries
+  `MostRecent`. Both probes came back empty, so SkullKey fell back to a generic
+  profile — an empty one — while the real session sat untouched in the folder
+  belonging to the actual account.
+
+  Epic showed it worst, because its configuration is reached through a symlink
+  that was being repointed at the empty profile on every run. GOG and Amazon
+  were simply looked up in the wrong place.
+
+  The active account is now resolved from `AutoLoginUser` and matched by account
+  name, then from `AutoLogin`, then from the most recent `Timestamp` — with the
+  older `ActiveUser` and `MostRecent` keys still honoured, so an older Steam
+  keeps working exactly as before.
+
+  Existing sessions are not lost: they are still in the account folder they were
+  written to, and become visible again as soon as the account is detected
+  correctly.
+
 ## 1.11.4 — 2026-08-09
 
 ### Fixed
