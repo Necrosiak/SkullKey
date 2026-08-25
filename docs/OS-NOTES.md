@@ -30,10 +30,10 @@ it keeps being used — both backends share the same login.
 `git` is also needed once to build the Amazon client (nile):
 `pacman -S git` / `dnf install git` / `apt install git` / `zypper install git`.
 
-## Amazon login window
+## Store login windows
 
-The Amazon login opens in a small GTK window and needs the system GTK3 +
-WebKit2 python bindings (present on Bazzite, **not** on stock Arch):
+The Epic, GOG and Amazon logins open in a small GTK window and need the system
+GTK3 + WebKit2 python bindings (present on Bazzite, **not** on stock Arch):
 
 | Distro | Command |
 |---|---|

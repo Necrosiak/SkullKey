@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.12.1 — 2026-08-25
+
+### Fixed
+
+- **Epic login closed immediately on systems using SkullKey's native
+  Legendary environment.** Steam does not give temporary shortcuts an
+  interactive standard input, so Legendary could not receive the authorization
+  code it asks users to paste and exited with `EOFError`. Epic now uses
+  SkullKey's embedded GTK/WebKit login window, captures the authorization code
+  automatically and passes it to Legendary non-interactively.
+- **Missing GTK/WebKit packages now produce an actionable error for every store
+  login.** Epic, GOG and Amazon all check their graphical login dependencies
+  before opening the temporary shortcut and show the distro-specific install
+  command when they are absent. GOG previously opened and closed immediately
+  with `Namespace WebKit2 not available`; Amazon already had the check.
+
 ## 1.12.0 — 2026-08-25
 
 ### Fixed

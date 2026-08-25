@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-# GOG OAuth login window (GTK + WebKit2, both shipped with Bazzite/SteamOS-like
-# systems). Shows the GOG login page; when GOG redirects to
-# embed.gog.com/on_login_success?code=XXX we grab the code, print it on stdout
-# and exit 0. Exit 1 = window closed without logging in.
+# OAuth login window shared by GOG and Epic (GTK + WebKit2).  GOG returns its
+# code in the redirect URL.  Epic's legendary.gl helper renders a JSON response
+# containing authorizationCode; --epic reads that value from the finished page.
+# Exit 1 = window closed without logging in.
+import json
 import sys
 import urllib.parse
 
@@ -13,12 +14,14 @@ from gi.repository import Gtk, WebKit2
 
 GALAXY_CLIENT_ID = "46899977096215655"
 REDIRECT = "https://embed.gog.com/on_login_success?origin=client"
-LOGIN_URL = (
+GOG_LOGIN_URL = (
     "https://auth.gog.com/auth?client_id=" + GALAXY_CLIENT_ID
     + "&redirect_uri=" + urllib.parse.quote(REDIRECT, safe="")
     + "&response_type=code&layout=galaxy"
 )
 
+epic_mode = "--epic" in sys.argv[1:]
+login_url = "https://legendary.gl/epiclogin" if epic_mode else GOG_LOGIN_URL
 code = None
 
 
@@ -33,8 +36,27 @@ def check_uri(uri):
     return False
 
 
+def on_epic_javascript_finished(webview, result, _data):
+    global code
+    try:
+        js_result = webview.run_javascript_finish(result)
+        body = js_result.get_js_value().to_string()
+        payload = json.loads(body)
+        value = payload.get("authorizationCode")
+        if value:
+            code = value
+            Gtk.main_quit()
+    except Exception as exc:
+        print(f"Could not read Epic authorization response: {exc}", file=sys.stderr)
+
+
 def on_load_changed(webview, event):
-    check_uri(webview.get_uri())
+    if epic_mode:
+        if event == WebKit2.LoadEvent.FINISHED:
+            webview.run_javascript("document.body.innerText", None,
+                                   on_epic_javascript_finished, None)
+    else:
+        check_uri(webview.get_uri())
 
 
 def on_decide_policy(webview, decision, decision_type):
@@ -44,20 +66,20 @@ def on_decide_policy(webview, decision, decision_type):
             uri = decision.get_navigation_action().get_request().get_uri()
         except Exception:
             return False
-        if check_uri(uri):
+        if not epic_mode and check_uri(uri):
             decision.ignore()
             return True
     return False
 
 
-win = Gtk.Window(title="GOG Login")
+win = Gtk.Window(title="Epic Games Login" if epic_mode else "GOG Login")
 win.set_default_size(720, 900)
 win.connect("destroy", Gtk.main_quit)
 
 webview = WebKit2.WebView()
 webview.connect("load-changed", on_load_changed)
 webview.connect("decide-policy", on_decide_policy)
-webview.load_uri(LOGIN_URL)
+webview.load_uri(login_url)
 
 win.add(webview)
 win.show_all()

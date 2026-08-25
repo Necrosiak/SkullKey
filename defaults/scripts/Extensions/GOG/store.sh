@@ -223,8 +223,22 @@ function GOG_get-exe-list(){
     echo "$JSON"
 }
 
+# The GOG OAuth window uses the same system GTK3/WebKit2 bindings as Amazon.
+# They are present on Bazzite/SteamOS-like images, but not on a stock
+# Arch/CachyOS installation.  Check before creating the temporary Steam entry
+# so a missing typelib produces an actionable error instead of a window that
+# opens and immediately closes.
+function GOG_check_login_deps(){
+    /usr/bin/env python3 -c 'import gi; gi.require_version("Gtk","3.0"); gi.require_version("WebKit2","4.1")' 2>/dev/null
+}
+
 function GOG_login(){
     get_steam_env
+    if ! GOG_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"GOG login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     launchoptions "${DECKY_PLUGIN_DIR}/scripts/Extensions/GOG/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "GOG Login"
 }
 
@@ -248,6 +262,11 @@ function loginlaunchoptions () {
 
 function GOG_login-launch-options(){
     get_steam_env
+    if ! GOG_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"GOG login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     loginlaunchoptions "${DECKY_PLUGIN_DIR}/scripts/Extensions/GOG/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "GOG Login"
 }
 

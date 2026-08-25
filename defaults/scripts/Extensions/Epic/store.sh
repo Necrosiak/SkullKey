@@ -304,8 +304,17 @@ function launchoptions () {
     }}"
     echo $JSON
 }
+function Epic_check_login_deps(){
+    /usr/bin/env python3 -c 'import gi; gi.require_version("Gtk","3.0"); gi.require_version("WebKit2","4.1")' 2>/dev/null
+}
+
 function Epic_login(){
     get_steam_env
+    if ! Epic_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"Epic login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     launchoptions "${DECKY_PLUGIN_DIR}/scripts/Extensions/Epic/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "Epic Games Login" 
 }
 function loginlaunchoptions () {
@@ -327,6 +336,11 @@ function loginlaunchoptions () {
 }
 function Epic_login-launch-options(){
     get_steam_env
+    if ! Epic_check_login_deps; then
+        HINT=$(sk_pkg_hint "python-gobject webkit2gtk-4.1" "python3-gobject webkit2gtk4.1" "python3-gi gir1.2-webkit2-4.1")
+        echo "{\"Type\": \"Error\", \"Content\": {\"Message\": \"Epic login window needs GTK/WebKit. Run: ${HINT}\"}}"
+        return
+    fi
     loginlaunchoptions  "${DECKY_PLUGIN_DIR}/scripts/Extensions/Epic/login.sh" "" "${DECKY_PLUGIN_LOG_DIR}" "Epic Games Login" 
 }
 
