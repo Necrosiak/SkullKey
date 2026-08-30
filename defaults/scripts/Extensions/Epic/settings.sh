@@ -23,6 +23,16 @@ fi
 # retargetant le symlink <base>/legendary vers l'espace du compte. Le VRAI
 # dossier existant (session du propriétaire) est adopté par le premier compte
 # vu ; un dossier réel recréé par un run manuel est parqué, jamais supprimé.
+# SK_ACCOUNT_DIR vient de scripts/settings.sh. Les scripts lancés directement
+# par Steam (login.sh) ne sourcent QUE ce fichier-ci : sans ce rattrapage on
+# retombait sur DECKY_PLUGIN_RUNTIME_DIR, et la connexion s'écrivait hors de
+# l'espace de compte que la lecture du statut consulte — « pas connecté » sur
+# les trois boutiques avec les identifiants bien présents un dossier plus haut
+# (#3). scripts/settings.sh ne source aucun settings.sh de boutique : pas de
+# récursion possible.
+if [[ -z "${SK_ACCOUNT_DIR:-}" && -f "${DECKY_PLUGIN_DIR}/scripts/settings.sh" ]]; then
+    source "${DECKY_PLUGIN_DIR}/scripts/settings.sh"
+fi
 SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
 _LEG_TARGET="${SK_ACCOUNT_DIR}/legendary"
 if [[ -d "${_LEG_BASE}" ]]; then

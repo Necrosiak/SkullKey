@@ -26,3 +26,9 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
   provisioning outright while the ensure task still reported success
   ([#3](https://github.com/Necrosiak/SkullKey/issues/3), fixed in v1.12.1 and
   v1.12.2)
+- Then the diagnostic run that settled the rest of it: his output showed the
+  account space resolving to `65830022` while `legendary` answered
+  `<not logged in>`, and the follow-up search located the stranded `user.json`
+  in the runtime root — which is what exposed the login helpers writing outside
+  the account space they are read from, on all three stores
+  ([#3](https://github.com/Necrosiak/SkullKey/issues/3), fixed in v1.12.3)

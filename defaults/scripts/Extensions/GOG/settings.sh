@@ -2,6 +2,16 @@
 GOGCONF="${DECKY_PLUGIN_DIR}/scripts/gog-config.py"
 GOGDL_BIN="${HOME}/.local/share/skullkey-gogdl/bin/gogdl"
 # multi-comptes : token GOG + DB dans l'espace du compte Steam actif
+# SK_ACCOUNT_DIR vient de scripts/settings.sh. Les scripts lancés directement
+# par Steam (login.sh) ne sourcent QUE ce fichier-ci : sans ce rattrapage on
+# retombait sur DECKY_PLUGIN_RUNTIME_DIR, et la connexion s'écrivait hors de
+# l'espace de compte que la lecture du statut consulte — « pas connecté » sur
+# les trois boutiques avec les identifiants bien présents un dossier plus haut
+# (#3). scripts/settings.sh ne source aucun settings.sh de boutique : pas de
+# récursion possible.
+if [[ -z "${SK_ACCOUNT_DIR:-}" && -f "${DECKY_PLUGIN_DIR}/scripts/settings.sh" ]]; then
+    source "${DECKY_PLUGIN_DIR}/scripts/settings.sh"
+fi
 SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR:-${DECKY_PLUGIN_RUNTIME_DIR}}"
 GOG_AUTH_FILE="${SK_ACCOUNT_DIR}/gog_auth.json"
 export GOGDL="${GOGDL_BIN} --auth-config-path ${GOG_AUTH_FILE}"

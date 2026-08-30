@@ -40,7 +40,15 @@ def on_epic_javascript_finished(webview, result, _data):
     global code
     try:
         js_result = webview.run_javascript_finish(result)
-        body = js_result.get_js_value().to_string()
+        body = (js_result.get_js_value().to_string() or "").lstrip()
+        # Ce rappel se déclenche sur CHAQUE page terminée, y compris le
+        # formulaire de connexion Epic. Tenter json.loads dessus remplissait le
+        # journal de « Expecting value: line 1 column 1 (char 0) » à chaque
+        # étape, et faisait passer une navigation normale pour une panne.
+        # Seule la page de réponse est du JSON : les autres sont ignorées en
+        # silence, et une vraie réponse illisible reste signalée.
+        if not body.startswith("{"):
+            return
         payload = json.loads(body)
         value = payload.get("authorizationCode")
         if value:
