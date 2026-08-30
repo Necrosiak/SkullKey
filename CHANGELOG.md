@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.12.3 — 2026-08-30
+
+Signing in to Epic, GOG or Amazon appeared to do nothing: the store kept asking
+for a login even though the credentials had been written to disk. They were —
+one directory away from where SkullKey looked for them.
+
+### Fixed
+
+- **Store logins were written outside the account space they are read from.**
+  SkullKey keeps each Steam account's store logins under
+  `accounts/<steamid>/`, resolved by `scripts/settings.sh`. The login helpers
+  are launched directly by Steam and source only their own store's
+  `settings.sh`, where the account directory silently fell back to the runtime
+  root. So `legendary auth` wrote to `<runtime>/legendary` while the status
+  check read `accounts/<steamid>/legendary` and reported `<not logged in>`
+  forever. All three stores shared that fallback, which is why all three
+  behaved the same way. Each store's `settings.sh` now resolves the account
+  space properly when it is invoked on its own.
+- **Existing installations recover without signing in again.** Credentials and
+  databases stranded in the runtime root, or in the `default` space used when
+  Steam is not yet running, are adopted by the active account. Only what the
+  account space is missing is moved: nothing is overwritten and nothing is
+  deleted. A store directory that already exists is completed entry by entry,
+  since a `legendary status` leaves an empty one behind that would otherwise
+  block the recovery.
+- **The Epic login window no longer reports a failure on every page it loads.**
+  It attempted to parse each finished page as JSON, including the sign-in form,
+  filling the log with `Expecting value: line 1 column 1 (char 0)` and making
+  ordinary navigation look like a fault.
+
+Thanks to [@tobal37](https://github.com/tobal37), whose diagnostic output
+located the stranded `user.json` and settled this
+([#3](https://github.com/Necrosiak/SkullKey/issues/3)).
+
 ## 1.12.2 — 2026-08-25
 
 ### Fixed
