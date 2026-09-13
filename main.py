@@ -39,6 +39,27 @@ def _spawn(coro):
     return task
 
 
+# How many release checks, and how long between two. The check runs a few
+# seconds after the backend, which is often BEFORE the network is reachable:
+# the logs on the test machine show three boots out of four dying on
+# "Temporary failure in name resolution". Nothing retried, so the plugin stayed
+# on its version until the next boot — which failed the same way.
+UPDATE_CHECK_TRIES = 10
+UPDATE_CHECK_DELAY_S = 30
+
+
+async def _recheck(updater):
+    """`updater.check()`, retried for as long as it is the network that is missing."""
+    from asyncio import sleep as _sleep
+    info = await updater.check()
+    for _ in range(UPDATE_CHECK_TRIES - 1):
+        if not info.get("error"):
+            break
+        await _sleep(UPDATE_CHECK_DELAY_S)
+        info = await updater.check()
+    return info
+
+
 async def _auto_update_check():
     """Silent release-based auto-update, a little after startup so the plugin
     is fully usable first. Module-level (no `self`) because decky's dispatch
@@ -47,25 +68,44 @@ async def _auto_update_check():
         await asyncio.sleep(20)
         if not updater.is_autoupdate_enabled():
             return
-        info = await updater.check()
+        info = await _recheck(updater)
         if not info.get("update_available"):
             return
         decky_plugin.logger.info(
-            f"[updater] {info['latest']} available (have {info['current']}); auto-applying"
+            f"[updater] {info['latest']} available (have {info['current']}); applying"
         )
         # apply() returns a dict: {"ok": False, "error": …} is always truthy,
         # so a failure used to pass for a success and the loader was restarted
         # anyway — on a loop, since the installed version had not changed.
         # Read the field, not the truthiness of the dict.
+        # We apply it OURSELVES. The plugin directory is root-owned, but every
+        # file inside it belongs to us (except plugin.json) — measured on
+        # 2026-09-13: overwriting an existing file works, creating an entry does
+        # not. The updater now sorts that out BEFORE writing anything.
+        #
+        # ⛔ Do NOT delegate to `utilities/install_plugin`: that is the Decky
+        # Store route, and it reports the install to plugins.deckbrew.xyz. Our
+        # plugins are not there → 404 → the rest never runs: files written,
+        # plugin never reloaded, and a frozen modal across the Steam UI.
+        # Measured here on 2026-09-13.
+        global _PENDING_UPDATE
         res = await updater.apply(info["url"])
         if res.get("ok"):
             updater.restart_loader()
-        else:
-            decky_plugin.logger.error(
-                f"[updater] update aborted: {res.get('error', 'unknown reason')}"
-            )
+            return
+        # Failed: say so, instead of leaving someone on a stale version without
+        # knowing it. The frontend does the telling — it is the only side that
+        # can raise a notification.
+        decky_plugin.logger.error(
+            f"[updater] update aborted: {res.get('error', 'unknown reason')}"
+        )
+        _PENDING_UPDATE = {"version": info["latest"], "error": res.get("error", "")}
     except Exception as e:
         decky_plugin.logger.error(f"[updater] auto-check error: {e}")
+
+
+# Failure notice parked by _auto_update_check, taken by the frontend that notifies.
+_PENDING_UPDATE = None
 
 
 async def _ensure_deps():
@@ -620,6 +660,15 @@ class Plugin:
         if res.get("ok"):
             updater.restart_loader()
         return res
+
+    async def take_pending_update(self):
+        """Hand the failed-update notice to the frontend, once.
+
+        Cleared on read: the notification must fire ONCE, not on every QAM open.
+        """
+        global _PENDING_UPDATE
+        pending, _PENDING_UPDATE = _PENDING_UPDATE, None
+        return pending or {}
 
     async def get_autoupdate(self):
         return updater.is_autoupdate_enabled()
