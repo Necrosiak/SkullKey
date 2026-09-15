@@ -39,7 +39,21 @@ export function storeTheme(name?: string): StoreTheme {
 // malformed entries without notification_type on this Steam build, which can
 // crash the notifications panel — DisplayClientNotification is a transparent
 // replacement (title/body).
+// Streamer mode — contract SHARED with Steamcord, BoneCast and BC250 Toolkit
+// (same Steam JS context): window.__necroStreamer.sources = { source: bool },
+// localStorage "necro_streamer_mode" (auto | always | off, set in Steamcord).
+// While live, a Steam toast is printed into the captured video: hold it.
+function streamerActive(): boolean {
+    let mode = "auto";
+    try { mode = localStorage.getItem("necro_streamer_mode") || "auto"; } catch { }
+    if (mode === "off") return false;
+    if (mode === "always") return true;
+    return Object.values((window as any).__necroStreamer?.sources || {}).some(Boolean);
+}
+const STREAMER_RETRY_MS = 15000;
+
 export function notify(data: { title?: string; body: string; duration?: number }) {
+    if (streamerActive()) { setTimeout(() => notify(data), STREAMER_RETRY_MS); return; }
     try {
         const App = (window as any).App;
         const steamid = App?.GetCurrentUser?.()?.strSteamID || App?.m_CurrentUser?.strSteamID || "";
