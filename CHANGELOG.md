@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.12.5 — 2026-09-15
+
+### Notifications wait until you stop streaming
+
+A Steam notification that pops up while you are live ends up in the video:
+gamescope draws it over the game, and that is the picture a stream captures.
+SkullKey's notifications are now **held while you are live** and shown once the
+stream ends.
+
+It follows the *Streamer mode* setting in
+[Steamcord](https://github.com/Necrosiak/Steamcord) (Automatic, Always on, Off):
+*Automatic* holds them during a Discord Go Live or a
+[BoneCast](https://github.com/Necrosiak/BoneCast) stream or recording, *Always on*
+covers OBS and any other streaming software. Without Steamcord, they are held
+while BoneCast is live or recording.
+
 ## 1.12.4 — 2026-09-13
 
 ### Updates no longer stop at the first thing they cannot write, or at DNS
