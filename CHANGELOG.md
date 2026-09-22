@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.12.6 — unreleased
+## 1.12.6 — 2026-09-22
 
 ### Updates that installed but never loaded
 
