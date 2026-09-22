@@ -89,7 +89,34 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                 setUpdating(false);
                 setUpdUrl("");
                 setUpdLabel((res && res.error) || t("update_error"));
+                return;
             }
+            // The files are written — but nothing is loaded yet: the backend
+            // cannot restart plugin_loader (measured 2026-09-22: the loader's
+            // PyInstaller libraries, inherited by our backends, stop `systemctl`
+            // from even starting; and without them polkit refuses the system
+            // unit to a non-root plugin). The loader itself IS root: its internal
+            // loader/reload_plugin route stops the backend, re-imports it from
+            // the new files and has the frontend reload dist/index.js. This is
+            // NOT utilities/install_plugin, the Store route, which dies on a
+            // deckbrew 404 and leaves a frozen modal behind (2026-09-13).
+            const backend: any = (window as any).DeckyBackend;
+            if (backend?.call) {
+                try {
+                    await backend.call("loader/reload_plugin", "SkullKey");
+                    // The open panel is NOT remounted by the reload — Steam
+                    // keeps the React tree it already mounted, so it used to sit
+                    // on "updating…" forever even though the plugin had just
+                    // been re-imported (seen on screen 2026-09-22). Finish the
+                    // journey ourselves; the new code serves the next opening.
+                    setUpdating(false);
+                    setUpdUrl("");
+                    setUpdLabel(t("up_to_date"));
+                    return;
+                } catch { /* Decky too old for that route */ }
+            }
+            setUpdating(false);
+            setUpdLabel(t("update_needs_restart"));
         } catch (e) {
             setUpdating(false);
             setUpdUrl("");

@@ -12,6 +12,14 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
 
 ---
 
+### [@bastiHST90](https://github.com/bastiHST90)
+
+- Reported on Steamcord, and it turned out to apply here too: the update button
+  that wrote the new files and never loaded them, with the follow-up edit that
+  made the diagnosis — after a reboot he *was* on the latest build
+  ([Steamcord #52](https://github.com/Necrosiak/Steamcord/issues/52), fixed in
+  v1.12.6)
+
 ### [@arsaban](https://github.com/arsaban)
 
 - The Genshin Impact mod-loading request, and the testing that mapped out what

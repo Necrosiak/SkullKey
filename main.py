@@ -91,7 +91,14 @@ async def _auto_update_check():
         global _PENDING_UPDATE
         res = await updater.apply(info["url"])
         if res.get("ok"):
-            updater.restart_loader()
+            if updater.restart_loader():
+                return
+            # Refused: plugin_loader is a system unit and this plugin is not
+            # root, so polkit asks for an authentication nobody can give here
+            # (measured 2026-09-22). The files are in place; the code is not.
+            log(f"[updater] {info['latest']} written to disk; loader restart "
+                "refused (plugin is not root) — active at next Steam start")
+            _PENDING_UPDATE = {"version": info["latest"], "reload": True}
             return
         # Failed: say so, instead of leaving someone on a stale version without
         # knowing it. The frontend does the telling — it is the only side that
@@ -657,8 +664,10 @@ class Plugin:
 
     async def apply_update(self, url):
         res = await updater.apply(url)
-        if res.get("ok"):
-            updater.restart_loader()
+        # Writing the files is not loading them. The frontend takes it from
+        # here: it asks the loader to re-import THIS plugin. We no longer
+        # restart plugin_loader from the backend — it is not allowed to (see
+        # restart_loader) and it would bounce every plugin for nothing.
         return res
 
     async def take_pending_update(self):
@@ -826,9 +835,6 @@ class Plugin:
         try:
             decky_plugin.logger.info("Starting plugin unload...")
 
-            # Stop WebSocket server
-            await Helper.stop_ws_server()
-
             # Cancel our own background tasks — and only those.
             # This used to sweep asyncio.all_tasks(), which has two problems:
             # the unload coroutine is itself a running task, so it cancelled
@@ -849,8 +855,17 @@ class Plugin:
             # gather() on the cancelled tasks was never resumed. Cancellation
             # itself is synchronous, so the tasks are told to stop either way.
             Helper.action_cache.clear()
+            Helper.wsServerIsRunning = False
 
             decky_plugin.logger.info("SkullKey out!")
+
+            # LAST, and knowingly so: stopping the aiohttp site waits for its
+            # handlers, i.e. a real suspension — which, per the note above, never
+            # resumes here. Measured on Steamcord 2026-09-22: the loader then
+            # SIGKILLs the plugin exactly 5 s later, every single reload. Sitting
+            # at the end, it costs nothing (the process is about to die, so the
+            # port goes with it) instead of taking the whole unload down with it.
+            await Helper.stop_ws_server()
         except Exception as e:
             decky_plugin.logger.error(f"Error during unload: {e}")
 
