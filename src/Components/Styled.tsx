@@ -3,7 +3,7 @@
 // one accent color per store, native Steam notifications.
 import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
-import { SiEpicgames, SiGogdotcom, SiMihoyo } from "react-icons/si";
+import { SiBattledotnet, SiEpicgames, SiGogdotcom, SiMihoyo, SiUbisoft } from "react-icons/si";
 import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull } from "react-icons/fa";
 
 const Btn = DialogButton as any;
@@ -24,6 +24,8 @@ export function storeTheme(name?: string): StoreTheme {
     if (n.includes("gog")) return { color: "#a24bfa", icon: SiGogdotcom };
     if (n.includes("amazon")) return { color: "#ff9900", icon: FaAmazon };
     if (n.includes("mihoyo") || n.includes("hoyo")) return { color: "#4d8dff", icon: SiMihoyo };
+    if (n.includes("battle")) return { color: "#148eff", icon: SiBattledotnet };
+    if (n.includes("ubisoft")) return { color: "#c04bdb", icon: SiUbisoft };
     // "Classics Reborn" tab (title) / PortsActions (SetName): revived console
     // classics — skull icon to match the SkullKey theme.
     if (n.includes("ports") || n.includes("classic")) return { color: "#c8a24b", icon: FaSkull };

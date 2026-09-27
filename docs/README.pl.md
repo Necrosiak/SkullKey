@@ -12,6 +12,7 @@
 - 🩹 **Dodatki miHoYo** — aktualizacje delta (tylko różnica, ~4× mniejsze), wybór języka dubbingu, **weryfikacja i naprawa** integralności oraz automatycznie obsłużony anti-cheat Zenless Zone Zero
 - 🏛️ **Classics Reborn** — 52 natywnych otwartych portów i rekompilacji klasyków (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), instalowanych z oficjalnych wydań każdego projektu, z jasnymi instrukcjami dla twoich oryginalnych plików gry (9 języków)
 - ⛏️ **Minecraft** — Java Edition (przez [Prism Launcher](https://prismlauncher.org), wstępnie skonfigurowany: zaloguj się kontem Microsoft i graj), Bedrock Edition (przez [mcpelauncher](https://mcpelauncher.readthedocs.io) z Flathub, natywna obsługa pada) oraz **modpacki z Modrinth** jako skróty Steam za jednym kliknięciem (wyszukiwanie na żywo, przypinanie wersji lub codzienne auto-aktualizacje, automatyczne kopie światów przed każdą zmianą wersji)
+- 🎯 **Battle.net i Ubisoft Connect** *(eksperymentalne)* — oficjalne klienty Windows działają każdy we wspólnym prefiksie Protona: logujesz się raz, twoje gry pojawiają się w SkullKey, *Zainstaluj* otwiera klienta na stronie gry (jedno naciśnięcie, by potwierdzić), *Graj* uruchamia grę bezpośrednio i zamyka klienta po wyjściu
 - 👥 **Osobna przestrzeń sklepów na konto Steam (multi-konto)** — każdy użytkownik Steam na maszynie ma własne loginy i biblioteki Epic/GOG/Amazon; zmiana konta Steam przełącza wszystko automatycznie (istniejące loginy zostają przy koncie aktywnym przy pierwszym użyciu)
 - 📦 **Automatyczna aktualizacja gier** — codzienny przebieg w tle utrzymuje wszystkie zainstalowane gry w aktualnej wersji, w każdym sklepie i dla każdego konta
 - 💾 **Kopia zapasowa i przywracanie zapisów** — zrób kopię postępów gry z jej strony jedną akcją (przez [ludusavi](https://github.com/mtkennerly/ludusavi), instalowane automatycznie) i przywróć na żądanie — gry Epic, GOG i Amazon, kopie w `~/.local/share/skullkey-saves`
@@ -91,4 +92,10 @@ BSD-3-Clause — zobacz [LICENSE](../LICENSE).
 
 ## Informacja o AI
 
-Przy tworzeniu tego projektu korzystano z AI — do inżynierii wstecznej, programowania i dokumentacji. **Nie** do grafiki ani twórczego pisania. Wszystko, co publikowane, przechodzi przez człowieka, a za wynik odpowiadam ja. Jeśli ci to nie odpowiada, teraz już wiesz.
+Przy tworzeniu tego projektu korzystano z AI (Claude od Anthropic i Codex od OpenAI) — do inżynierii wstecznej, programowania i dokumentacji. **Nie** do grafiki ani twórczego pisania. Wszystko, co publikowane, przechodzi przez człowieka, a za wynik odpowiadam ja. Jeśli ci to nie odpowiada, teraz już wiesz.
+
+## Wesprzyj rozwój
+
+Jeśli ten projekt jest dla Ciebie przydatny, możesz wesprzeć jego dalszy rozwój na [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Wesprzyj mnie na Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

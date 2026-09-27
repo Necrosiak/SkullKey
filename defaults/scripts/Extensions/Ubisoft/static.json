@@ -1,0 +1,208 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetUbisoftActions",
+     "Title": "Get Ubisoft store actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ubisoft-actions"
+    }
+   ]
+  }
+ },
+ "main-menu-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetUbisoftActions",
+     "Title": "Get Ubisoft store actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ubisoft-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Ubisoft",
+     "Type": "GameGrid",
+     "ActionId": "GetUbisoftActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "ubisoft-login-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "UbisoftLoginActions",
+   "Actions": [
+    {
+     "Id": "Login",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh Ubisoft login"
+    },
+    {
+     "Id": "LoginLaunchOptions",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh Ubisoft login-launch-options"
+    },
+    {
+     "Id": "Logout",
+     "Title": "Logout",
+     "Type": "Logout",
+     "Command": "./scripts/skullkey.sh Ubisoft logout"
+    },
+    {
+     "Id": "GetContent",
+     "Title": "Status",
+     "Type": "Status",
+     "Command": "./scripts/skullkey.sh Ubisoft loginstatus"
+    },
+    {
+     "Id": "GetSetting",
+     "Title": "Get settings",
+     "Type": "GetSettings",
+     "Command": "./scripts/skullkey.sh Ubisoft getsetting"
+    },
+    {
+     "Id": "SaveSetting",
+     "Title": "Set settings",
+     "Type": "SaveSettings",
+     "Command": "./scripts/skullkey.sh Ubisoft savesetting"
+    }
+   ]
+  }
+ },
+ "ubisoft-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "ubisoft-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": [
+    {
+     "ActionId": "Refresh",
+     "Title": "Refresh Games List",
+     "Type": "ScriptAction",
+     "InstalledOnly": "False"
+    }
+   ]
+  }
+ },
+ "ubisoft-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "UbisoftActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get Ubisoft games list",
+     "Type": "GameGrid",
+     "Command": "./scripts/skullkey.sh Ubisoft getgames"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "Get game size",
+     "Type": "GameSize",
+     "Command": "./scripts/skullkey.sh Ubisoft getgamesize"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "Get game details",
+     "Type": "GameDetails",
+     "Command": "./scripts/skullkey.sh Ubisoft getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "Get game images as json",
+     "Type": "GameImages",
+     "Command": "./scripts/skullkey.sh Ubisoft getjsonimages"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install game",
+     "Type": "Install",
+     "Command": "./scripts/skullkey.sh Ubisoft install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download game",
+     "Type": "Download",
+     "Command": "./scripts/skullkey.sh Ubisoft download"
+    },
+    {
+     "Id": "Update",
+     "Title": "Update game",
+     "Type": "Update",
+     "Command": "./scripts/skullkey.sh Ubisoft update"
+    },
+    {
+     "Id": "Verify",
+     "Title": "Verify game",
+     "Type": "Verify",
+     "Command": "./scripts/skullkey.sh Ubisoft verify"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall game",
+     "Type": "Uninstall",
+     "Command": "./scripts/skullkey.sh Ubisoft uninstall"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "Get install progress",
+     "Type": "GetProgress",
+     "Command": "./scripts/skullkey.sh Ubisoft getprogress"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel install",
+     "Type": "CancelInstall",
+     "Command": "./scripts/skullkey.sh Ubisoft cancelinstall"
+    },
+    {
+     "Id": "GetLoginActions",
+     "Title": "Get login status",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ubisoft-login-actions"
+    },
+    {
+     "Id": "GetLaunchOptions",
+     "Title": "Get launch options",
+     "Type": "GetLaunchOptions",
+     "Command": "./scripts/skullkey.sh Ubisoft getlaunchoptions"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ubisoft-game-script-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ubisoft-script-actions"
+    },
+    {
+     "Id": "Refresh",
+     "Title": "Refresh Games List",
+     "Type": "Refresh",
+     "Command": "./scripts/skullkey.sh Ubisoft refresh"
+    }
+   ]
+  }
+ }
+}

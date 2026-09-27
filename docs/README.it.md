@@ -12,6 +12,7 @@
 - 🩹 **Extra miHoYo** — aggiornamenti delta (solo il diff, ~4× più piccoli), selettore lingua del doppiaggio, **verifica e riparazione** dell'integrità, e anti-cheat di Zenless Zone Zero gestito automaticamente
 - 🏛️ **Classics Reborn** — 52 port nativi open source e ricompilazioni di classici (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installati dalle release ufficiali di ogni progetto, con istruzioni chiare per i tuoi file di gioco originali (9 lingue)
 - ⛏️ **Minecraft** — Java Edition (tramite [Prism Launcher](https://prismlauncher.org), preconfigurato: accedi con il tuo account Microsoft e gioca), Bedrock Edition (tramite [mcpelauncher](https://mcpelauncher.readthedocs.io) da Flathub, controller nativo) e **modpack Modrinth** come scorciatoie Steam in un clic (ricerca live, versione bloccabile o aggiornamenti automatici quotidiani, backup automatico dei mondi prima di ogni cambio di versione)
+- 🎯 **Battle.net e Ubisoft Connect** *(sperimentale)* — i client Windows ufficiali girano ciascuno in un prefisso Proton condiviso: accedi una volta, i tuoi giochi compaiono in SkullKey, *Installa* apre il client sulla pagina del gioco (una pressione per confermare), *Gioca* avvia direttamente il gioco e chiude il client quando esci
 - 👥 **Uno spazio store per account Steam (multi-account)** — ogni utente Steam della macchina ha i propri login e librerie Epic/GOG/Amazon; cambiare account Steam cambia tutto automaticamente (i login esistenti restano all'account attivo al primo uso)
 - 📦 **Aggiornamento automatico dei giochi** — un passaggio quotidiano in background tiene aggiornati tutti i giochi installati, su ogni store e per ogni account
 - 💾 **Backup e ripristino dei salvataggi** — salva i progressi di un gioco dalla sua pagina con un'azione (via [ludusavi](https://github.com/mtkennerly/ludusavi), fornito automaticamente) e ripristinali su richiesta — giochi Epic, GOG e Amazon, backup in `~/.local/share/skullkey-saves`
@@ -92,4 +93,10 @@ BSD-3-Clause — vedi [LICENSE](../LICENSE).
 
 ## Nota sull'IA
 
-L'IA è stata usata nella realizzazione di questo progetto: per reverse engineering, sviluppo e documentazione. **Non** per grafica o scrittura creativa. Tutto ciò che viene pubblicato è riletto da un umano, e il risultato resta sotto la mia responsabilità. Se la cosa ti dà fastidio, ora lo sai.
+L'IA (Claude di Anthropic e Codex di OpenAI) è stata usata nella realizzazione di questo progetto: per reverse engineering, sviluppo e documentazione. **Non** per grafica o scrittura creativa. Tutto ciò che viene pubblicato è riletto da un umano, e il risultato resta sotto la mia responsabilità. Se la cosa ti dà fastidio, ora lo sai.
+
+## Sostieni lo sviluppo
+
+Se questo progetto ti è utile, puoi sostenere il suo sviluppo continuo su [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Sostienimi su Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

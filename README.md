@@ -12,6 +12,7 @@
 - 🩹 **miHoYo extras** — delta updates (download only the diff, ~4× smaller), voice-over language picker, integrity **check & repair**, and Zenless Zone Zero anti-cheat handled automatically
 - 🏛️ **Classics Reborn** — 52 open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
 - ⛏️ **Minecraft** — Java Edition (through [Prism Launcher](https://prismlauncher.org), pre-configured: sign in with your Microsoft account and play), Bedrock Edition (through [mcpelauncher](https://mcpelauncher.readthedocs.io) from Flathub, native controller support) and **Modrinth modpacks** as one-click Steam shortcuts (live search, version pinning or daily auto-updates, automatic world backups before every version change)
+- 🎯 **Battle.net & Ubisoft Connect** *(experimental)* — the official Windows clients run in one shared Proton prefix each: log in once, your owned games appear in SkullKey, *Install* opens the client on the game's page (one press to confirm), *Play* starts the game directly and closes the client when you quit
 - 👥 **One store space per Steam account (multi-account)** — every Steam user of the machine gets their own Epic/GOG/Amazon logins and library; switching the Steam account switches everything automatically (existing logins are kept by the account active at first run)
 - 📦 **Games auto-update** — a daily background pass keeps every installed game current, on every store and for every account
 - 💾 **Save backup & restore** — back up a game's progression from its page in one action (via [ludusavi](https://github.com/mtkennerly/ludusavi), auto-provisioned) and restore it on demand — Epic, GOG and Amazon games, backups in `~/.local/share/skullkey-saves`
@@ -97,4 +98,10 @@ BSD-3-Clause — see [LICENSE](LICENSE).
 
 ## AI disclaimer
 
-AI was used in the making of this project — for reverse engineering, development and documentation. It was **not** used for any art or creative writing. Everything released publicly is reviewed by a human, and the results are my responsibility. If that is not something you are comfortable with, now you know.
+AI (Claude by Anthropic and Codex by OpenAI) was used in the making of this project — for reverse engineering, development and documentation. It was **not** used for any art or creative writing. Everything released publicly is reviewed by a human, and the results are my responsibility. If that is not something you are comfortable with, now you know.
+
+## Support development
+
+If this project is useful to you, you can support its ongoing development on [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

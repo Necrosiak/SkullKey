@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.13.0 — 2026-09-27
+
+### Battle.net and Ubisoft Connect (experimental)
+
+Two new stores, built on the official Windows clients rather than a
+command-line tool: neither Blizzard nor Ubisoft offers one. Each client runs in
+its own shared Proton prefix, set up the first time you open the store.
+
+- **Log in once, in the client itself.** SkullKey then reads your library from
+  the client's own local data: the games you own show up with their artwork, and
+  installed ones are detected.
+- **Install opens the client on the game's page**, with the install button
+  ready: one press on your controller confirms it. The client's own download
+  runs from there, and SkullKey follows its progress.
+- **Play starts the game directly.** The client starts hidden, launches the
+  game and is closed when you quit, so you land back in Steam instead of on a
+  store page.
+- **Ubisoft Connect's in-game overlay is turned off**, because it swallows
+  controller input while it runs.
+- **Updates and uninstalls stay with the clients**, which already handle them.
+  Uninstalling from SkullKey removes the shortcut and tells you where to finish.
+
+Known issue: Ubisoft Connect's embedded browser occasionally crashes right
+after launching a game. The client then restarts on its own and the game loses
+it; quitting and launching again works.
+
+### A successful update now says so
+
+After installing an update, the About page went back to "Up to date", exactly
+like a click that did nothing. It now reads "Updated to X ✓", with a note to
+close and reopen the Quick Access menu. Same fix as
+[Steamcord #52](https://github.com/Necrosiak/Steamcord/issues/52), reported by
+[@bastiHST90](https://github.com/bastiHST90).
+
 ## 1.12.6 — 2026-09-22
 
 ### Updates that installed but never loaded

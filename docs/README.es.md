@@ -12,6 +12,7 @@
 - 🩹 **Extras miHoYo** — actualizaciones delta (solo el diff, ~4× más pequeñas), selector de idioma de doblaje, **verificación y reparación** de integridad, y anti-trampas de Zenless Zone Zero gestionado automáticamente
 - 🏛️ **Classics Reborn** — 52 ports nativos open source y recompilaciones de clásicos (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), instalados desde las releases oficiales de cada proyecto, con instrucciones claras para tus archivos de juego originales (9 idiomas)
 - ⛏️ **Minecraft** — Java Edition (mediante [Prism Launcher](https://prismlauncher.org), preconfigurado: inicia sesión con tu cuenta Microsoft y juega), Bedrock Edition (mediante [mcpelauncher](https://mcpelauncher.readthedocs.io) desde Flathub, mando nativo) y **modpacks de Modrinth** como accesos directos de Steam en un clic (búsqueda en vivo, versión fijable o actualizaciones automáticas diarias, copia automática de los mundos antes de cada cambio de versión)
+- 🎯 **Battle.net y Ubisoft Connect** *(experimental)* — los clientes oficiales de Windows se ejecutan cada uno en un prefijo de Proton compartido: inicias sesión una vez, tus juegos aparecen en SkullKey, *Instalar* abre el cliente en la página del juego (una pulsación para confirmar) y *Jugar* inicia el juego directamente y cierra el cliente al salir
 - 👥 **Un espacio de tiendas por cuenta de Steam (multicuenta)** — cada usuario de Steam de la máquina tiene sus propios logins y bibliotecas de Epic/GOG/Amazon; cambiar de cuenta de Steam lo cambia todo automáticamente (los logins existentes quedan con la cuenta activa en el primer uso)
 - 📦 **Actualización automática de juegos** — una pasada diaria en segundo plano mantiene al día todos los juegos instalados, en todas las tiendas y para todas las cuentas
 - 💾 **Copia y restauración de partidas guardadas** — respalda el progreso de un juego desde su página con una acción (vía [ludusavi](https://github.com/mtkennerly/ludusavi), aprovisionado automáticamente) y restáuralo cuando quieras — juegos de Epic, GOG y Amazon, copias en `~/.local/share/skullkey-saves`
@@ -92,4 +93,10 @@ BSD-3-Clause — ver [LICENSE](../LICENSE).
 
 ## Aviso sobre IA
 
-Se usó IA en la creación de este proyecto: para ingeniería inversa, desarrollo y documentación. **No** se usó para arte ni escritura creativa. Todo lo publicado lo revisa una persona, y el resultado es responsabilidad mía. Si eso te incomoda, ya lo sabes.
+Se usó IA (Claude de Anthropic y Codex de OpenAI) en la creación de este proyecto: para ingeniería inversa, desarrollo y documentación. **No** se usó para arte ni escritura creativa. Todo lo publicado lo revisa una persona, y el resultado es responsabilidad mía. Si eso te incomoda, ya lo sabes.
+
+## Apoya el desarrollo
+
+Si este proyecto te resulta útil, puedes apoyar su desarrollo continuo en [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Apóyame en Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

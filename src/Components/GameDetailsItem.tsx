@@ -2,7 +2,7 @@ import { Focusable, ServerAPI, ModalRoot, sleep, gamepadDialogClasses, showModal
 import { useState, useEffect, VFC, useRef } from "react";
 import GameDisplay from "./GameDisplay";
 import { ContentError, ContentResult, ContentType, EmptyContent, ExecuteGetGameDetailsArgs, ExecuteInstallArgs, GameDetails, GameImages, LaunchOptions, MenuAction, ProgressUpdate, ScriptActions } from "../Types/Types";
-import { runApp } from "../Utils/utils";
+import { focusShortcut, runApp, runHelperShortcut } from "../Utils/utils";
 import Logger from "../Utils/logger";
 import { Loading } from "./Loading";
 import { executeAction } from "../Utils/executeAction";
@@ -11,7 +11,10 @@ import { reaction } from 'mobx';
 import { ErrorDisplay } from "./ErrorDisplay";
 import { ErrorModal } from "../ErrorModal";
 import { notify } from "./Styled";
+
 import { t } from "../i18n";
+
+const shortcutCreation = new Map<string, Promise<number>>();
 
 const gameDetailsRootClass = 'game-details-modal-root';
 
@@ -240,7 +243,16 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                     shortname: shortname
                 }
             );
-            if (result?.Type == "Progress") {
+            if (result?.Type == "LaunchOptions") {
+                // The store installs through its own client (Battle.net):
+                // show it, then follow the install like any other.
+                await runHelperShortcut(result.Content as LaunchOptions);
+                setShouldUpdateShortcut(true);
+                setInstalling(true);
+            }
+            else if (result?.Type == "Progress") {
+                const focus = (result.Content as { Focus?: string }).Focus;
+                if (focus) focusShortcut(focus);
                 setShouldUpdateShortcut(true);
                 setInstalling(true);
             }
@@ -468,7 +480,16 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     };
     const install = async () => {
         try {
-            const id = await getSteamId();
+            // Two copies of this page (reopened while an install runs) both
+            // reach 100 % and would each create a shortcut: share one.
+            const key = `${initActionSet}:${shortname}`;
+            let pending = shortcutCreation.get(key);
+            if (!pending) {
+                pending = getSteamId();
+                shortcutCreation.set(key, pending);
+                pending.finally(() => setTimeout(() => shortcutCreation.delete(key), 60000));
+            }
+            const id = await pending;
             await configureShortcut(id);
         } catch (error) {
             logger.error(error);

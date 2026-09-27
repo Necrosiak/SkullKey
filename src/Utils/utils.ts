@@ -77,3 +77,37 @@ export function configureShortcut(id: number, launchOptions: LaunchOptions) {
         }
     }
 }
+// A store client that has to be visible in gamescope (Battle.net) must be
+// started by Steam, from a shortcut. The backend describes that shortcut; it
+// is created once and found again by its name, then run.
+const SHORTCUT_APP_TYPE = 1073741824;
+
+function findShortcutByName(name: string) {
+    return appStore.allApps.find(a => a.app_type == SHORTCUT_APP_TYPE && a.display_name == name);
+}
+
+export async function runHelperShortcut(launchOptions: LaunchOptions): Promise<number> {
+    const logger = new Logger('runHelperShortcut');
+    let id = findShortcutByName(launchOptions.Name)?.appid;
+    if (!id) {
+        id = await SteamClient.Apps.AddShortcut(launchOptions.Name, launchOptions.Exe, launchOptions.WorkingDir, "");
+        SteamClient.Apps.SetShortcutName(id, launchOptions.Name);
+        logger.debug("created helper shortcut", id);
+    }
+    configureShortcut(id, launchOptions);
+    // A fresh shortcut has no overview (hence no game id) for a moment.
+    for (let i = 0; i < 20 && gameIDFromAppID(id) === -1; i++) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    const gid = gameIDFromAppID(id);
+    if (gid !== -1) SteamClient.Apps.RunGame(gid as string, "", -1, 100);
+    return id;
+}
+
+// Bring an already running helper shortcut back to the foreground.
+export function focusShortcut(name: string) {
+    const app = findShortcutByName(name);
+    if (!app) return;
+    const gid = gameIDFromAppID(app.appid);
+    if (gid !== -1) SteamClient.Apps.RunGame(gid as string, "", -1, 100);
+}

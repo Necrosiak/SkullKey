@@ -1,0 +1,208 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetBattleNetActions",
+     "Title": "Get Battle.net store actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py battlenet-actions"
+    }
+   ]
+  }
+ },
+ "main-menu-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetBattleNetActions",
+     "Title": "Get Battle.net store actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py battlenet-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Battle.net",
+     "Type": "GameGrid",
+     "ActionId": "GetBattleNetActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "battlenet-login-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "BattleNetLoginActions",
+   "Actions": [
+    {
+     "Id": "Login",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh BattleNet login"
+    },
+    {
+     "Id": "LoginLaunchOptions",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh BattleNet login-launch-options"
+    },
+    {
+     "Id": "Logout",
+     "Title": "Logout",
+     "Type": "Logout",
+     "Command": "./scripts/skullkey.sh BattleNet logout"
+    },
+    {
+     "Id": "GetContent",
+     "Title": "Status",
+     "Type": "Status",
+     "Command": "./scripts/skullkey.sh BattleNet loginstatus"
+    },
+    {
+     "Id": "GetSetting",
+     "Title": "Get settings",
+     "Type": "GetSettings",
+     "Command": "./scripts/skullkey.sh BattleNet getsetting"
+    },
+    {
+     "Id": "SaveSetting",
+     "Title": "Set settings",
+     "Type": "SaveSettings",
+     "Command": "./scripts/skullkey.sh BattleNet savesetting"
+    }
+   ]
+  }
+ },
+ "battlenet-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "battlenet-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": [
+    {
+     "ActionId": "Refresh",
+     "Title": "Refresh Games List",
+     "Type": "ScriptAction",
+     "InstalledOnly": "False"
+    }
+   ]
+  }
+ },
+ "battlenet-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "BattleNetActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get Battle.net games list",
+     "Type": "GameGrid",
+     "Command": "./scripts/skullkey.sh BattleNet getgames"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "Get game size",
+     "Type": "GameSize",
+     "Command": "./scripts/skullkey.sh BattleNet getgamesize"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "Get game details",
+     "Type": "GameDetails",
+     "Command": "./scripts/skullkey.sh BattleNet getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "Get game images as json",
+     "Type": "GameImages",
+     "Command": "./scripts/skullkey.sh BattleNet getjsonimages"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install game",
+     "Type": "Install",
+     "Command": "./scripts/skullkey.sh BattleNet install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download game",
+     "Type": "Download",
+     "Command": "./scripts/skullkey.sh BattleNet download"
+    },
+    {
+     "Id": "Update",
+     "Title": "Update game",
+     "Type": "Update",
+     "Command": "./scripts/skullkey.sh BattleNet update"
+    },
+    {
+     "Id": "Verify",
+     "Title": "Verify game",
+     "Type": "Verify",
+     "Command": "./scripts/skullkey.sh BattleNet verify"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall game",
+     "Type": "Uninstall",
+     "Command": "./scripts/skullkey.sh BattleNet uninstall"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "Get install progress",
+     "Type": "GetProgress",
+     "Command": "./scripts/skullkey.sh BattleNet getprogress"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel install",
+     "Type": "CancelInstall",
+     "Command": "./scripts/skullkey.sh BattleNet cancelinstall"
+    },
+    {
+     "Id": "GetLoginActions",
+     "Title": "Get login status",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py battlenet-login-actions"
+    },
+    {
+     "Id": "GetLaunchOptions",
+     "Title": "Get launch options",
+     "Type": "GetLaunchOptions",
+     "Command": "./scripts/skullkey.sh BattleNet getlaunchoptions"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py battlenet-game-script-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py battlenet-script-actions"
+    },
+    {
+     "Id": "Refresh",
+     "Title": "Refresh Games List",
+     "Type": "Refresh",
+     "Command": "./scripts/skullkey.sh BattleNet refresh"
+    }
+   ]
+  }
+ }
+}

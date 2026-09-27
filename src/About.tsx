@@ -46,6 +46,8 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [updating, setUpdating] = useState(false);
     const [updUrl, setUpdUrl] = useState("");
     const [updLabel, setUpdLabel] = useState("");
+    const [updLatest, setUpdLatest] = useState("");
+    const [updatedTo, setUpdatedTo] = useState("");
 
     useEffect(() => {
         serverAPI.callPluginMethod<{}, string>("get_version", {}).then((r) => r.success && setVersion(String(r.result)));
@@ -56,12 +58,14 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
         setChecking(true);
         setUpdLabel("");
         setUpdUrl("");
+        setUpdatedTo("");
         try {
             const r = await serverAPI.callPluginMethod<{}, any>("check_update", {});
             if (r.success && r.result) {
                 const info: any = r.result;
                 if (info.update_available) {
                     setUpdUrl(info.url);
+                    setUpdLatest(info.latest);
                     setUpdLabel(t("btn_install_update", { version: info.latest }));
                 } else if (info.error) {
                     setUpdLabel(t("update_error"));
@@ -109,9 +113,14 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     // on "updating…" forever even though the plugin had just
                     // been re-imported (seen on screen 2026-09-22). Finish the
                     // journey ourselves; the new code serves the next opening.
+                    // Ending on "Up to date" looked exactly like a click that
+                    // did nothing (Steamcord #52, 2026-09-24): say it worked,
+                    // and what to do next.
                     setUpdating(false);
                     setUpdUrl("");
-                    setUpdLabel(t("up_to_date"));
+                    setVersion(updLatest);
+                    setUpdatedTo(updLatest);
+                    setUpdLabel(t("update_done", { version: updLatest }));
                     return;
                 } catch { /* Decky too old for that route */ }
             }
@@ -143,6 +152,11 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                                 : updLabel || t("btn_check_updates")}
                 </span>
             </ActionCard>
+            {updatedTo && (
+                <div style={{ fontSize: 11, color: "#4caf50", lineHeight: 1.35, marginTop: 6 }}>
+                    {t("update_done_note", { version: updatedTo })}
+                </div>
+            )}
             <ToggleField
                 label={t("autoupdate")}
                 description={t("autoupdate_desc")}

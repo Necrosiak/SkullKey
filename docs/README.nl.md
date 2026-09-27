@@ -12,6 +12,7 @@
 - 🩹 **miHoYo-extra's** — delta-updates (alleen het verschil, ~4× kleiner), keuzemenu voor de stemtaal, integriteits**controle & reparatie**, en Zenless Zone Zero-anti-cheat automatisch afgehandeld
 - 🏛️ **Classics Reborn** — 52 native opensource-ports & hercompilaties van klassiekers (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), geïnstalleerd vanaf de officiële releases van elk project, met duidelijke instructies voor je originele spelbestanden (9 talen)
 - ⛏️ **Minecraft** — Java Edition (via [Prism Launcher](https://prismlauncher.org), voorgeconfigureerd: log in met je Microsoft-account en speel), Bedrock Edition (via [mcpelauncher](https://mcpelauncher.readthedocs.io) van Flathub, native controllerondersteuning) en **Modrinth-modpacks** als één-klik-Steam-snelkoppelingen (live zoeken, versie vastzetten of dagelijkse auto-updates, automatische wereldenback-ups vóór elke versiewissel)
+- 🎯 **Battle.net & Ubisoft Connect** *(experimenteel)* — de officiële Windows-clients draaien elk in één gedeelde Proton-prefix: één keer inloggen, je games verschijnen in SkullKey, *Installeren* opent de client op de pagina van de game (één druk om te bevestigen), *Spelen* start de game direct en sluit de client wanneer je stopt
 - 👥 **Eén winkelruimte per Steam-account (multi-account)** — elke Steam-gebruiker van de machine heeft eigen Epic/GOG/Amazon-logins en bibliotheken; wisselen van Steam-account schakelt alles automatisch om (bestaande logins blijven bij het account dat bij het eerste gebruik actief is)
 - 📦 **Auto-update van games** — een dagelijkse achtergrondronde houdt alle geïnstalleerde games actueel, in elke winkel en voor elk account
 - 💾 **Back-up & herstel van saves** — maak met één actie vanaf de spelpagina een back-up van de voortgang (via [ludusavi](https://github.com/mtkennerly/ludusavi), automatisch voorzien) en herstel die op verzoek — Epic-, GOG- en Amazon-games, back-ups in `~/.local/share/skullkey-saves`
@@ -91,4 +92,10 @@ BSD-3-Clause — zie [LICENSE](../LICENSE).
 
 ## AI-vermelding
 
-Bij het maken van dit project is AI gebruikt — voor reverse engineering, ontwikkeling en documentatie. **Niet** voor beeld of creatief schrijven. Alles wat wordt gepubliceerd is door een mens nagekeken, en het resultaat blijft mijn verantwoordelijkheid. Als je daar moeite mee hebt, weet je het nu.
+Bij het maken van dit project is AI (Claude van Anthropic en Codex van OpenAI) gebruikt — voor reverse engineering, ontwikkeling en documentatie. **Niet** voor beeld of creatief schrijven. Alles wat wordt gepubliceerd is door een mens nagekeken, en het resultaat blijft mijn verantwoordelijkheid. Als je daar moeite mee hebt, weet je het nu.
+
+## Steun de ontwikkeling
+
+Als dit project nuttig voor je is, kun je de verdere ontwikkeling steunen via [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Steun mij op Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

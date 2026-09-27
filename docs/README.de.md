@@ -12,6 +12,7 @@
 - 🩹 **miHoYo-Extras** — Delta-Updates (nur der Diff, ~4× kleiner), Sprachauswahl für die Vertonung, Integritäts-**Prüfung & Reparatur** und automatisch gehandhabter Zenless-Zone-Zero-Anti-Cheat
 - 🏛️ **Classics Reborn** — 52 native Open-Source-Ports & Rekompilierungen von Klassikern (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installiert aus den offiziellen Releases jedes Projekts, mit klaren Anleitungen für deine Original-Spieldateien (9 Sprachen)
 - ⛏️ **Minecraft** — Java Edition (über [Prism Launcher](https://prismlauncher.org), vorkonfiguriert: mit dem Microsoft-Konto anmelden und spielen), Bedrock Edition (über [mcpelauncher](https://mcpelauncher.readthedocs.io) von Flathub, native Controller-Unterstützung) und **Modrinth-Modpacks** als Ein-Klick-Steam-Verknüpfungen (Live-Suche, Version anpinnen oder tägliche Auto-Updates, automatische Welten-Backups vor jedem Versionswechsel)
+- 🎯 **Battle.net & Ubisoft Connect** *(experimentell)* — die offiziellen Windows-Clients laufen jeweils in einem gemeinsamen Proton-Präfix: einmal anmelden, deine Spiele erscheinen in SkullKey, *Installieren* öffnet den Client auf der Seite des Spiels (ein Tastendruck zum Bestätigen), *Spielen* startet das Spiel direkt und schließt den Client beim Beenden
 - 👥 **Ein Store-Bereich pro Steam-Konto (Multi-Account)** — jeder Steam-Nutzer der Maschine hat eigene Epic/GOG/Amazon-Logins und Bibliotheken; der Wechsel des Steam-Kontos schaltet alles automatisch um (bestehende Logins bleiben beim beim ersten Start aktiven Konto)
 - 📦 **Auto-Update der Spiele** — ein täglicher Hintergrund-Durchlauf hält alle installierten Spiele aktuell, in jedem Store und für jedes Konto
 - 💾 **Spielstand-Backup & -Wiederherstellung** — sichere den Fortschritt eines Spiels von seiner Seite aus mit einer Aktion (via [ludusavi](https://github.com/mtkennerly/ludusavi), automatisch bereitgestellt) und stelle ihn bei Bedarf wieder her — Epic-, GOG- und Amazon-Spiele, Backups in `~/.local/share/skullkey-saves`
@@ -91,4 +92,10 @@ BSD-3-Clause — siehe [LICENSE](../LICENSE).
 
 ## KI-Hinweis
 
-Bei der Entwicklung dieses Projekts wurde KI eingesetzt — für Reverse Engineering, Entwicklung und Dokumentation. **Nicht** für Grafik oder kreatives Schreiben. Alles Veröffentlichte wird von einem Menschen geprüft, und ich stehe für das Ergebnis gerade. Wer damit nicht einverstanden ist, weiß nun Bescheid.
+Bei der Entwicklung dieses Projekts wurde KI (Claude von Anthropic und Codex von OpenAI) eingesetzt — für Reverse Engineering, Entwicklung und Dokumentation. **Nicht** für Grafik oder kreatives Schreiben. Alles Veröffentlichte wird von einem Menschen geprüft, und ich stehe für das Ergebnis gerade. Wer damit nicht einverstanden ist, weiß nun Bescheid.
+
+## Entwicklung unterstützen
+
+Wenn dir dieses Projekt hilft, kannst du seine weitere Entwicklung auf [Ko-fi](https://ko-fi.com/nekyron) unterstützen.
+
+[![Unterstütze mich auf Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)

@@ -12,6 +12,7 @@
 - 🩹 **Extras miHoYo** — mises à jour delta (ne télécharge que le diff, ~4× plus léger), sélecteur de langue de doublage, **vérification & réparation** d'intégrité, et anti-cheat de Zenless Zone Zero géré automatiquement
 - 🏛️ **Classics Reborn** — 52 ports natifs open source et recompilations de classiques (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island…), installés depuis les releases officielles de chaque projet, avec des instructions claires pour vos fichiers de jeu originaux (9 langues)
 - ⛏️ **Minecraft** — Java Edition (via [Prism Launcher](https://prismlauncher.org), pré-configuré : connectez votre compte Microsoft et jouez), Bedrock Edition (via [mcpelauncher](https://mcpelauncher.readthedocs.io) depuis Flathub, manette native) et **modpacks Modrinth** en raccourcis Steam un clic (recherche live, version épinglable ou màj auto quotidiennes, backup automatique des mondes avant chaque changement de version)
+- 🎯 **Battle.net & Ubisoft Connect** *(expérimental)* — les clients Windows officiels tournent chacun dans un préfixe Proton partagé : une seule connexion, tes jeux possédés apparaissent dans SkullKey, *Installer* ouvre le client sur la page du jeu (un appui pour valider), *Jouer* lance directement le jeu et ferme le client quand tu quittes
 - 👥 **Un espace boutiques par compte Steam (multi-comptes)** — chaque utilisateur Steam de la machine a ses propres logins et bibliothèques Epic/GOG/Amazon ; changer de compte Steam bascule tout automatiquement (les logins existants restent au compte actif à la première utilisation)
 - 📦 **Mise à jour auto des jeux** — un passage quotidien en arrière-plan garde tous les jeux installés à jour, sur toutes les boutiques et pour tous les comptes
 - 💾 **Sauvegarde & restauration des saves** — sauvegarde la progression d'un jeu depuis sa page en une action (via [ludusavi](https://github.com/mtkennerly/ludusavi), auto-provisionné) et restaure-la à la demande — jeux Epic, GOG et Amazon, backups dans `~/.local/share/skullkey-saves`
@@ -92,4 +93,10 @@ BSD-3-Clause — voir [LICENSE](../LICENSE).
 
 ## Mention IA
 
-L'IA a été utilisée dans la réalisation de ce projet — pour la rétro-ingénierie, le développement et la documentation. Elle n'a **pas** servi pour de l'art ni de l'écriture créative. Tout ce qui est publié est relu par un humain, et le résultat reste sous ma responsabilité. Si cela vous dérange, vous voilà informé.
+L'IA (Claude d'Anthropic et Codex d'OpenAI) a été utilisée dans la réalisation de ce projet — pour la rétro-ingénierie, le développement et la documentation. Elle n'a **pas** servi pour de l'art ni de l'écriture créative. Tout ce qui est publié est relu par un humain, et le résultat reste sous ma responsabilité. Si cela vous dérange, vous voilà informé.
+
+## Soutenir le développement
+
+Si ce projet vous est utile, vous pouvez soutenir son développement continu sur [Ko-fi](https://ko-fi.com/nekyron).
+
+[![Soutenez-moi sur Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/nekyron)
