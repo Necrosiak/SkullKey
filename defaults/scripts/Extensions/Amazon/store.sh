@@ -301,3 +301,30 @@ function updategamedetailsafteramazoncmd() {
     $AMAZONCONF --update-game-details $game --dbfile $DBFILE &> /dev/null
     return $rc
 }
+
+# ── Connexion dans le navigateur de Steam (SkullKey #4) ──
+# Repli quand la fenêtre GTK/WebKit est impossible (SteamOS d'origine) :
+# l'interface ouvre l'URL dans le navigateur de Steam, le backend lit le code
+# par CDP puis appelle Amazon_login-code. Voir BrowserLogin dans main.py.
+# Amazon (PKCE) : `nile auth --login` donne l'URL ET le code_verifier/serial
+# qu'il faudra rendre à `nile register` → gardés dans le dossier runtime.
+function Amazon_login-url(){
+    local STATE="${DECKY_PLUGIN_RUNTIME_DIR}/amazon-browser-login.json"
+    if ! $NILE auth --login --non-interactive > "${STATE}" 2>> "${DECKY_PLUGIN_LOG_DIR}/amazonlogin.log"; then
+        echo '{"Type": "Error", "Content": {"Message": "nile auth --login failed (see amazonlogin.log)"}}'
+        return
+    fi
+    /usr/bin/env python3 -c 'import json,sys; print(json.dumps({"Type": "LoginUrl", "Content": {"Url": json.load(open(sys.argv[1]))["url"]}}))' "${STATE}"
+}
+function Amazon_login-code(){
+    local STATE="${DECKY_PLUGIN_RUNTIME_DIR}/amazon-browser-login.json"
+    local ARGS
+    ARGS=$(/usr/bin/env python3 -c 'import json,shlex,sys; d=json.load(open(sys.argv[1])); print(" ".join(shlex.quote(x) for x in ["--client-id", d["client_id"], "--code-verifier", d["code_verifier"], "--serial", d["serial"]]))' "${STATE}") || {
+        echo '{"Type": "Error", "Content": {"Message": "Amazon login state missing"}}'; return; }
+    if eval "$NILE register --code $(printf %q "${1}") ${ARGS}" &>> "${DECKY_PLUGIN_LOG_DIR}/amazonlogin.log"; then
+        rm -f "${STATE}"
+        Amazon_loginstatus --flush-cache
+    else
+        echo '{"Type": "Error", "Content": {"Message": "Amazon login failed (see amazonlogin.log)"}}'
+    fi
+}

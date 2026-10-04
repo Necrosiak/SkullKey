@@ -2,6 +2,7 @@ import { PanelSection, ModalRoot, Focusable, } from "decky-frontend-lib";
 import { VFC } from "react";
 import { ErrorModalProps } from "./ConfEditor";
 import { ErrorDisplay } from "./Components/ErrorDisplay";
+import { t } from "./i18n";
 
 
 export const ErrorModal: VFC<ErrorModalProps> = ({ Error, onCancel, onOK, onEscKeypress, bAllowFullSize, bCancelDisabled, bOKDisabled, closeModal }) => {
@@ -17,7 +18,7 @@ export const ErrorModal: VFC<ErrorModalProps> = ({ Error, onCancel, onOK, onEscK
         >
             <Focusable
                 focusable={true} noFocusRing={false}>
-                <PanelSection title="Erreur">
+                <PanelSection title={t("error_title")}>
                     <ErrorDisplay error={Error} />
 
                 </PanelSection>

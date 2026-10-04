@@ -463,6 +463,11 @@ def _build_art(game, W, H, slot_order, with_logo=True):
         return None
     try:
         from PIL import Image, ImageFilter
+    except ImportError:
+        # Pas de Pillow (Python de SteamOS d'origine, SkullKey #4) : l'image
+        # brute du client, que Steam recadre lui-même, plutôt qu'aucune.
+        return src
+    try:
         src_img = Image.open(src).convert("RGBA")
 
         def cover(im):
@@ -515,6 +520,9 @@ def _logo_png(game):
         return path
     try:
         from PIL import Image
+    except ImportError:
+        return src                                # logo brut, sans rognage
+    try:
         logo = Image.open(src).convert("RGBA")
         bbox = logo.getchannel("A").getbbox()
         logo = logo.crop(bbox) if bbox else logo
@@ -533,8 +541,10 @@ _LANDSCAPE = ("install_background", "background", "key_art")
 def _data_uri(path):
     if not path:
         return None
+    # Le repli sans Pillow peut rendre un PNG du client tel quel.
+    mime = "image/png" if path.lower().endswith(".png") else "image/jpeg"
     with open(path, "rb") as f:
-        return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+        return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
 # ── client process helpers ────────────────────────────────────────────────────

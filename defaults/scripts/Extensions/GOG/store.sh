@@ -315,3 +315,18 @@ function updategamedetailsaftergogcmd() {
     $GOGCONF --update-game-details $game --dbfile $DBFILE &> /dev/null
     return $rc
 }
+
+# ── Connexion dans le navigateur de Steam (SkullKey #4) ──
+# Repli quand la fenêtre GTK/WebKit est impossible (SteamOS d'origine) :
+# l'interface ouvre l'URL dans le navigateur de Steam, le backend lit le code
+# par CDP puis appelle GOG_login-code. Voir BrowserLogin dans main.py.
+function GOG_login-url(){
+    echo '{"Type": "LoginUrl", "Content": {"Url": "https://auth.gog.com/auth?client_id=46899977096215655&redirect_uri=https%3A%2F%2Fembed.gog.com%2Fon_login_success%3Forigin%3Dclient&response_type=code&layout=galaxy"}}'
+}
+function GOG_login-code(){
+    if $GOGDL auth --code "${1}" > /dev/null 2>> "${DECKY_PLUGIN_LOG_DIR}/goglogin.log"; then
+        GOG_loginstatus --flush-cache
+    else
+        echo '{"Type": "Error", "Content": {"Message": "GOG login failed (see goglogin.log)"}}'
+    fi
+}

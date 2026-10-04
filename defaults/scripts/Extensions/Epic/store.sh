@@ -387,3 +387,18 @@ function updategamedetailsaftercmd() {
     "$@"
     $EPICCONF --update-game-details $game --dbfile $DBFILE &> /dev/null
 }
+
+# ── Connexion dans le navigateur de Steam (SkullKey #4) ──
+# Repli quand la fenêtre GTK/WebKit est impossible (SteamOS d'origine) :
+# l'interface ouvre l'URL dans le navigateur de Steam, le backend lit le code
+# par CDP puis appelle Epic_login-code. Voir BrowserLogin dans main.py.
+function Epic_login-url(){
+    echo '{"Type": "LoginUrl", "Content": {"Url": "https://legendary.gl/epiclogin"}}'
+}
+function Epic_login-code(){
+    if $LEGENDARY auth --code "${1}" -v &>> "${DECKY_PLUGIN_LOG_DIR}/epiclogin.log"; then
+        Epic_loginstatus --flush-cache
+    else
+        echo '{"Type": "Error", "Content": {"Message": "Epic login failed (see epiclogin.log)"}}'
+    fi
+}

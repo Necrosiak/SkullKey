@@ -13,7 +13,7 @@ source "${DECKY_PLUGIN_DIR}/scripts/Extensions/GOG/settings.sh"
 
 CODE=$(/usr/bin/python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/GOG/gog-login-gui.py" 2>> "${DECKY_PLUGIN_LOG_DIR}/goglogin.log")
 if [[ -n "${CODE}" ]]; then
-    $GOGDL auth --code "${CODE}" &>> "${DECKY_PLUGIN_LOG_DIR}/goglogin.log"
+    $GOGDL auth --code "${CODE}" > /dev/null 2>> "${DECKY_PLUGIN_LOG_DIR}/goglogin.log"
 else
     echo "GOG login window closed without a code" >> "${DECKY_PLUGIN_LOG_DIR}/goglogin.log"
 fi

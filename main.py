@@ -622,6 +622,113 @@ class Helper:
 # import requests
 
 
+
+# ── Connexion dans le navigateur de Steam (SkullKey #4) ─────────────────────
+# Les fenêtres de connexion Epic / GOG / Amazon sont des applis GTK + WebKit2
+# lancées comme un jeu. SteamOS d'origine n'a NI PyGObject NI WebKit2 (et son
+# système est en lecture seule) → connexion impossible sur un Steam Deck.
+# Repli : la page de connexion s'ouvre dans le navigateur intégré de Steam
+# (Navigation.NavigateToExternalWeb côté interface) et on lit le code par le
+# CDP de Steam (127.0.0.1:8080). Ce navigateur N'APPARAÎT PAS dans /json : seul
+# Target.getTargets au niveau navigateur le liste (mesuré 04/10, Chrome 126).
+BROWSER_LOGIN = {
+    # Epic : legendary.gl renvoie vers la connexion Epic, qui finit sur une page
+    # JSON contenant authorizationCode (l'URL ne contient pas le code).
+    "Epic": {"match": "epicgames.com/id/api/redirect", "param": None},
+    "GOG": {"match": "embed.gog.com/on_login_success", "param": "code"},
+    "Amazon": {"match": "openid.oa2.authorization_code",
+               "param": "openid.oa2.authorization_code"},
+}
+
+
+class BrowserLogin:
+    state = {"status": "idle"}          # idle | waiting | finishing | done | error
+    task = None
+
+    @staticmethod
+    async def _cdp(ws, method, params=None, session=None, _ids=[0]):
+        _ids[0] += 1
+        my = _ids[0]
+        msg = {"id": my, "method": method, "params": params or {}}
+        if session:
+            msg["sessionId"] = session
+        await ws.send_str(json.dumps(msg))
+        while True:
+            m = await asyncio.wait_for(ws.receive(), timeout=10)
+            if m.type != aiohttp.WSMsgType.TEXT:
+                raise RuntimeError(f"CDP fermé ({m.type})")
+            d = json.loads(m.data)
+            if d.get("id") == my:
+                if "error" in d:
+                    raise RuntimeError(d["error"].get("message"))
+                return d.get("result") or {}
+
+    @staticmethod
+    async def _find_code(session, platform):
+        """Une passe : cherche la page de redirection et en extrait le code."""
+        from urllib.parse import urlparse, parse_qs
+        rule = BROWSER_LOGIN[platform]
+        async with session.get("http://127.0.0.1:8080/json/version") as r:
+            ver = await r.json(content_type=None)
+        async with session.ws_connect(ver["webSocketDebuggerUrl"], max_msg_size=0) as ws:
+            targets = (await BrowserLogin._cdp(ws, "Target.getTargets")).get("targetInfos", [])
+            for t in targets:
+                url = t.get("url") or ""
+                if t.get("type") != "page" or rule["match"] not in url:
+                    continue
+                if rule["param"]:
+                    vals = parse_qs(urlparse(url).query).get(rule["param"])
+                    if vals and vals[0]:
+                        return vals[0]
+                    continue
+                # Epic : lire la page JSON.
+                att = await BrowserLogin._cdp(ws, "Target.attachToTarget",
+                                              {"targetId": t["targetId"], "flatten": True})
+                sid = att.get("sessionId")
+                try:
+                    res = await BrowserLogin._cdp(ws, "Runtime.evaluate",
+                                                  {"expression": "document.body ? document.body.innerText : ''",
+                                                   "returnByValue": True}, session=sid)
+                finally:
+                    try:
+                        await BrowserLogin._cdp(ws, "Target.detachFromTarget", {"sessionId": sid})
+                    except Exception:
+                        pass
+                text = ((res.get("result") or {}).get("value") or "").strip()
+                try:
+                    code = json.loads(text).get("authorizationCode")
+                except Exception:
+                    code = None
+                if code:
+                    return code
+        return None
+
+    @staticmethod
+    async def _watch(platform, deadline):
+        async with aiohttp.ClientSession() as session:
+            while time.time() < deadline and BrowserLogin.state.get("status") == "waiting":
+                try:
+                    code = await BrowserLogin._find_code(session, platform)
+                except Exception as e:
+                    decky_plugin.logger.warning(f"[browser-login] {e!r}")
+                    code = None
+                if code:
+                    BrowserLogin.state = {"status": "finishing", "platform": platform}
+                    out = await Helper.call_script(
+                        "./scripts/skullkey.sh",
+                        platform, "login-code", code)
+                    ok = '"Error"' not in (out or "")
+                    decky_plugin.logger.info(f"[browser-login] {platform} : code reçu, "
+                                             f"connexion {'OK' if ok else 'en échec'}")
+                    BrowserLogin.state = ({"status": "done", "platform": platform} if ok else
+                                          {"status": "error", "platform": platform,
+                                           "message": (out or "")[-300:]})
+                    return
+                await asyncio.sleep(1)
+        if BrowserLogin.state.get("status") == "waiting":
+            BrowserLogin.state = {"status": "error", "platform": platform, "message": "timeout"}
+
+
 class Plugin:
     async def _main(self):
         decky_plugin.logger.info("SkullKey starting up...")
@@ -704,6 +811,57 @@ class Plugin:
                 decky_plugin.logger.info(f"init result: {result}")
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")
+
+    async def browser_login_needed(self):
+        """True si la fenêtre de connexion GTK/WebKit ne peut pas s'ouvrir
+        (SteamOS d'origine) → l'interface passe par le navigateur de Steam.
+        ~/.config/skullkey-force-browser-login force ce chemin (tests, ou si la
+        fenêtre GTK pose problème)."""
+        if os.path.exists(os.path.join(decky_plugin.DECKY_USER_HOME, ".config",
+                                       "skullkey-force-browser-login")):
+            return True
+        try:
+            p = await asyncio.create_subprocess_exec(
+                "/usr/bin/env", "python3", "-c",
+                'import gi; gi.require_version("Gtk","3.0"); gi.require_version("WebKit2","4.1")',
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+            return (await p.wait()) != 0
+        except Exception:
+            return True
+
+    async def browser_login_start(self, actionSet):
+        """Démarre la connexion dans le navigateur de Steam pour le magasin de
+        `actionSet` ; renvoie l'URL que l'interface ouvre."""
+        try:
+            action = Helper.get_action(actionSet, "Login") or {}
+            parts = (action.get("Command") or "").split()
+            platform = next((x for x in parts if x in BROWSER_LOGIN), None)
+            if not platform:
+                return {"ok": False, "error": f"unsupported store ({actionSet})"}
+            out = await Helper.call_script(
+                "./scripts/skullkey.sh",
+                platform, "login-url")
+            url = (json.loads(out or "{}").get("Content") or {}).get("Url")
+            if not url:
+                return {"ok": False, "error": (out or "no url")[-300:]}
+            if BrowserLogin.task and not BrowserLogin.task.done():
+                BrowserLogin.task.cancel()
+            BrowserLogin.state = {"status": "waiting", "platform": platform}
+            BrowserLogin.task = asyncio.get_event_loop().create_task(
+                BrowserLogin._watch(platform, time.time() + 600))
+            decky_plugin.logger.info(f"[browser-login] {platform} : page ouverte")
+            return {"ok": True, "url": url, "platform": platform}
+        except Exception as e:
+            decky_plugin.logger.error(f"[browser-login] start: {e!r}")
+            return {"ok": False, "error": str(e)}
+
+    async def browser_login_status(self):
+        return BrowserLogin.state
+
+    async def browser_login_cancel(self):
+        if BrowserLogin.state.get("status") == "waiting":
+            BrowserLogin.state = {"status": "idle"}
+        return {"ok": True}
 
     async def get_websocket_port(self):
         return Helper.websocket_port

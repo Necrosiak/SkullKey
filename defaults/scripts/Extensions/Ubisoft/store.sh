@@ -31,6 +31,8 @@ function Ubisoft_loginstatus()          { _ubisoft_py loginstatus "${@}"; }
 function Ubisoft_login()                { _ubisoft_py login "${@}"; }
 function Ubisoft_login-launch-options() { _ubisoft_py login-launch-options "${@}"; }
 function Ubisoft_logout()               { _ubisoft_py logout "${@}"; }
+function Ubisoft_removeinfo()           { _ubisoft_py removeinfo "${@}"; }
+function Ubisoft_removeclient()         { _ubisoft_py removeclient "${@}"; }
 function Ubisoft_download()             { _ubisoft_py download "${@}"; }
 function Ubisoft_install()              { _ubisoft_py install "${@}"; }
 function Ubisoft_update()               { _ubisoft_py update "${@}"; }

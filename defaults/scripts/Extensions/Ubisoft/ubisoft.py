@@ -120,6 +120,8 @@ _MSG = {
         "note": "Installs and updates go through Ubisoft Connect, which "
                 "opens its install window (use A to confirm).",
         "user": "Ubisoft account",
+        "remove_busy": "Close Ubisoft Connect and any Ubisoft game first.",
+        "remove_failed": "Some files could not be removed.",
     },
     "fr": {
         "waiting": "Valide l'installation dans Ubisoft Connect (A) pour "
@@ -139,6 +141,8 @@ _MSG = {
         "note": "Les installations et mises à jour passent par Ubisoft "
                 "Connect, qui ouvre sa fenêtre d'installation (valide avec A).",
         "user": "Compte Ubisoft",
+        "remove_busy": "Ferme d'abord Ubisoft Connect et tout jeu Ubisoft.",
+        "remove_failed": "Certains fichiers n'ont pas pu être supprimés.",
     },
 }
 
@@ -441,6 +445,11 @@ def _build_art(game, W, H, with_logo=True):
         return None
     try:
         from PIL import Image, ImageFilter
+    except ImportError:
+        # Pas de Pillow (Python de SteamOS d'origine, SkullKey #4) : l'image
+        # brute du catalogue, que Steam recadre lui-même, plutôt qu'aucune.
+        return src
+    try:
         img = Image.open(src).convert("RGBA")
         scale = max(W / img.width, H / img.height)
         img = img.resize((max(1, round(img.width * scale)),
@@ -485,6 +494,9 @@ def _logo_png(game):
         return path
     try:
         from PIL import Image
+    except ImportError:
+        return src                                # logo brut, sans rognage
+    try:
         logo = Image.open(src).convert("RGBA")
         bbox = logo.getchannel("A").getbbox()
         logo = logo.crop(bbox) if bbox else logo
@@ -499,8 +511,10 @@ def _logo_png(game):
 def _data_uri(path):
     if not path:
         return None
+    # Le repli sans Pillow peut rendre un PNG du catalogue tel quel.
+    mime = "image/png" if path.lower().endswith(".png") else "image/jpeg"
     with open(path, "rb") as f:
-        return "data:image/jpeg;base64," + base64.b64encode(f.read()).decode()
+        return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
 # ── client process helpers ────────────────────────────────────────────────────
@@ -759,6 +773,31 @@ def action_logout(*_):
     return action_loginstatus()
 
 
+# ── supprimer Ubisoft Connect (SkullKey #4) ──────────────────────────────────
+# PAS dans « Déconnexion » : par défaut les jeux s'installent DANS le préfixe
+# (Program Files (x86)/Ubisoft/.../games), donc le supprimer efface aussi les
+# jeux installés. Action séparée, confirmée avec la taille et la liste.
+def action_removeinfo(*_):
+    if not os.path.isdir(PREFIX):
+        return {"Type": "RemoveInfo", "Content": {"Exists": False}}
+    catalog = load_catalog()
+    games = sorted((catalog.get(pid) or {}).get("name") or str(pid)
+                   for pid in _install_dirs())
+    return {"Type": "RemoveInfo", "Content": {
+        "Exists": True, "Size": _human(_dir_size(PREFIX)), "Games": games}}
+
+
+def action_removeclient(*_):
+    if _our_wine_processes():
+        return {"Type": "Error", "Content": {"Message": msg("remove_busy")}}
+    import shutil
+    shutil.rmtree(PREFIX, ignore_errors=True)
+    if os.path.isdir(PREFIX):
+        return {"Type": "Error", "Content": {"Message": msg("remove_failed")}}
+    save_state({"games": {}, "settings": load_state().get("settings", {})})
+    return action_loginstatus()
+
+
 def action_getgames(filter_str="", installed="false", *_):
     logged = action_loginstatus()["Content"]["LoggedIn"]
     state = load_state()
@@ -954,6 +993,8 @@ def main():
         "login": action_login,
         "login-launch-options": action_login_launch_options,
         "logout": action_logout,
+        "removeinfo": action_removeinfo,
+        "removeclient": action_removeclient,
         "getsetting": action_getsetting,
         "savesetting": action_savesetting,
         "download": action_download,

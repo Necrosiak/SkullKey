@@ -19,6 +19,11 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
   made the diagnosis — after a reboot he *was* on the latest build
   ([Steamcord #52](https://github.com/Necrosiak/Steamcord/issues/52), fixed in
   v1.12.6)
+- Epic and GOG login impossible on a stock Steam Deck, with the detail that
+  mattered: the suggested `pacman` command fails on SteamOS's read-only system.
+  It led to logging in through Steam's own browser, plus the missing Ubisoft
+  artwork, the untranslated error title and the way to remove the client
+  ([#4](https://github.com/Necrosiak/SkullKey/issues/4), fixed in v1.14.0)
 
 ### [@arsaban](https://github.com/arsaban)
 

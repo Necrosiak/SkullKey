@@ -78,6 +78,18 @@
      "Title": "Set settings",
      "Type": "SaveSettings",
      "Command": "./scripts/skullkey.sh Ubisoft savesetting"
+    },
+    {
+     "Id": "RemoveInfo",
+     "Title": "RemoveInfo",
+     "Type": "Logout",
+     "Command": "./scripts/skullkey.sh Ubisoft removeinfo"
+    },
+    {
+     "Id": "RemoveClient",
+     "Title": "RemoveClient",
+     "Type": "Logout",
+     "Command": "./scripts/skullkey.sh Ubisoft removeclient"
     }
    ]
   }

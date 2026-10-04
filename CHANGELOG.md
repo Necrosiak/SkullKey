@@ -1,5 +1,38 @@
 # Changelog
 
+## 1.14.0 — 2026-10-04
+
+### Epic, GOG and Amazon login on stock SteamOS
+
+Reported by [bastiHST90](https://github.com/bastiHST90) in
+[#4](https://github.com/Necrosiak/SkullKey/issues/4), on a Steam Deck OLED.
+
+The login window for these three stores needs GTK and WebKit for Python, which
+SteamOS doesn't ship, so logging in was impossible on a stock Steam Deck. The
+error also told you to install them with `pacman`, which fails on SteamOS's
+read-only system.
+
+- **When those packages are missing, the login page now opens in Steam's own
+  browser.** Log in as usual: SkullKey picks up the login by itself, closes the
+  browser and brings you back to the store page. Nothing to install.
+- Where GTK and WebKit are available, the login window works as before.
+
+### Ubisoft Connect
+
+- **Covers and logos without Pillow.** The artwork is drawn with a Python
+  library that SteamOS may not ship; without it, games had no artwork at all.
+  They now show the store's original images instead. Same for Battle.net.
+- **Remove the client.** A new button next to Log out deletes Ubisoft Connect
+  and its Wine prefix. It asks first, showing the size and the installed games
+  it will delete, since games install inside the prefix by default.
+
+### Fixes
+
+- The title of error messages was always in French; it now follows your
+  language.
+- GOG's login tokens were written to `goglogin.log`; only errors are logged
+  now.
+
 ## 1.13.0 — 2026-09-27
 
 ### Battle.net and Ubisoft Connect (experimental)

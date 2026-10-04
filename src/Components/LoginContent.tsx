@@ -1,4 +1,4 @@
-import { DialogButton, DialogLabel, Navigation, ServerAPI } from "decky-frontend-lib";
+import { ConfirmModal, DialogButton, DialogLabel, Navigation, ServerAPI, showModal } from "decky-frontend-lib";
 import { ReactElement, VFC, useEffect, useState } from "react";
 import {
     ActionSet, ContentError, ContentResult, ContentType,
@@ -12,6 +12,46 @@ import { gameIDFromAppID } from "../Utils/utils";
 import { ActionCard, storeTheme } from "./Styled";
 import { t } from "../i18n";
 
+// ── Connexion dans le navigateur de Steam (SkullKey #4) ─────────────────────
+// SteamOS d'origine n'a pas GTK/WebKit pour Python : la fenêtre de connexion ne
+// peut pas s'ouvrir. On ouvre alors la page du magasin dans le navigateur de
+// Steam ; le backend y lit le code (CDP) et termine la connexion. Le suivi vit
+// au niveau du MODULE : ouvrir le navigateur démonte cette page.
+let browserPoll: ReturnType<typeof setInterval> | null = null;
+let browserLoginError = "";
+
+const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route: string) => {
+    const r = await serverAPI.callPluginMethod<{ actionSet: string }, any>(
+        "browser_login_start", { actionSet });
+    const res = r.success ? r.result : null;
+    if (!res?.ok || !res?.url) {
+        browserLoginError = res?.error || "browser login failed";
+        return false;
+    }
+    browserLoginError = "";
+    Navigation.NavigateToExternalWeb(res.url);
+    if (browserPoll) clearInterval(browserPoll);
+    const started = Date.now();
+    browserPoll = setInterval(async () => {
+        const st = await serverAPI.callPluginMethod<{}, any>("browser_login_status", {});
+        const status = st.success ? st.result?.status : null;
+        if (status === "done" || status === "error" || Date.now() - started > 600000) {
+            if (browserPoll) clearInterval(browserPoll);
+            browserPoll = null;
+            if (status !== "done") {
+                browserLoginError = st.result?.message || "timeout";
+                serverAPI.callPluginMethod("browser_login_cancel", {}).catch(() => {});
+            }
+            // Referme le navigateur : retour DIRECT sur la page du magasin, qui
+            // se recharge et affiche le nouvel état de connexion. Pas
+            // NavigateBack : dans le navigateur il recule dans SON historique
+            // (Epic = 3 pages) au lieu de le quitter (mesuré 04/10).
+            Navigation.Navigate(route);
+        }
+    }, 1500);
+    return true;
+};
+
 
 export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; initAction: string; }> = ({ serverAPI, initActionSet, initAction }) => {
     const logger = new Logger("LoginContent");
@@ -19,12 +59,31 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
     const [actionSetName, setActionSetName] = useState<string>("");
     const [LoggedIn, setLoggedIn] = useState<string>("false");
     const [SteamClientId, setSteamClientId] = useState<string>("");
+    // Magasins qui installent un client dans un préfixe (Ubisoft) : bouton
+    // « Supprimer » séparé de la déconnexion (le préfixe contient les jeux).
+    const [removeInfo, setRemoveInfo] = useState<any>(null);
     const originRoute = location.pathname.replace('/routes', '');
     useEffect(() => {
         if (actionSetName !== "") {
             updateLoginStatus();
         }
     }, [LoggedIn, actionSetName]);
+    const loadRemoveInfo = async () => {
+        const r = await executeAction<ExecuteArgs, any>(serverAPI, actionSetName, "RemoveInfo", { inputData: "" });
+        setRemoveInfo(r?.Type === "RemoveInfo" && (r.Content as any)?.Exists ? r.Content : null);
+    };
+    const askRemoveClient = () => {
+        const games: string[] = removeInfo?.Games || [];
+        showModal(<ConfirmModal strTitle={t("remove_client_title")} bDestructiveWarning
+            strDescription={t("remove_client_desc", { size: removeInfo?.Size || "?" })
+                + (games.length ? "\n\n" + t("remove_client_games", { games: games.join(", ") }) : "")}
+            strOKButtonText={t("remove_client_ok")}
+            onOK={async () => {
+                const r = await executeAction<ExecuteArgs, ContentType>(serverAPI, actionSetName, "RemoveClient", { inputData: "" });
+                if (r) setContent(r);
+                loadRemoveInfo();
+            }} />);
+    };
     const updateLoginStatus = async () => {
         logger.debug("Updating login status with actionSetName: ", actionSetName);
         const result = await executeAction<ExecuteArgs, ContentType>(serverAPI, actionSetName,
@@ -38,6 +97,7 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
         }
         setContent(result);
         logger.debug("Login status: ", result);
+        loadRemoveInfo();
     };
     const onLoginExit = (id) => {
         Navigation.CloseSideMenus();
@@ -85,6 +145,15 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
     };
     const login = async () => {
         try {
+            const need = await serverAPI.callPluginMethod<{}, boolean>("browser_login_needed", {});
+            if (need.success && need.result) {
+                if (!(await startBrowserLogin(serverAPI, actionSetName, originRoute))) {
+                    setContent({ Type: "Error", Content: {
+                        Message: t("browser_login_failed"), Data: browserLoginError,
+                        ActionSet: actionSetName, ActionName: "Login" } as any });
+                }
+                return;
+            }
             const launchOptionsResult = await executeAction<ExecuteArgs, LaunchOptions>(serverAPI, actionSetName,
                 "LoginLaunchOptions", {});
             logger.debug("launchOptionsResult: ", launchOptionsResult);
@@ -168,6 +237,14 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
     };
     useEffect(() => {
         onInit();
+        // Retour du navigateur après une connexion ratée : on le dit.
+        if (browserLoginError && !browserPoll) {
+            const msg = browserLoginError;
+            browserLoginError = "";
+            setTimeout(() => setContent({ Type: "Error", Content: {
+                Message: t("browser_login_failed"), Data: msg,
+                ActionSet: initActionSet, ActionName: "Login" } as any }), 1500);
+        }
     }, []);
 
     const theme = storeTheme(actionSetName || initActionSet);
@@ -195,6 +272,13 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
                             {isLoggedIn ? t('logout') : t('login')}
                         </ActionCard>
                     </div>
+                    {removeInfo && (
+                        <div style={{ width: 130 }}>
+                            <ActionCard color="#c0392b" onClick={askRemoveClient}>
+                                {t('remove_client')}
+                            </ActionCard>
+                        </div>
+                    )}
                 </>
             );
             break;

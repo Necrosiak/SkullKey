@@ -14,7 +14,7 @@ ACTIONS=("init" "getgames" "getactions" "saveconfig" "getconfig" "download" \
 "install" "update" "verify" "repair" "import" "getjsonimages" "cancelinstall" \
 "uninstall" "protontricks" "enable-eos-overlay" "disable-eos-overlay" \
 "getgamedetails" "getbats" "savebats" "getprogress" "login" \
-"login-launch-options" "logout" "loginstatus" "getsetting" "savesetting" \
+"login-launch-options" "login-url" "login-code" "removeinfo" "removeclient" "logout" "loginstatus" "getsetting" "savesetting" \
 "getlaunchoptions" "run-exe" "get-exe-list" "gettabconfig" "savetabconfig" \
 "saveplatformconfig" "getplatformconfig" "refresh" "getgamesize" "move" "repair_and_update" \
 "getvoices" "setvoices" "voice-en" "voice-jp" "voice-cn" "voice-ko" "voice-auto" \

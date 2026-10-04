@@ -34,6 +34,10 @@ let _locale: Locale | null = null;
 
 const T: Record<Locale, Dict> = {
   en: {
+    remove_client: "Remove client", remove_client_title: "Remove Ubisoft Connect?",
+    remove_client_desc: "This deletes Ubisoft Connect and its Wine prefix ({size}), including the games installed inside it. Your Ubisoft account and purchases are not affected; signing in again reinstalls the client.",
+    remove_client_games: "Installed games that will be deleted: {games}", remove_client_ok: "Remove",
+    error_title: "Error", browser_login_failed: "Login didn't finish. Try again; if it keeps failing, please attach the SkullKey logs to an issue.",
     // QAM menu
     stores: "Stores", cat_games: "Game stores", cat_media: "Media & Apps", open_store: "Open the store", plugin: "Plugin", settings_about: "Settings & About",
     // Login card
@@ -88,6 +92,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} available",
   },
   fr: {
+    remove_client: "Supprimer le client", remove_client_title: "Supprimer Ubisoft Connect ?",
+    remove_client_desc: "Cela supprime Ubisoft Connect et son préfixe Wine ({size}), y compris les jeux installés dedans. Ton compte Ubisoft et tes achats ne sont pas touchés ; te reconnecter réinstalle le client.",
+    remove_client_games: "Jeux installés qui seront supprimés : {games}", remove_client_ok: "Supprimer",
+    error_title: "Erreur", browser_login_failed: "La connexion n'a pas abouti. Réessayez ; si ça persiste, joignez les journaux de SkullKey à une issue.",
     stores: "Boutiques", cat_games: "Boutiques de jeux", cat_media: "Médias & Apps", open_store: "Ouvrir la boutique", plugin: "Plugin", settings_about: "Réglages & À propos",
     connected: "Connecté :", not_connected: "Non connecté", login: "Connexion", logout: "Déconnexion",
     checking_status: "Vérification du statut…",
@@ -132,6 +140,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Mise à jour {version} disponible",
   },
   de: {
+    remove_client: "Client entfernen", remove_client_title: "Ubisoft Connect entfernen?",
+    remove_client_desc: "Dies löscht Ubisoft Connect und sein Wine-Präfix ({size}), einschließlich der darin installierten Spiele. Dein Ubisoft-Konto und deine Käufe bleiben erhalten; bei erneuter Anmeldung wird der Client neu installiert.",
+    remove_client_games: "Installierte Spiele, die gelöscht werden: {games}", remove_client_ok: "Entfernen",
+    error_title: "Fehler", browser_login_failed: "Die Anmeldung wurde nicht abgeschlossen. Bitte erneut versuchen; falls es weiter fehlschlägt, die SkullKey-Logs an ein Issue anhängen.",
     stores: "Shops", cat_games: "Spiele-Shops", cat_media: "Medien & Apps", open_store: "Shop öffnen", plugin: "Plugin", settings_about: "Einstellungen & Info",
     connected: "Angemeldet:", not_connected: "Nicht angemeldet", login: "Anmelden", logout: "Abmelden",
     checking_status: "Status wird geprüft…",
@@ -176,6 +188,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} verfügbar",
   },
   es: {
+    remove_client: "Eliminar cliente", remove_client_title: "¿Eliminar Ubisoft Connect?",
+    remove_client_desc: "Esto borra Ubisoft Connect y su prefijo de Wine ({size}), incluidos los juegos instalados dentro. Tu cuenta de Ubisoft y tus compras no se ven afectadas; al volver a iniciar sesión se reinstala el cliente.",
+    remove_client_games: "Juegos instalados que se borrarán: {games}", remove_client_ok: "Eliminar",
+    error_title: "Error", browser_login_failed: "El inicio de sesión no terminó. Inténtalo de nuevo; si sigue fallando, adjunta los registros de SkullKey a un issue.",
     stores: "Tiendas", cat_games: "Tiendas de juegos", cat_media: "Multimedia y Apps", open_store: "Abrir la tienda", plugin: "Plugin", settings_about: "Ajustes y Acerca de",
     connected: "Conectado:", not_connected: "No conectado", login: "Iniciar sesión", logout: "Cerrar sesión",
     checking_status: "Comprobando estado…",
@@ -220,6 +236,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Actualización {version} disponible",
   },
   it: {
+    remove_client: "Rimuovi client", remove_client_title: "Rimuovere Ubisoft Connect?",
+    remove_client_desc: "Questo elimina Ubisoft Connect e il suo prefisso Wine ({size}), compresi i giochi installati al suo interno. Il tuo account Ubisoft e gli acquisti non vengono toccati; accedendo di nuovo il client viene reinstallato.",
+    remove_client_games: "Giochi installati che verranno eliminati: {games}", remove_client_ok: "Rimuovi",
+    error_title: "Errore", browser_login_failed: "L'accesso non è stato completato. Riprova; se continua a fallire, allega i log di SkullKey a una issue.",
     stores: "Negozi", cat_games: "Negozi di giochi", cat_media: "Media e App", open_store: "Apri il negozio", plugin: "Plugin", settings_about: "Impostazioni e Info",
     connected: "Connesso:", not_connected: "Non connesso", login: "Accedi", logout: "Disconnetti",
     checking_status: "Verifica dello stato…",
@@ -264,6 +284,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Aggiornamento {version} disponibile",
   },
   pt: {
+    remove_client: "Remover cliente", remove_client_title: "Remover o Ubisoft Connect?",
+    remove_client_desc: "Isto apaga o Ubisoft Connect e o seu prefixo Wine ({size}), incluindo os jogos instalados nele. A tua conta Ubisoft e as compras não são afetadas; ao entrar de novo o cliente é reinstalado.",
+    remove_client_games: "Jogos instalados que serão apagados: {games}", remove_client_ok: "Remover",
+    error_title: "Erro", browser_login_failed: "O login não foi concluído. Tente novamente; se continuar falhando, anexe os logs do SkullKey a uma issue.",
     stores: "Lojas", cat_games: "Lojas de jogos", cat_media: "Média e Apps", open_store: "Abrir a loja", plugin: "Plugin", settings_about: "Definições e Sobre",
     connected: "Ligado:", not_connected: "Não ligado", login: "Iniciar sessão", logout: "Terminar sessão",
     checking_status: "A verificar o estado…",
@@ -308,6 +332,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Atualização {version} disponível",
   },
   nl: {
+    remove_client: "Client verwijderen", remove_client_title: "Ubisoft Connect verwijderen?",
+    remove_client_desc: "Dit verwijdert Ubisoft Connect en zijn Wine-prefix ({size}), inclusief de games die erin geïnstalleerd zijn. Je Ubisoft-account en aankopen blijven behouden; opnieuw inloggen installeert de client opnieuw.",
+    remove_client_games: "Geïnstalleerde games die verwijderd worden: {games}", remove_client_ok: "Verwijderen",
+    error_title: "Fout", browser_login_failed: "Het inloggen is niet afgerond. Probeer het opnieuw; blijft het mislukken, voeg dan de SkullKey-logs toe aan een issue.",
     stores: "Winkels", cat_games: "Gamewinkels", cat_media: "Media & Apps", open_store: "Winkel openen", plugin: "Plugin", settings_about: "Instellingen & Over",
     connected: "Ingelogd:", not_connected: "Niet ingelogd", login: "Inloggen", logout: "Uitloggen",
     checking_status: "Status controleren…",
@@ -352,6 +380,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} beschikbaar",
   },
   pl: {
+    remove_client: "Usuń klienta", remove_client_title: "Usunąć Ubisoft Connect?",
+    remove_client_desc: "To usuwa Ubisoft Connect i jego prefiks Wine ({size}), łącznie z zainstalowanymi w nim grami. Twoje konto Ubisoft i zakupy pozostają bez zmian; ponowne zalogowanie zainstaluje klienta ponownie.",
+    remove_client_games: "Zainstalowane gry, które zostaną usunięte: {games}", remove_client_ok: "Usuń",
+    error_title: "Błąd", browser_login_failed: "Logowanie nie zostało ukończone. Spróbuj ponownie; jeśli nadal się nie udaje, dołącz logi SkullKey do zgłoszenia.",
     stores: "Sklepy", cat_games: "Sklepy z grami", cat_media: "Media i Aplikacje", open_store: "Otwórz sklep", plugin: "Wtyczka", settings_about: "Ustawienia i Informacje",
     connected: "Zalogowano:", not_connected: "Nie zalogowano", login: "Zaloguj", logout: "Wyloguj",
     checking_status: "Sprawdzanie stanu…",
@@ -396,6 +428,10 @@ const T: Record<Locale, Dict> = {
     update_available: "Dostępna aktualizacja {version}",
   },
   ru: {
+    remove_client: "Удалить клиент", remove_client_title: "Удалить Ubisoft Connect?",
+    remove_client_desc: "Будут удалены Ubisoft Connect и его префикс Wine ({size}), включая установленные в нём игры. Аккаунт Ubisoft и покупки не затрагиваются; при повторном входе клиент установится снова.",
+    remove_client_games: "Установленные игры, которые будут удалены: {games}", remove_client_ok: "Удалить",
+    error_title: "Ошибка", browser_login_failed: "Вход не завершён. Попробуйте ещё раз; если не получается, приложите логи SkullKey к issue.",
     stores: "Магазины", cat_games: "Игровые магазины", cat_media: "Медиа и приложения", open_store: "Открыть магазин", plugin: "Плагин", settings_about: "Настройки и О плагине",
     connected: "Вход выполнен:", not_connected: "Не выполнен вход", login: "Войти", logout: "Выйти",
     checking_status: "Проверка статуса…",
