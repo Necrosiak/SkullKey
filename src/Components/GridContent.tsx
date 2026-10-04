@@ -42,6 +42,15 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
     const [installedFilterLoading, setInstalledLoading] = useState(false);
     const [scriptActions, setScriptActions] = useState<MenuAction[] | null>();
     const [filter, setFilter] = useState(argsCache.filter);
+    // L'icône des réglages seulement si le magasin a une page de réglages :
+    // Ubisoft, Battle.net, Minecraft… n'en ont pas, et l'appeler ouvrait une
+    // fenêtre « Action not found » (SkullKey #4).
+    const [hasTabConfig, setHasTabConfig] = useState(false);
+    useEffect(() => {
+        serverAPI.callPluginMethod<{ actionSet: string; actionName: string }, boolean>(
+            "has_action", { actionSet: initActionSet, actionName: "GetTabConfigActions" })
+            .then((r) => setHasTabConfig(!!(r.success && r.result))).catch(() => setHasTabConfig(false));
+    }, [initActionSet]);
 
     useEffect(() => {
         (async () => {
@@ -150,7 +159,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 <IconBtn color={storeTheme(initActionSet).color} onClick={actionsMenu} disabled={!scriptActions}>
                     <FaSlidersH style={{ verticalAlign: 'middle' }} />
                 </IconBtn>
-                <IconBtn color={storeTheme(initActionSet).color} onClick={() => showModal(
+                {hasTabConfig && <IconBtn color={storeTheme(initActionSet).color} onClick={() => showModal(
                     <ConfEditor
                         serverAPI={serverAPI}
                         initActionSet={initActionSet}
@@ -160,7 +169,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                     />
                 )}>
                     <FaCog style={{ verticalAlign: 'middle' }} />
-                </IconBtn>
+                </IconBtn>}
                 {content.storeURL &&
                     <IconBtn color={storeTheme(initActionSet).color} onClick={() => {
                         if (content.storeURL)

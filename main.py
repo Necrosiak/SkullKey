@@ -812,6 +812,15 @@ class Plugin:
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")
 
+    async def has_action(self, actionSet, actionName):
+        """L'action existe-t-elle pour ce magasin ? Appeler une action absente
+        ouvre une fenêtre d'erreur côté interface : les boutons optionnels
+        (réglages, supprimer le client) demandent d'abord ici (SkullKey #4)."""
+        try:
+            return Helper.get_action(actionSet, actionName) is not None
+        except Exception:
+            return False
+
     async def browser_login_needed(self):
         """True si la fenêtre de connexion GTK/WebKit ne peut pas s'ouvrir
         (SteamOS d'origine) → l'interface passe par le navigateur de Steam.

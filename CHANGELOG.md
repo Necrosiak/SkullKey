@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.14.1 — 2026-10-04
+
+### Fixes
+
+- **An "Action not found" error popped up on Epic, GOG, Amazon and Battle.net**
+  every time you opened them. The new Ubisoft "Remove client" button was
+  looking for its action on every store; it now only does so on Ubisoft.
+  Reported by [bastiHST90](https://github.com/bastiHST90) in
+  [#4](https://github.com/Necrosiak/SkullKey/issues/4).
+- **The settings icon showed the same error** on stores without settings
+  (Ubisoft, Battle.net, Minecraft and others). It now only shows on stores
+  that have a settings page.
+
 ## 1.14.0 — 2026-10-04
 
 ### Epic, GOG and Amazon login on stock SteamOS

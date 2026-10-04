@@ -69,6 +69,11 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
         }
     }, [LoggedIn, actionSetName]);
     const loadRemoveInfo = async () => {
+        // Seul Ubisoft a cette action : la demander ailleurs ouvrait une
+        // fenêtre « Action not found » sur chaque magasin (régression 1.14.0).
+        const has = await serverAPI.callPluginMethod<{ actionSet: string; actionName: string }, boolean>(
+            "has_action", { actionSet: actionSetName, actionName: "RemoveInfo" });
+        if (!(has.success && has.result)) { setRemoveInfo(null); return; }
         const r = await executeAction<ExecuteArgs, any>(serverAPI, actionSetName, "RemoveInfo", { inputData: "" });
         setRemoveInfo(r?.Type === "RemoveInfo" && (r.Content as any)?.Exists ? r.Content : null);
     };
