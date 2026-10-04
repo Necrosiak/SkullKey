@@ -759,7 +759,7 @@ def action_getgames(filter_str="", installed="false", *_):
                 "SteamClientID": st.get("steamClientID"),
             })
     return {"Type": "GameGrid",
-            "Content": {"NeedsLogin": "false" if logged else "true",
+            "Content": {"NeedsLogin": "true",   # barre de connexion toujours visible (Déconnexion) — #4
                         "Games": games_out, "storeURL": STORE_URL}}
 
 

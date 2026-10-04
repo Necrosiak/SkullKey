@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.14.2 — 2026-10-04
+
+### Fix
+
+- **No Log out button on Ubisoft and Battle.net.** Once you were logged in,
+  these two stores hid their whole login bar, so Log out (and Ubisoft's new
+  Remove client button) couldn't be reached. The bar now always shows, like on
+  the other stores. Reported by [bastiHST90](https://github.com/bastiHST90) in
+  [#4](https://github.com/Necrosiak/SkullKey/issues/4).
+
 ## 1.14.1 — 2026-10-04
 
 ### Fixes
