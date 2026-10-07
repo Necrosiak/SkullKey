@@ -24,6 +24,9 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
   It led to logging in through Steam's own browser, plus the missing Ubisoft
   artwork, the untranslated error title and the way to remove the client
   ([#4](https://github.com/Necrosiak/SkullKey/issues/4), fixed in v1.14.0)
+- The request for a custom Proton prefix location, to keep non-Steam games
+  out of Steam's `compatdata` ([#5](https://github.com/Necrosiak/SkullKey/issues/5),
+  added in v1.15.0)
 
 ### [@arsaban](https://github.com/arsaban)
 

@@ -1,7 +1,7 @@
 // Settings & About page — fully rewritten for this fork (no upstream content).
 // One sidebar: Settings / Dependencies / Logs / About (+ Developer). All
 // user-facing text goes through i18n (t()).
-import { ConfirmModal, DialogBody, DialogControlsSection, Focusable, Navigation, ServerAPI, SidebarNavigation, ToggleField, showModal } from "decky-frontend-lib";
+import { ConfirmModal, DialogBody, DialogControlsSection, Focusable, Navigation, ServerAPI, SidebarNavigation, TextField, ToggleField, showModal } from "decky-frontend-lib";
 import { VFC, useEffect, useRef, useState } from "react";
 import { HiOutlineQrCode } from "react-icons/hi2";
 import { SiEpicgames, SiGithub, SiGogdotcom } from "react-icons/si";
@@ -170,6 +170,40 @@ const UpdateSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     );
 };
 
+// Emplacement des préfixes Proton des NOUVEAUX jeux (SkullKey #5). Vide =
+// compatdata de Steam, comme avant. Les jeux déjà installés ne bougent pas.
+const DEFAULT_PREFIX_ROOT = "~/Games/prefixes";
+const PrefixLocation: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [root, setRoot] = useState<string | null>(null);
+    const [draft, setDraft] = useState("");
+    useEffect(() => {
+        serverAPI.callPluginMethod<{}, string>("get_prefix_root", {})
+            .then((r) => { const v = r.success ? String(r.result || "") : ""; setRoot(v); setDraft(v || DEFAULT_PREFIX_ROOT); })
+            .catch(() => { setRoot(""); setDraft(DEFAULT_PREFIX_ROOT); });
+    }, []);
+    if (root === null) return null;
+    const save = (v: string) => serverAPI.callPluginMethod<{ path: string }, any>("set_prefix_root", { path: v })
+        .then((r) => { if (r.success && r.result?.ok) setRoot(r.result.root || ""); }).catch(() => { });
+    return (
+        <>
+            <ToggleField
+                label={t("prefix_custom")}
+                description={t("prefix_custom_desc")}
+                checked={!!root}
+                onChange={(v) => save(v ? (draft.trim() || DEFAULT_PREFIX_ROOT) : "")}
+            />
+            {!!root && (
+                <TextField
+                    label={t("prefix_folder")}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={() => { const v = draft.trim(); if (v && v !== root) save(v); }}
+                />
+            )}
+        </>
+    );
+};
+
 const SettingsTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [doubleStick, setDoubleStick] = useState(localStorage.getItem('sk_doubleStick') === 'true');
     const [logging, setLogging] = useState(localStorage.getItem('enableLogger') === 'true');
@@ -184,6 +218,7 @@ const SettingsTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     checked={doubleStick}
                     onChange={(v) => { setDoubleStick(v); localStorage.setItem('sk_doubleStick', String(v)); }}
                 />
+                <PrefixLocation serverAPI={serverAPI} />
             </Section>
             <UpdateSection serverAPI={serverAPI} />
             <Section title={t("sec_advanced")} color="#ff9800">
@@ -201,6 +236,92 @@ const SettingsTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                 />
             </Section>
         </div>
+    );
+};
+
+// ── Gestionnaire de Proton (demande user 07/10) ─────────────────────────────
+// Valve : installé PAR STEAM (assistant d'installation, comme les runtimes
+// EasyAntiCheat/BattlEye plus bas). Communautaires : dernière release GitHub,
+// téléchargée et vérifiée (SHA-512) par le backend dans compatibilitytools.d.
+const VALVE_PROTONS = ["Proton Experimental", "Proton Hotfix", "Proton Next"];
+const valveApps = () => {
+    // @ts-ignore
+    const all = (appStore.allApps || []).filter((a: any) => /^Proton (\d+\.\d+|Experimental|Hotfix|Next)$/.test(a.display_name));
+    // Dernière version numérotée + les trois canaux nommés.
+    const numbered = all.filter((a: any) => /^Proton \d/.test(a.display_name))
+        .sort((a: any, b: any) => parseFloat(b.display_name.slice(7)) - parseFloat(a.display_name.slice(7)));
+    return [...numbered.slice(0, 1), ...VALVE_PROTONS.map((n) => all.find((a: any) => a.display_name === n)).filter(Boolean)];
+};
+const valveInstalled = (appid: number) => {
+    // @ts-ignore
+    try { return !!appStore.GetAppOverviewByAppID(appid)?.local_per_client_data?.installed; } catch { return false; }
+};
+const fmtMB = (n: number) => `${Math.round((n || 0) / 1048576)} MB`;
+
+const ProtonSection: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [list, setList] = useState<any[] | null>(null);
+    const [st, setSt] = useState<any>({ status: "idle" });
+    const load = () => serverAPI.callPluginMethod<{}, any>("proton_list", {})
+        .then((r) => setList(r.success ? (r.result?.sources || []) : [])).catch(() => setList([]));
+    useEffect(() => { load(); }, []);
+    useEffect(() => {
+        if (!["downloading", "verifying", "extracting"].includes(st.status)) return;
+        const id = setInterval(async () => {
+            const r = await serverAPI.callPluginMethod<{}, any>("proton_status", {});
+            if (r.success) {
+                setSt(r.result);
+                if (r.result?.status === "done") load();
+            }
+        }, 1000);
+        return () => clearInterval(id);
+    }, [st.status]);
+    const busy = ["downloading", "verifying", "extracting"].includes(st.status);
+    const progress = st.status === "downloading" && st.total
+        ? `${t("proton_downloading")} ${fmtMB(st.done)} / ${fmtMB(st.total)}`
+        : st.status === "verifying" ? t("proton_verifying")
+        : st.status === "extracting" ? t("proton_extracting") : "";
+
+    return (
+        <Section title={t("sec_proton")} color="#9b59b6">
+            <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>{t("proton_valve_desc")}</div>
+            <Focusable style={{ display: "flex", gap: 6, flexWrap: "wrap" }} flow-children="row">
+                {valveApps().map((a: any) => (
+                    <div key={a.appid} style={{ flex: "1 1 45%" }}>
+                        <ActionCard color="#9b59b6" disabled={valveInstalled(a.appid)} onClick={() => {
+                            SteamClient.Installs.OpenInstallWizard([a.appid]);
+                        }}>
+                            <FaDownload size={12} />
+                            <span>{a.display_name}{valveInstalled(a.appid) ? " ✓" : ""}</span>
+                        </ActionCard>
+                    </div>
+                ))}
+            </Focusable>
+            <div style={{ fontSize: 12, opacity: 0.7, margin: "12px 0 8px" }}>{t("proton_community_desc")}</div>
+            {list === null ? <div style={{ fontSize: 12, opacity: 0.6 }}>…</div> : (
+                <Focusable style={{ display: "flex", flexDirection: "column", gap: 6 }} flow-children="column">
+                    {list.map((p: any) => (
+                        <ActionCard key={p.key} color="#9b59b6" center={false}
+                            disabled={busy || !!p.error || p.installed}
+                            onClick={async () => {
+                                const r = await serverAPI.callPluginMethod<{ key: string }, any>("proton_install", { key: p.key });
+                                if (r.success && r.result?.ok) setSt({ status: "downloading", key: p.key, done: 0, total: p.size });
+                            }}>
+                            <FaDownload size={12} />
+                            <span style={{ flex: 1, textAlign: "left" }}>
+                                {p.name} {p.tag ? `— ${p.tag}` : ""}{p.installed ? " ✓" : p.size ? ` (${fmtMB(p.size)})` : ""}
+                                {p.error ? ` — ${p.error}` : ""}
+                            </span>
+                        </ActionCard>
+                    ))}
+                </Focusable>
+            )}
+            {(busy || st.status === "done" || st.status === "error") && (
+                <div style={{ fontSize: 12, marginTop: 8, color: st.status === "error" ? "#f44336" : st.status === "done" ? "#4caf50" : "#fff" }}>
+                    {st.status === "done" ? t("proton_done", { tag: st.tag || "" })
+                        : st.status === "error" ? `⚠️ ${st.message || ""}` : progress}
+                </div>
+            )}
+        </Section>
     );
 };
 
@@ -300,6 +421,7 @@ const DependenciesTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     />
                 )}
             </Section>
+            <ProtonSection serverAPI={serverAPI} />
             <Section title={t("sec_anticheat")} color="#ff9800">
                 <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
                     {t("anticheat_desc")}

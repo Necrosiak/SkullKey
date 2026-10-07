@@ -3,6 +3,25 @@
 # stand-alone : commande d'installation adaptée à l'OS détecté (une seule
 # version du plugin pour tous les OS — on vérifie ce que la machine a et on
 # dit exactement quoi installer sinon). $1=paquets Arch $2=Fedora $3=Debian.
+# Préfixe Proton d'un jeu (SkullKey #5) : compatdata/<id Steam> par défaut, ou
+# le dossier choisi dans les réglages pour les jeux installés après ce choix.
+function sk_compatdir(){
+    /usr/bin/env python3 "${DECKY_PLUGIN_DIR}/scripts/shared/prefixes.py" compatdir "${1}"
+}
+function sk_prefix_env(){
+    /usr/bin/env python3 "${DECKY_PLUGIN_DIR}/scripts/shared/prefixes.py" env "${1}"
+}
+function sk_runexe_opts(){
+    # « Lancer un .exe » : la variable doit précéder %command%, sinon Steam la
+    # passe comme simple argument du programme.
+    local E
+    E=$(sk_prefix_env "${1}")
+    if [[ -n "${E}" ]]; then echo "${E}%command% ${2}"; else echo "${2}"; fi
+}
+function sk_prefix_assign(){
+    /usr/bin/env python3 "${DECKY_PLUGIN_DIR}/scripts/shared/prefixes.py" assign "${1}" "${2}" "${3}" >/dev/null
+}
+
 function sk_pkg_hint(){
     if command -v pacman >/dev/null 2>&1; then echo "sudo pacman -S ${1}"
     elif command -v rpm-ostree >/dev/null 2>&1; then echo "rpm-ostree install ${2}"
@@ -208,13 +227,13 @@ function loginstatus(){
 
 function enable-eos-overlay(){
     APP_ID=$2
-    $LEGENDARY eos-overlay enable --prefix "~/.local/share/Steam/steamapps/compatdata/${APP_ID}/pfx"
+    $LEGENDARY eos-overlay enable --prefix "$(sk_compatdir "${APP_ID}")/pfx"
     echo "{\"Type\": \"Overlay\", \"Content\": {\"Message\": \"Enabled\"}}"
 }
 
 function disable-eos-overlay(){
     APP_ID=$2
-    $LEGENDARY eos-overlay disable --prefix "~/.local/share/Steam/steamapps/compatdata/${APP_ID}/pfx"
+    $LEGENDARY eos-overlay disable --prefix "$(sk_compatdir "${APP_ID}")/pfx"
     echo "{\"Type\": \"Overlay\", \"Content\": {\"Message\": \"Enabled\"}}"
 }
 
@@ -276,7 +295,7 @@ function get-exe-list(){
     STEAM_ID="${1}"
     GAME_SHORTNAME="${2}"
     GAME_PATH=$($EPICCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE --offline)
-    export STEAM_COMPAT_DATA_PATH="${HOME}/.local/share/Steam/steamapps/compatdata/${STEAM_ID}"
+    export STEAM_COMPAT_DATA_PATH="$(sk_compatdir "${STEAM_ID}")"
     export STEAM_COMPAT_CLIENT_INSTALL_PATH="${GAME_PATH}"
     cd $STEAM_COMPAT_CLIENT_INSTALL_PATH
     LIST=$(find . -name "*.exe")

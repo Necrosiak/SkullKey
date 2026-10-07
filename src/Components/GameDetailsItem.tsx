@@ -425,19 +425,25 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
         logger.debug("images", images);
         if (images.Grid !== null) {
             logger.debug("setting grid image:" + id)
-            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Grid, 'png', 0);
+            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Grid, images.GridType || 'png', 0);
         }
         if (images.Hero !== null) {
             logger.debug("setting hero image:" + id)
-            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Hero, "png", 1);
+            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Hero, images.HeroType || "png", 1);
         }
         if (images.Logo !== null) {
             logger.debug("setting logo image:" + id)
-            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Logo, "png", 2);
+            await SteamClient.Apps.SetCustomArtworkForApp(id, images.Logo, images.LogoType || "png", 2);
         }
         if (images.GridH !== null) {
             logger.debug("setting gridh image:" + id)
-            await SteamClient.Apps.SetCustomArtworkForApp(id, images.GridH, "png", 3);
+            await SteamClient.Apps.SetCustomArtworkForApp(id, images.GridH, images.GridHType || "png", 3);
+        }
+        // Icône du raccourci (Classiques : choisie sur SteamGridDB).
+        // @ts-ignore — absente des typages, présente dans SteamClient.Apps
+        if (images.IconPath && SteamClient.Apps.SetShortcutIcon) {
+            // @ts-ignore
+            SteamClient.Apps.SetShortcutIcon(id, images.IconPath);
         }
         //await appDetailsStore.RequestAppDetails(id);
     };

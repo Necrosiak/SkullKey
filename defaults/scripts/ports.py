@@ -17,6 +17,12 @@ Three install kinds:
                 set "datadir" when the game files live outside the port folder
                 (e.g. GeneralsX reads ~/GeneralsX/Generals) and "args" for
                 extra fixed launch arguments.
+  - "winarchive": Windows-only build (zip), extracted like "archive"; the
+                Steam shortcut points at the .exe with Proton enabled
+                ("winargs" = launch arguments, {dir} = the port folder).
+                Recomps that need a disc image may set "iso_import": the user
+                drops the .iso into <port>/<subdir>/ and SkullKey extracts the
+                listed root entries from it (scripts/xiso_extract.py).
 
 Modeled on media.py: standalone (no GameSet/sqlite), JSON state, detached
 install worker + progress file, Pillow-composed Steam artwork, and a daily
@@ -39,8 +45,9 @@ from io import BytesIO
 from pathlib import Path
 
 try:
-    from ports_i18n import desc_for, needs_line, howto_line
+    from ports_i18n import desc_for, needs_line, howto_line, iso_status
 except ImportError:
+    iso_status = lambda k: k                      # noqa: E731
     desc_for = lambda s: ""                       # noqa: E731
     needs_line = lambda p: ""                     # noqa: E731
     howto_line = lambda d: ""                     # noqa: E731
@@ -69,6 +76,13 @@ RAW = "https://raw.githubusercontent.com/{repo}/HEAD/{path}"
 
 # shortname, title, repo, kind, asset regex, exe hint (glob on filename),
 # logo url, brand color, needs=(template, game, spec[, exact filename])
+# ⚖️ Légalité — règle du catalogue. Chaque entrée télécharge UNIQUEMENT le
+# moteur publié par le projet (sa release GitHub officielle). Aucun contenu de
+# jeu n'est fourni ni téléchargé : l'utilisateur doit utiliser une copie qu'il
+# possède et qu'il a dumpée lui-même (ROM de sa cartouche, image de SON disque,
+# fichiers de SA version achetée). Ne jamais ajouter ici de lien, de miroir ou
+# d'aide vers une source de jeux : SkullKey n'encourage pas le téléchargement
+# illégal, et les projets recensés l'interdisent eux-mêmes.
 PORTS = [
     dict(shortname="dusklight", title="Dusklight (Zelda: Twilight Princess)",
          repo="TwilitRealm/dusklight", kind="appimage",
@@ -440,6 +454,104 @@ PORTS = [
          color="#8f6f2f",
          needs=("files", "Might and Magic VI–VIII",
                 "ANIMS/ + DATA/ + SOUNDS/ — GOG")),
+    # ── wave 4 (2026-10-07) : recomps récents ───────────────────────────────
+    dict(shortname="banjorecomp", title="Banjo-Kazooie: Recompiled",
+         repo="BanjoRecomp/BanjoRecomp", kind="archive",
+         asset=r"Linux-X64\.tar\.gz$", exe="BanjoRecompiled",
+         logo=RAW.format(repo="BanjoRecomp/BanjoRecomp", path="icons/app.png"),
+         color="#c8901e",
+         needs=("pick", "Banjo-Kazooie", "N64 US 1.0 — .z64")),
+    dict(shortname="goemon64recomp", title="Goemon 64: Recompiled",
+         repo="klorfmorf/Goemon64Recomp", kind="archive",
+         asset=r"Linux-X64-Release\.zip$", exe="Goemon64Recompiled",
+         logo=RAW.format(repo="klorfmorf/Goemon64Recomp", path="icons/512.png"),
+         color="#3a78c8",
+         needs=("pick", "Mystical Ninja Starring Goemon", "N64 US — .z64")),
+    dict(shortname="harvestmoon64recomp", title="Harvest Moon 64: Recompiled",
+         repo="HarvestMoon64Recomp/HarvestMoon64Recomp", kind="archive",
+         asset=r"Linux-X64\.zip$", exe="HarvestMoon64Recompiled",
+         logo=RAW.format(repo="HarvestMoon64Recomp/HarvestMoon64Recomp", path="icons/app.png"),
+         color="#5aa040",
+         needs=("pick", "Harvest Moon 64", "N64 US — .z64")),
+    dict(shortname="lostodysseyrecomp", title="Lost Odyssey Recomp",
+         repo="freefrank/LostOdysseyRecomp", kind="appimage",
+         asset=r"linux-x64-v[\d.]+\.AppImage$", exe="",
+         logo=RAW.format(repo="freefrank/LostOdysseyRecomp", path="assets/lost-odyssey-recomp.png"),
+         color="#4a5a8a",
+         needs=("pick", "Lost Odyssey", "Xbox 360 — your own discs")),
+    dict(shortname="simpsonsgamerecomp", title="The Simpsons Game Recompiled",
+         repo="YesterMester/TheSimpsonsGameRecomp", kind="archive",
+         asset=r"Linux-x64\.tar\.gz$", exe="Play.sh",
+         logo="",  # pas d icône projet : tuile titre (_text_logo),
+         color="#f0c020",
+         needs=("pick", "The Simpsons Game", "Xbox 360 USA — .iso")),
+    dict(shortname="gen1recomp", title="Gen1Recomp (Pokémon Red/Blue/Yellow)",
+         repo="bryanthaboi/gen1recomp", kind="appimage",
+         asset=r"linux-x86_64\.AppImage$", exe="",
+         logo=RAW.format(repo="bryanthaboi/gen1recomp", path="assets/logo/gen1recomp_cover.png"),
+         color="#d03030",
+         needs=("pick", "Pokémon Red / Blue / Yellow", "Game Boy — .gb")),
+    # Recomps uniquement Windows, lancés sous Proton (testé 07/10 : Fable 2
+    # tourne sous Proton Experimental, rendu D3D12 via vkd3d-proton).
+    dict(shortname="fable2recomp", title="Fable II Recompiled",
+         repo="himdo/Fable-2-Recomp", kind="winarchive",
+         asset=r"windows\.zip$", exe="fable_2.exe",
+         winargs="--game_data_root Z:{dir}/game",
+         iso_import=dict(subdir="game", files=("default.xex", "data")),
+         logo=RAW.format(repo="himdo/Fable-2-Recomp", path="assets/app-icon.png"),
+         color="#8a5a2a",
+         needs=("iso", "Fable II — Game of the Year", "Xbox 360 USA/Europe or German GOTY — .iso")),
+    dict(shortname="ng2recomp", title="Ninja's Dawn (Ninja Gaiden II)",
+         repo="TheSaltTrader/Ninja-s-Dawn---A-Ninja-Gaiden-2-Recompilation-Project",
+         kind="winarchive", asset=r"win-amd64\.zip$", exe="ng2.exe",
+         logo=RAW.format(repo="TheSaltTrader/Ninja-s-Dawn---A-Ninja-Gaiden-2-Recompilation-Project", path="resources/ng2_256.png"),
+         color="#a02020",
+         needs=("pick", "Ninja Gaiden II", "Xbox 360 — .iso or extracted folder")),
+    dict(shortname="dk64recomp", title="Donkey Kong 64: Recompiled",
+         repo="Rainchus/Donkey-Kong-64-Recompiled", kind="archive",
+         asset=r"Linux-X64-Release-[\d-]+\.zip$", exe="DK64Recompiled",
+         logo="", color="#c8a018",
+         needs=("pick", "Donkey Kong 64", "N64 US — .z64")),
+    # Build Linux en 32 bits (bibliothèques système 32 bits SDL3/OpenGL/PipeWire,
+    # absentes de SteamOS hors runtime Steam) → build Windows sous Proton, qui
+    # embarque sa SDL3.dll. Le jeu demande l'image disque au premier lancement.
+    dict(shortname="halo-ce", title="Halo: Combat Evolved (OpenCE)",
+         repo="OpenCommunityEdition/OpenCE", kind="winarchive",
+         asset=r"^halo-windows-release\.zip$", exe="halo.exe",
+         logo="", color="#3a6a3a",
+         needs=("pick", "Halo: Combat Evolved", "original Xbox — .iso / .xiso")),
+    # Le zip Linux contient lui-même un .tar.gz : la double extraction de
+    # _extract s'en charge.
+    dict(shortname="bm64recomp", title="Bomberman 64: Recompiled",
+         repo="RevoSucks/BM64Recomp", kind="archive",
+         asset=r"Linux-X64-Release\.zip$", exe="BM64Recompiled",
+         logo="", color="#3060c0",
+         needs=("pick", "Bomberman 64", "N64 US — .z64")),
+    dict(shortname="edgeoftimerecomp", title="Spider-Man: Edge of Time Recompiled",
+         repo="goliathret/EdgeOfTimeRecomp", kind="appimage",
+         asset=r"x86_64\\.AppImage$", exe="",
+         logo="", color="#b02020",
+         needs=("pick", "Spider-Man: Edge of Time", "Xbox 360 US + title update — your own dump")),
+    dict(shortname="splosionmanrecomp", title="'Splosion Man Recomp",
+         repo="thefixinhixon/SplosionManRecomp", kind="appimage",
+         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         logo="", color="#e07020",
+         needs=("pick", "'Splosion Man", "Xbox 360 XBLA package — your own")),
+    dict(shortname="pacificrimrecomp", title="Pacific Rim Recomp",
+         repo="thefixinhixon/PacificRimRecomp", kind="appimage",
+         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         logo="", color="#2a5a8a",
+         needs=("pick", "Pacific Rim", "Xbox 360 XBLA package — your own")),
+    dict(shortname="realsteelrecomp", title="Real Steel Recomp",
+         repo="thefixinhixon/RealSteelRecomp", kind="appimage",
+         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         logo="", color="#707880",
+         needs=("pick", "Real Steel", "Xbox 360 XBLA package — your own")),
+    dict(shortname="themawrecomp", title="The Maw Recomp",
+         repo="thefixinhixon/TheMawRecomp", kind="appimage",
+         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         logo="", color="#6a9a3a",
+         needs=("pick", "The Maw", "Xbox 360 XBLA package — your own")),
 ]
 
 APPS = {p["shortname"]: p for p in PORTS}
@@ -548,6 +660,16 @@ def _extract(archive, dest, shortname, name):
     else:
         with tarfile.open(archive) as t:
             t.extractall(dest, filter="data")
+    # Archive dans l'archive (Harvest Moon 64, Goemon : un .zip qui ne
+    # contient qu'un .tar.gz) : on la déplie aussi, puis on la supprime.
+    inner = [p for p in Path(dest).iterdir()
+             if p.is_file() and p.name != Path(archive).name
+             and re.search(r"\.(zip|tar\.(gz|xz|bz2)|tgz)$", p.name, re.I)]
+    others = [p for p in Path(dest).iterdir()
+              if p.name != Path(archive).name and p not in inner]
+    if len(inner) == 1 and not others:
+        _extract(inner[0], dest, shortname, name)
+        inner[0].unlink(missing_ok=True)
 
 
 def _mark_executables(root):
@@ -686,6 +808,37 @@ def worker_install(shortname):
         write_progress(shortname, 0, "Installation failed", error=str(e))
 
 
+def iso_import(port):
+    """Recomp qui lit un disque extrait (Fable 2) : si l'utilisateur a déposé
+    son .iso dans <port>/<subdir>/ et que les fichiers n'y sont pas encore,
+    lance l'extraction en arrière-plan. Renvoie une ligne d'état (ou "")."""
+    imp = port["iso_import"]
+    d = port_dir(port) / imp["subdir"]
+    d.mkdir(parents=True, exist_ok=True)
+    if all((d / f).exists() for f in imp["files"]):
+        return iso_status("ready")
+    lock = d / ".extracting"
+    if lock.exists():
+        try:                                   # extraction en cours ?
+            os.kill(int(lock.read_text().strip()), 0)
+            return iso_status("busy")
+        except Exception:
+            # Extraction terminée mais fichiers absents : elle a échoué
+            # (mauvaise image, disque plein…) ; le détail est dans .extract.log.
+            lock.unlink(missing_ok=True)
+            return iso_status("failed")
+    isos = sorted(d.glob("*.iso")) + sorted(d.glob("*.ISO"))
+    if not isos:
+        return iso_status("drop").format(dir=str(d))
+    tool = Path(__file__).resolve().parent / "xiso_extract.py"
+    with open(d / ".extract.log", "w") as log:
+        p = subprocess.Popen([sys.executable, str(tool), str(isos[0]), str(d), *imp["files"]],
+                             stdout=log, stderr=subprocess.STDOUT,
+                             start_new_session=True)
+    lock.write_text(str(p.pid))
+    return iso_status("busy")
+
+
 def worker_autoupdate():
     """Silent daily maintenance: re-download a port when its release tag (or
     rolling asset date) changed. User files in the folder are untouched."""
@@ -750,7 +903,15 @@ def fetch_logo(port):
     ART_DIR.mkdir(parents=True, exist_ok=True)
     cache = ART_DIR / f"{port['shortname']}_logo.png"
     if not cache.exists():
-        from PIL import Image
+        try:
+            from PIL import Image
+        except ImportError:
+            # Pas de Pillow (SteamOS d'origine, cf. SkullKey #4) : le logo
+            # brut du projet sert d'illustration plutôt qu'aucune.
+            if not port.get("logo"):
+                return None
+            cache.write_bytes(urlopen_retry(port["logo"], timeout=20))
+            return cache
         try:
             raw = urlopen_retry(port["logo"], timeout=20)
             img = Image.open(BytesIO(raw)).convert("RGBA")
@@ -763,7 +924,10 @@ def fetch_logo(port):
 
 
 def compose(port, w, h):
-    from PIL import Image
+    try:
+        from PIL import Image
+    except ImportError:
+        return fetch_logo(port)                 # repli sans Pillow
     ART_DIR.mkdir(parents=True, exist_ok=True)
     out = ART_DIR / f"{port['shortname']}_{w}x{h}.png"
     if out.exists():
@@ -798,6 +962,12 @@ def b64_file(path):
 
 # ── actions ──────────────────────────────────────────────────────────────────
 
+def _cover_url(port):
+    """Image de la grille SkullKey : la jaquette SteamGridDB (portrait, comme
+    les autres magasins), sinon le logo du projet."""
+    return _art_map().get(port["shortname"], {}).get("grid") or port.get("logo") or ""
+
+
 def action_getgames(cat="ports", filter_str="", installed="false"):
     state = load_state()
     games = []
@@ -810,7 +980,7 @@ def action_getgames(cat="ports", filter_str="", installed="false"):
         games.append({
             "ID": i,
             "Name": port["title"],
-            "Images": [port["logo"]],
+            "Images": [_cover_url(port)],
             "ShortName": port["shortname"],
             "SteamClientID": st.get("steamClientID", ""),
         })
@@ -823,6 +993,10 @@ def action_getgamedetails(shortname):
     state = load_state()
     st = state["apps"].get(shortname, {})
     desc = desc_for(shortname)
+    if port.get("iso_import"):
+        status = iso_import(port)
+        if status:
+            desc += f"<br><br><b>{status}</b>"
     needs = needs_line(port)
     if needs:
         desc += f"<br><br>{needs}"
@@ -835,7 +1009,7 @@ def action_getgamedetails(shortname):
         "Description": desc,
         "ApplicationPath": "", "ManualPath": "", "RootFolder": "",
         "DatabaseID": shortname, "ConfigurationPath": "",
-        "Images": [port["logo"]],
+        "Images": [_cover_url(port)],
         "ShortName": shortname,
         "SteamClientID": st.get("steamClientID", ""),
         "HasDosConfig": False, "HasBatFiles": False,
@@ -856,16 +1030,53 @@ def action_getgamesize(shortname):
     print(json.dumps({"Type": "GameSize", "Content": {"Size": size}}))
 
 
+# Jeu d'images Steam de chaque Classique (jaquette, bannière, héros, logo,
+# icône), choisi une fois sur SteamGridDB et figé dans ports_art.json : rien à
+# configurer pour l'utilisateur. Ce qui manque retombe sur la tuile composée.
+def _art_map():
+    try:
+        return json.loads((Path(__file__).resolve().parent / "ports_art.json").read_text())
+    except Exception:
+        return {}
+
+
+def _art_file(port, slot):
+    url = _art_map().get(port["shortname"], {}).get(slot)
+    if not url:
+        return None
+    ext = os.path.splitext(url.split("?")[0])[1].lower() or ".png"
+    path = ART_DIR / f"{port['shortname']}_sgdb_{slot}{ext}"
+    if not path.exists():
+        ART_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            path.write_bytes(urlopen_retry(url, timeout=30))
+        except Exception as e:
+            print(f"art {slot} failed: {e}", file=sys.stderr)
+            return None
+    return path
+
+
+def _img_type(path):
+    ext = Path(path).suffix.lower().lstrip(".")
+    return {"jpeg": "jpg"}.get(ext, ext or "png")
+
+
 def action_getjsonimages(shortname):
     port = APPS[shortname]
     content = {"Grid": None, "GridH": None, "Hero": None, "Logo": None}
-    try:
-        content["Grid"] = b64_file(compose(port, 600, 900))
-        content["GridH"] = b64_file(compose(port, 920, 430))
-        content["Hero"] = b64_file(compose(port, 1920, 620))
-        content["Logo"] = b64_file(fetch_logo(port))
-    except Exception as e:
-        print(f"artwork failed: {e}", file=sys.stderr)
+    fallback = {"Grid": lambda: compose(port, 600, 900), "GridH": lambda: compose(port, 920, 430),
+                "Hero": lambda: compose(port, 1920, 620), "Logo": lambda: fetch_logo(port)}
+    for key, slot in (("Grid", "grid"), ("GridH", "gridh"), ("Hero", "hero"), ("Logo", "logo")):
+        try:
+            path = _art_file(port, slot) or fallback[key]()
+            if path:
+                content[key] = b64_file(path)
+                content[key + "Type"] = _img_type(path)
+        except Exception as e:
+            print(f"artwork {key} failed: {e}", file=sys.stderr)
+    icon = _art_file(port, "icon")
+    if icon:
+        content["IconPath"] = str(icon)
     print(json.dumps({"Type": "Images", "Content": content}))
 
 
@@ -915,6 +1126,20 @@ def action_install(shortname, steam_client_id=""):
     if not exe:
         print(json.dumps({"Type": "Error", "Content": {
             "Message": f"{port['title']} is not installed yet."}}))
+        return
+    if port["kind"] == "winarchive":
+        # Recomp uniquement Windows : Steam lance le .exe sous Proton. Pas de
+        # %command% dans les options : Steam y ajoute simplement les
+        # arguments (mesuré 07/10 sur Fable 2 : avec « %command% … » Steam
+        # passait une commande vide au shell).
+        args = (port.get("winargs") or "").replace("{dir}", str(port_dir(port)))
+        print(json.dumps({"Type": "LaunchOptions", "Content": {
+            "Exe": f'"{exe}"',
+            "Options": args,
+            "WorkingDir": str(Path(exe).parent),
+            "Compatibility": True,
+            "Name": port["title"],
+        }}))
         return
     script = write_launch_script(port, exe)
     print(json.dumps({"Type": "LaunchOptions", "Content": {

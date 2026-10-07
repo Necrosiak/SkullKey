@@ -1,0 +1,475 @@
+{
+ "2s2h": {
+  "grid": "https://cdn2.steamgriddb.com/grid/958c6e525626a72dc5722a63f638a80b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/3258bb70c96330b7eaadc3458bc8f00d.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/25fa2d39a0143f1f30c36eece145a526.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/fe8c15fed5f808006ce95eddb7366e35.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/30b4f25f536778f198568a0030e8a586.ico"
+ },
+ "arx-libertatis": {
+  "grid": "https://cdn2.steamgriddb.com/grid/94eb3174c69baa2aa3e3ebf3d6605d8b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/348cd1fbd694f05bbb2a1838cbb472b7.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/da796dcc49ab9fc5ac26db17e02a9e33.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/c3d69d6cb156570e7116785863dcdddd.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/dcff23e664d3f00d1e96f75be4fc4043.ico"
+ },
+ "augustus": {
+  "grid": "https://cdn2.steamgriddb.com/grid/542fc94a9de4c6a445290d7455baec31.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/f00bc8f466b80857c3e37ee6e94bc315.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/85b9a5ac91cd629bd3afe396ec07270a.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/e0661cebebef932699e87b44500d6f92.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/52eea859b07495d44fb844cdcecdf239.ico"
+ },
+ "banjorecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/a154a70f923c579313aa9c47ed7c34e2.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/2f966883d44c88b9059c90bea7eda7d5.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/17326d10d511828f6b34fa6d751739e2.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/ce5193a069bea027a60e06c57a106eb6.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/c133fb1bb634af68c5088f3438848bfd.png"
+ },
+ "bm64recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/c5b781ce025e8217c23f95f9569a0b96.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/c6f2808cacad2bd81ecc51c62ab0b728.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/3a06105cf87a4a0d2b22ca218aca4783.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/afb79a9be5cd9762572a008088d3153e.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/bb6c7fdc54b738a6fdc09a851afa12fb.png"
+ },
+ "bstone": {
+  "grid": "https://cdn2.steamgriddb.com/grid/d6aafa9124cbab6246a23f22682fbb1b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/b10da401983c68f7afa9265686a2a66b.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/6d708b43a0845f5396a57a0261a10709.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/e64928412aae022e2c27456df62dda09.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/1b7b38f8732abc170e9625784aeecab3.ico"
+ },
+ "corsixth": {
+  "grid": "https://cdn2.steamgriddb.com/grid/8bb83e1a8cc4cd736672877bc83149ea.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/7c4ede33a62160a19586f6e26eaefacf.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/03dadd644cb5856e1bb2c75dda01a4f0.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/146f7dd4c91bc9d80cf4458ad6d6cd1b.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/114c621415abd39026c0cce854c1f501.ico"
+ },
+ "daggerfall-unity": {
+  "grid": "https://cdn2.steamgriddb.com/grid/c33d40a3ecfa16a5956d9bf81eef24bb.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/5b55e47734ee133b49f9691ec3690989.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/68a2d3d7b5423bc30cd12d789b6b24d2.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/b7574793f15c6db2537254b5732da315.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/5bb352aa0983fe81d1ab84a49b7a902f.ico"
+ },
+ "descent3": {
+  "grid": "https://cdn2.steamgriddb.com/grid/1cd87c94d194af285419eceb558a00fb.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a885e2694d4d70bb6e531289081bcb7e.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/415585bd389b69659223807d77a96791.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/31de30ca9911527082e67d0ef250e272.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/22aa4afb21f6341e431a9862debe0144.ico"
+ },
+ "dethrace": {
+  "grid": "https://cdn2.steamgriddb.com/grid/0b10574b8240b424056808b793bef04f.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/481b4799b166cef12acc9b01a958af84.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/84c10b2211891c399469ee784cdb1987.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/0e19a8bac63f97a513063dcb9a64442b.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/2e8c9ec0a94375617e4f142e6156c2b3.png"
+ },
+ "devilutionx": {
+  "grid": "https://cdn2.steamgriddb.com/grid/cced2922f69c1c789ba9d1c9c4210b1c.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/e353a1de6fac9ca0b764554349f298e0.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/c26820b8a4c1b3c2aa868d6d57e14a79.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/ce943be8824807573e3d363d01058edb.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/2e3907cbad887e6a1bea84d450b756db.png"
+ },
+ "dhewm3": {
+  "grid": "https://cdn2.steamgriddb.com/grid/55cd98eebef4ff8a45ec3a1f2d8f0a43.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/ce54a9d26efb54be3bbf946c88943893.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/4299f209da83da82b711f1d631cc607b.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/f80bf05527157a8c2a7bb63b22f49aaa.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/f899139df5e1059396431415e770c6dd.ico"
+ },
+ "dk64recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/86f7d456aa5848c284f7940bdecdef5d.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/3393e96e52553f76f7454a3863e24f6c.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/dd6e83b6da55d90f5740e0dd3f3e5a13.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/6933b5648c59d618bbb30986c84080fe.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/bd46c557fbdb2e0f92a082793598803d.ico"
+ },
+ "dusklight": {
+  "grid": "https://cdn2.steamgriddb.com/grid/36d6a670240681fbbf69cbba0c9065ce.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a073416fbe3a75be1c9dabe1a85176ca.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/e105b88b3e1ac23ec811a708cd7edebf.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/2d8b6c92b659a90e7ef716f811d8bba1.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/feecee9f1643651799ede2740927317a.ico"
+ },
+ "edgeoftimerecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/61c6ddc8fa35f40c7eb51fc06d66499a.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/fcbfab2f4cda26061ed9e3ee96a4fd61.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/332da72e6fc156f0340836378416136c.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/e95a45d0b1f5afdf0ab9cde82b4b1d06.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/677fa4059ee76333f9bb9a7920aef719.png"
+ },
+ "fable2recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/539ef09cdaadc97ead9ad8794efde829.jpg",
+  "gridh": "https://cdn2.steamgriddb.com/grid/528559760de976ac94d5237046a7f9fe.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/0f66d5d47cc484792935962c50253404.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/58f9067fdaf69fdde42cf95d8daacfde.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/2c0f572a4d4a4b73016a8b79876a39c9.ico"
+ },
+ "fallout1-ce": {
+  "grid": "https://cdn2.steamgriddb.com/grid/dd2087cb0a1847a79e93fd58ddfb8cce.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/adcfdc82e412f690d69876278df2c415.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/e94a37c9b33d6a973b40a831d810b0c6.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/33c14ab38a8923e563e17b79e41693ba.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/d921c3c762b1522c475ac8fc0811bb0f.ico"
+ },
+ "fallout2-ce": {
+  "grid": "https://cdn2.steamgriddb.com/grid/5609571bd6572cdb562cea3562df8b83.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/1a7ddf9a4eefd0bd44db20bdcebabacb.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/d479263a1438a8f9e85937a3a2d4f4a8.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/7be9f234f2dc2b716b263dc3d73822d8.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a65cdaa87ef58fd864ee42ce5fd25dff.ico"
+ },
+ "fheroes2": {
+  "grid": "https://cdn2.steamgriddb.com/grid/d08a016d59a164c17df9573ae39388a2.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/dd17ee9e2355df4f69fd072a5bd3334d.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/3941c4358616274ac2436eacf67fae05.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/17446a8ae7dbf7e2c2535ba49340b4b9.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/8eafcde359d51e3e5386f19516e4ea65.ico"
+ },
+ "fs2open": {
+  "grid": "https://cdn2.steamgriddb.com/grid/ab0de82241e387d3de66d8227f3f7f08.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/15110d7696bc0ce58890d63af4f416a1.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/274ad4786c3abca69fa097b85867d9a4.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/8bf1e5954737835c2c2bb65bb94b19b7.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/66415896d2260eca2ad3d84b9a65bc29.ico"
+ },
+ "gen1recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/deaf47d9953d7c0216d9c3aa944fe5ba.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/b5346c9f1590412e92e6245b38720bca.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/09c9e2d4a95bbada9230220c9d53e26d.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/711679f479bcda7e13c471859df7475a.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/8f8049419ea576995cc62452eec5a89f.png"
+ },
+ "generalsx": {
+  "grid": "https://cdn2.steamgriddb.com/grid/db6e6f04e40842e3f1f104fae6d65eb1.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/1f0d72b1baba712f607418eae18330e2.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/9d8df73a3cfbf3c5b47bc9b50f214aff.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/c115ba9e04ab27fbbb664f932112246d.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a9813e9550fee3110373c21fa012eee7.png"
+ },
+ "generalsx-zh": {
+  "grid": "https://cdn2.steamgriddb.com/grid/52da446847470576cfb4a08e0311dae4.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a6c39c820081dd442cedc35851851de9.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/3faf3b08de6c7c130e63c0e38e5553a8.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/1b2ae1abc7405fb92168d400454c936c.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/0234c510bc6d908b28c70ff313743079.ico"
+ },
+ "goemon64recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/47e596b1edee7909345c64a4d1a39517.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/2ded3f5794e4b627239f72571c8cd2ec.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/058a4a63fccbdb3d0b0ab0e8f7a8951c.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/421740375847b6249d9383615831c23b.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/5cbd31d6a0809f253c2679d508ecb6c2.png"
+ },
+ "halo-ce": {
+  "grid": "https://cdn2.steamgriddb.com/grid/09a146c8d1cfdbdb54ceb60ede93cdab.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/33880528245ea2845dc447bd36ebc547.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/1a6d2e708873df49ad05540c37e8d36a.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/d56b9fc4b0f1be8871f5e1c40c0067e7.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/045cf83ab0722e782cf72d14e44adf98.png"
+ },
+ "harvestmoon64recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/cab8fb3904dfe2e30a8579bc38e74ada.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/8b88deddb91dad147fa341ddd1e95702.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/4a65fd714997aaca6455b8d338cc61c6.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/609a199881ca4ba9c95688235cd6ac5c.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/4a15fc6d75970e9607efa44697977f2b.ico"
+ },
+ "helion": {
+  "grid": "https://cdn2.steamgriddb.com/grid/ef58f7ffe086514aa0164c7fc4f6cea8.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/fd9a483355d14f74c125ec3474f82b6f.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/442465f5282183631234848d916ce365.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/6a3b6ffa5dbf8a5abcad2135e5bc77d9.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/c98399cf427813fcbe9bd5ad68d18f56.png"
+ },
+ "iortcw": {
+  "grid": "https://cdn2.steamgriddb.com/grid/376fa4e9db29db031e42237b552e0dd1.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/4e28c5073443af1433e1e0107f3e3a4f.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/e517564e98c2825803fdf00b6c0d9ee7.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/d68a18275455ae3eaa2c291eebb46e6d.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/793aaa24e931c05d077f434e33485574.ico"
+ },
+ "isle": {
+  "grid": "https://cdn2.steamgriddb.com/grid/e18a081756e4c0d0dd76c53b75e678bc.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/9f46b7df8259ed40431162b7814bc308.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/ce5d75028d92047a9ec617acb9c34ce6.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/91a0ac7c34ea63ffc3ef3e8d5ddd58bb.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a60bc8d1c676b79e6ce18be8ca86d2bd.ico"
+ },
+ "ja2": {
+  "grid": "https://cdn2.steamgriddb.com/grid/06959429bc7e729c3997bc2fea923e53.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/62da20b04ddf8896d66683d67d53ea47.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/ecd62de20ea67e1c2d933d311b08178a.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/a354debcfce426aa11ef079c0c1e3da4.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/494c9ccfa27cbc0348b8569acb0dffa4.ico"
+ },
+ "librelancer": {
+  "grid": "https://cdn2.steamgriddb.com/grid/0cb595edad32d18696daaadcdc626e18.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/d47bf0af618a3523a226ed7cada85ce3.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/e8792705b5cea2f03388f86885f645a3.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/64f9b199132a3f597af54f875ba0078d.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a569009d01541e901c36b7ae8fa273a7.ico"
+ },
+ "lostodysseyrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/c935ae5eb3f0ae34220b8ea163a59d43.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/52aa43218cdad5fd2203547d1ed17b15.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/b339bbc54585e3bfa6177a570e03f08f.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/d6f3b91cd2d825cf868db8b60714c477.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/5162c8e2f5e54609e7f32ae984efe16a.ico"
+ },
+ "ng2recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/952316a1c27f03d5b6cd9d6d530d1ee2.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/2ba36a822e1e5a242340c4b554030e16.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/2b763a9f0c775cd353c1bea1c613ef49.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/cffa2aeddbf5f50f1d93641db49a68c2.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a952ddeda0b7e2c20744e52e728e5594.png"
+ },
+ "nxengine-evo": {
+  "grid": "https://cdn2.steamgriddb.com/grid/e646e2fec7dcbe33111f4481a96523af.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/61567049f602cc79b1a79716ee815642.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/97d0145823aeb8ed80617be62e08bdcc.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/c02064e6a401f91134e124c48970862c.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/371128e024a059f21333bf055bf6184a.ico"
+ },
+ "oldunreal-ut": {
+  "grid": "https://cdn2.steamgriddb.com/grid/f5d05927348722b5f79ede43ef26a16f.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a4f8ad699d88e73c59f606edbeb49d4e.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/e64928412aae022e2c27456df62dda09.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/db529fd87084ec6e5e9c6ccb9a9032be.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/771a83c3aab78a8115be5e2e93d2b534.ico"
+ },
+ "openbor": {
+  "grid": "https://cdn2.steamgriddb.com/grid/be4fc8968b453e72b5e246cfddf8d968.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/befa39f3ef41c9b59d315557ed05fe01.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/16b3c684e83d985bb7b493cf75bbb145.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/7bab7650be60b0738e22c3b8745f937d.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/ce76257a7153b75400c7753635bd90b9.ico"
+ },
+ "openenroth": {
+  "grid": "https://cdn2.steamgriddb.com/grid/13554372e84991a63871e8b520b1fb21.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/9a9dd979dfc868467d53fb59121b7f30.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/c7ea80155da6839ccc5a6ec630e7578c.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/396bb038ac6ff551ed4b7be444669904.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/c6852f035cd6c4c21c3fc2ef8496f759.png"
+ },
+ "opengoal": {
+  "grid": "https://cdn2.steamgriddb.com/grid/a86c4aec1bcf14eb30646ed8df2d2401.jpg",
+  "gridh": "https://cdn2.steamgriddb.com/grid/5515fa6e517ccd2cfe9684b1bef7ada0.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/56add98fbde1aae192249d26d8dcb354.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/852c296dfa59522f563aef29d8d0adf6.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/7a20fd764fa23d34b52bd85bf5cb49a6.png"
+ },
+ "opengothic": {
+  "grid": "https://cdn2.steamgriddb.com/grid/3ede4f910022c657c9d9892052527ca7.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/f4670f182fc7f56eec3173021b75c69f.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/8e5b478921e08e89d44d9ead06957f74.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/b799d0e7cd0405858e6e45a7f8863736.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/7c8032e22d82b9b4d22f1583c9dfe2bb.ico"
+ },
+ "openjazz": {
+  "grid": "https://cdn2.steamgriddb.com/grid/e6265a85e503bb5db629f379330fe08b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/c47656f52e10d1f9ff93623c6d8ff801.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/061b7b3d5e2ee31c7875058883fbcce8.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/f5930695d180d30a1b0f358ab79cf115.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/1625abb8e458a79765c62009235e9d5b.png"
+ },
+ "openjk": {
+  "grid": "https://cdn2.steamgriddb.com/grid/b3d97fc266bb8892b7d48aadd19aca31.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/0b82e05871688be173d7103b9d803f73.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/ab2481c9f93d0ed3033a3281d865ccb2.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/67e103b0761e60683e83c559be18d40c.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/09dbda0ec297f8e1fb8fa397efd0f70a.png"
+ },
+ "openmohaa": {
+  "grid": "https://cdn2.steamgriddb.com/grid/f9ac72d331adc4ee35df9dc97761c61e.jpg",
+  "gridh": "https://cdn2.steamgriddb.com/grid/f5e536083a438cec5b64a4954abc17f1.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/c56a4706337730e0e15da875405fa1c5.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/9cf2af1403d6f96d729fe33c63c75585.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/26e15f51ca014db995acd8b1b4111603.ico"
+ },
+ "openmw": {
+  "grid": "https://cdn2.steamgriddb.com/grid/1ac14644c9b40ddeb100f417af0e608b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/5195a97bc3c5b1aa552b5acfbfa299af.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/4b6538a44a1dfdc2b83477cd76dee98e.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/fdc2262d34ab23978bb3d7998625157e.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/4a3fd911279cd8bc597fa13222ef83be.png"
+ },
+ "openomf": {
+  "grid": "https://cdn2.steamgriddb.com/grid/758b178cead50675e1e8d51ed7bbc15b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/933b3ed333d19c81a4254bc96b6db1a3.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/c6097a7d6559351136402136e3803a38.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/1e2a98f9985fb7f1552cc0bff7af2831.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/30b2ad15870627a0c2b7f34570af6d24.ico"
+ },
+ "openra-d2k": {
+  "grid": "https://cdn2.steamgriddb.com/grid/494b91746c68f85422da0cd89689febc.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/f08c5a8eb59b1d7c20f0bd6e257496a8.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/a9be4c2a4041cadbf9d61ae16dd1389e.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/0c2f66f43752d47fb49abeea0badf47a.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/0780e8f5d5df0c219dcafae6e0f35043.ico"
+ },
+ "openra-ra": {
+  "grid": "https://cdn2.steamgriddb.com/grid/b91e57514fa3018b0a8238eaba5337b7.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/1bbb81c5243f560caa9ed2c8865efa99.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/419503081d19da6921ec70b5e5ac8dfb.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/1f539471127c904e22309f6fa599e98f.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/12b1e42dc0746f22cf361267de07073f.ico"
+ },
+ "openra-td": {
+  "grid": "https://cdn2.steamgriddb.com/grid/db1dbea0fa65bdfe370033148e76cc3b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a212e4d731db9b299ac7b07c1b68fcda.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/63cd917a58c3fa3c2aef0de3480f9b5f.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/3eb46aa5d93b7a5939616af91addfa88.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/0559109a26611411de7acdb477d63f10.ico"
+ },
+ "openrct2": {
+  "grid": "https://cdn2.steamgriddb.com/grid/0a0def49c785aafcbb9d5013384afc41.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/383039867253008a2329c2dd81692a8e.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/5270662c66e89672a771bf6f8b050389.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/186e1b0ba5b03fba924e4a2486692568.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/1026d8c97a822ee171c6cbf939fe4aca.ico"
+ },
+ "opensupaplex": {
+  "grid": "https://cdn2.steamgriddb.com/grid/09de0014b6a40d3449c41c9e81ff3175.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/467c89d5b3e204eebe33ddbc54d905b1.png"
+ },
+ "opentesarena": {
+  "grid": "https://cdn2.steamgriddb.com/grid/08703fcc028ce06e7cb17cf3f93969db.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/ccd3b0db2e192db823f2225d2607cacf.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/58e4d44e550d0f7ee0a23d6b02d9b0db.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/dbd456d85889141a5bca8a0b51abcd7a.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/cdb3e6352aeabdf607267144010a1271.ico"
+ },
+ "pacificrimrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/d69d334894954cf704a74b50bb00b059.jpg",
+  "gridh": "https://cdn2.steamgriddb.com/grid/956524fb77a5e0ae9f8deaff73240d84.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/1a0abc84073fd12fa31e73e41042d89e.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/ae4c7fee61c84c3c5ddef18ea9709c37.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/b16e34cc63d75ffc0e29ef3229802db9.ico"
+ },
+ "perfect-dark": {
+  "grid": "https://cdn2.steamgriddb.com/grid/f2eaa301f9c53bb10fb8e5b9d3d0ea9c.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/9df811bc0ec3cd1b8ce8e8f1bab30be4.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/eb454ad6be830064d49727814426bb6e.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/5590ca803d2831d2a3dff3fa3eaca6f4.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/64314c17210c549a854f1f1c7adce8b6.ico"
+ },
+ "realsteelrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/4112cd2e8ed2b50659b0749d428af9f6.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/d62a5396964e4c76e34a76a0937109e4.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/ce2b8aedd1777f1977b0cc55b4dc8866.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/ee935469799a9e68ed930c5edcede795.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/710eec06bc39ec7c6bd28ddf5f3a5668.ico"
+ },
+ "redriver2": {
+  "grid": "https://cdn2.steamgriddb.com/grid/eb101d7eef150524b3cd895d08e4f673.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/15e773eba52af444597061fecfce8224.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/a0159473c23821556b1f5fb937e1b640.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/9245c6b6ad413336553235bfbb257ef6.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/5f15d685f087b79680f56b80a79b6d36.ico"
+ },
+ "simpsonsgamerecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/df5ffddf7952e45a242c550a389dfb0b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/b3f9fe2c6ffd14c118f070483638d590.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/2e7638c6f7667569fe469fec28c7405b.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/babcff88f8be8c4795bd6f0f8cccca61.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/38862237f701dd26bc89bb7906950b3a.png"
+ },
+ "sm64coopdx": {
+  "grid": "https://cdn2.steamgriddb.com/grid/f293653ffa5c0e53453463a82401dbec.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/fe895c991a5152476a051ae74fcbf8ac.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/2b423dc1a327648b419922ee8980e8dd.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/26d88423fc6da243ffddf161ca712757.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/d09bf41544a3365a46c9077ebb5e35c3.ico"
+ },
+ "soh": {
+  "grid": "https://cdn2.steamgriddb.com/grid/ed89e6477ff6a465891a5f17f77948ae.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/3976e8d9470abc7b3aed396293ab346a.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/1595af6435015c77a7149e92a551338e.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/e440113dde9d989caff2c0f405ad1334.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a896144046a1b5bd6e3e034d00b4f73a.png"
+ },
+ "sonic3air": {
+  "grid": "https://cdn2.steamgriddb.com/grid/8d5c814bc831f35be11c5b95b26a534f.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/843abb981a1f35e08f16419beeef89af.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/b5dd0e4351a65a23e2a13bf0483fe8cc.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/6b4a9e228208a5008088d8ad6e1b3dd7.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/a70dab11c90d06b809d0be230731762a.ico"
+ },
+ "spaghettikart": {
+  "grid": "https://cdn2.steamgriddb.com/grid/8908077ce7fd405516d81c2c929de429.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/c530fbfc90e6b52b488b3d5ab006e9b8.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/abdeb6f575ac5c6676b747bca8d09cc2.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/1755c118e8859eb000eb6eca25369407.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/f57e9defd1303332611ab2ca1994500d.png"
+ },
+ "splosionmanrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/ac37107a0d1cfa757c863143b080dcb7.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/a53516f7997eda8d1bc0d01f1171bc28.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/5c1e4de49d8575440b98077731e7a25f.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/b7f0b1c1761095727bb5513df24a3302.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/1869fb91c7518887d7bda05bae6af9e7.png"
+ },
+ "starship": {
+  "grid": "https://cdn2.steamgriddb.com/grid/9122b7acc2588eff1d20211ce8fb8798.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/2c42c18f166d989a8a9127ab8e190dc4.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/44adaadb095f40b587f4b409ac55799b.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/ad3019b856147c17e82a5bead782d2a8.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/9fbcbcb41e52efd7dbcb96e8a5c4cb63.ico"
+ },
+ "themawrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/93163216218da2675fc305af8e4ef9c5.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/32cd3f5c9a81bf85b99d79f4db186e40.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/133232fc800034e36792956ebea38deb.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/6cc1137b9d0a4ca7f85032e38705655c.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/c13eec7cb6bc9c1b1a0ad07f3b34db72.png"
+ },
+ "trx": {
+  "grid": "https://cdn2.steamgriddb.com/grid/c7cc7c9e1bebd8802a9044957e025e7a.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/bac4973afe4c1b8d0d3d51ab0b9743bd.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/b433da1b32b5ca96c0ba7fcb9edba97d.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/8f7d807e1f53eff5f9efbe5cb81090fb.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/0d5bd023a3ee11c7abca5b42a93c4866.ico"
+ },
+ "unleashedrecomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/b80c0932cb6f7be27c8d37b4c847a8bd.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/e78b099184c641aa52e98e2042adbcab.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/2fc1df7ac6e00ffac3509b070b117ddc.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/ce3b5506fc4151c97d646dc6fce8b1f5.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/63a99723ebb3af94d52b474c3b21dbe1.ico"
+ },
+ "vcmi": {
+  "grid": "https://cdn2.steamgriddb.com/grid/86b2c3a9ea9d228fcc5d95df244dd341.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/ceabc05588f646c05236e4f6d2d7a387.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/97ef7f4a6f519343cfcc3c26a3639178.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/f1cf2a082126bf02de0b307778ce73a7.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/f8c24c1d97f272c8b82b7d1ece3c07b6.ico"
+ },
+ "vkquake": {
+  "grid": "https://cdn2.steamgriddb.com/grid/906fec3cca7ccc130fa2b1844aa10126.jpg",
+  "gridh": "https://cdn2.steamgriddb.com/grid/05151757a7ba6d0f965d1a2b5f20943c.jpg",
+  "hero": "https://cdn2.steamgriddb.com/hero/f3296629e5e4964de099e204626f32fd.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/3a2a9aef4cbed81244820a091667c0bd.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/f24ad6f72d6cc4cb51464f2b29ab69d3.ico"
+ },
+ "warzone2100": {
+  "grid": "https://cdn2.steamgriddb.com/grid/12b374902ba6c9db78b82030c4a064b7.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/d99f140a4776e07439f85e5831c42345.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/90a5a12198b43cd185f76c1674f140ca.jpg",
+  "logo": "https://cdn2.steamgriddb.com/logo/105f42dc7e4a525528246f056ff4dc1d.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/ac8064c510ccb020abcf060830fbf1c6.png"
+ },
+ "zelda64recomp": {
+  "grid": "https://cdn2.steamgriddb.com/grid/958c6e525626a72dc5722a63f638a80b.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/3258bb70c96330b7eaadc3458bc8f00d.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/25fa2d39a0143f1f30c36eece145a526.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/fe8c15fed5f808006ce95eddb7366e35.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/30b4f25f536778f198568a0030e8a586.ico"
+ }
+}

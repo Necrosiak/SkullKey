@@ -729,6 +729,129 @@ class BrowserLogin:
             BrowserLogin.state = {"status": "error", "platform": platform, "message": "timeout"}
 
 
+
+# ── Gestionnaire de Proton (demande user 07/10) ─────────────────────────────
+# Proton communautaires installés dans compatibilitytools.d depuis la DERNIÈRE
+# release GitHub de chaque projet, archive vérifiée en SHA-512 avant extraction
+# (leçons du script GE de bc250-tweaks : lire le vrai nom d'archive dans l'API,
+# ne jamais le deviner ; une archive tronquée casse Steam en silence). Le Proton
+# de Valve, lui, s'installe par Steam (assistant d'installation, côté interface).
+PROTON_SOURCES = {
+    "ge": {"name": "GE-Proton", "repo": "GloriousEggroll/proton-ge-custom",
+           "asset": r"-x86_64\.tar\.gz$"},
+    "cachyos": {"name": "Proton-CachyOS", "repo": "CachyOS/proton-cachyos",
+                "asset": r"-slr-x86_64\.tar\.xz$"},
+}
+
+
+class ProtonManager:
+    state = {"status": "idle"}     # idle | downloading | verifying | extracting | done | error
+    task = None
+
+    @staticmethod
+    def compat_dir():
+        return os.path.join(decky_plugin.DECKY_USER_HOME, ".local", "share", "Steam",
+                            "compatibilitytools.d")
+
+    @staticmethod
+    def _ssl():
+        import ssl
+        # Le Python de Decky n'a pas de magasin de certificats : on pointe celui
+        # du système (chemins Fedora/Bazzite, Debian/SteamOS, Arch).
+        for ca in ("/etc/pki/tls/certs/ca-bundle.crt", "/etc/ssl/certs/ca-certificates.crt",
+                   "/etc/ssl/cert.pem"):
+            if os.path.exists(ca):
+                return ssl.create_default_context(cafile=ca)
+        return ssl.create_default_context()
+
+    @staticmethod
+    def installed():
+        d = ProtonManager.compat_dir()
+        try:
+            return sorted(n for n in os.listdir(d) if os.path.isdir(os.path.join(d, n)))
+        except OSError:
+            return []
+
+    @staticmethod
+    async def latest(key):
+        import re
+        src = PROTON_SOURCES[key]
+        url = f"https://api.github.com/repos/{src['repo']}/releases/latest"
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ProtonManager._ssl())) as s:
+            async with s.get(url, headers={"Accept": "application/vnd.github+json",
+                                           "User-Agent": "SkullKey"}, timeout=aiohttp.ClientTimeout(total=20)) as r:
+                rel = await r.json(content_type=None)
+        assets = rel.get("assets") or []
+        arc = next((a for a in assets if re.search(src["asset"], a.get("name", ""))), None)
+        if not arc:
+            return {"key": key, "name": src["name"], "error": "no x86_64 archive in latest release"}
+        base = re.sub(r"\.tar\.(gz|xz)$", "", arc["name"])
+        sha = next((a for a in assets if a.get("name") == base + ".sha512sum"), None)
+        inst = ProtonManager.installed()
+        tag = rel.get("tag_name") or base
+        # Dossier extrait : GE = « GE-Proton11-7 » (ou suffixé -x86_64),
+        # CachyOS = nom de l'archive sans extension.
+        is_inst = any(n == tag or n.startswith(tag + "-") or n == base for n in inst)
+        return {"key": key, "name": src["name"], "tag": tag, "url": arc["browser_download_url"],
+                "size": arc.get("size", 0), "sha_url": sha["browser_download_url"] if sha else "",
+                "installed": is_inst}
+
+    @staticmethod
+    async def install(key):
+        import hashlib, tarfile, tempfile
+        st = ProtonManager.state
+        tmp = None
+        try:
+            info = await ProtonManager.latest(key)
+            if info.get("error"):
+                raise RuntimeError(info["error"])
+            if not info.get("sha_url"):
+                raise RuntimeError("no SHA-512 checksum published for this release")
+            ProtonManager.state = st = {"status": "downloading", "key": key, "tag": info["tag"],
+                                        "done": 0, "total": info["size"]}
+            ssl_ctx = ProtonManager._ssl()
+            tmp = tempfile.NamedTemporaryFile(prefix="skullkey-proton-", delete=False,
+                                              dir=decky_plugin.DECKY_PLUGIN_RUNTIME_DIR)
+            h = hashlib.sha512()
+            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_ctx)) as s:
+                async with s.get(info["sha_url"], headers={"User-Agent": "SkullKey"}) as r:
+                    expected = (await r.text()).split()[0].strip().lower()
+                async with s.get(info["url"], headers={"User-Agent": "SkullKey"},
+                                 timeout=aiohttp.ClientTimeout(total=None, sock_read=60)) as r:
+                    r.raise_for_status()
+                    async for chunk in r.content.iter_chunked(1 << 20):
+                        tmp.write(chunk)
+                        h.update(chunk)
+                        st["done"] += len(chunk)
+            tmp.close()
+            st["status"] = "verifying"
+            if h.hexdigest() != expected:
+                raise RuntimeError("checksum mismatch — download corrupted, nothing was installed")
+            st["status"] = "extracting"
+            dest = ProtonManager.compat_dir()
+            os.makedirs(dest, exist_ok=True)
+
+            def _extract():
+                with tarfile.open(tmp.name) as tf:
+                    for m in tf.getmembers():   # pas de chemin qui sort du dossier
+                        if m.name.startswith("/") or ".." in m.name.split("/"):
+                            raise RuntimeError(f"unsafe path in archive: {m.name}")
+                    tf.extractall(dest)
+            await asyncio.get_event_loop().run_in_executor(None, _extract)
+            ProtonManager.state = {"status": "done", "key": key, "tag": info["tag"]}
+            decky_plugin.logger.info(f"[proton] {info['tag']} installé dans {dest}")
+        except Exception as e:
+            decky_plugin.logger.error(f"[proton] install {key}: {e!r}")
+            ProtonManager.state = {"status": "error", "key": key, "message": str(e)}
+        finally:
+            if tmp is not None:
+                try:
+                    tmp.close()
+                    os.unlink(tmp.name)
+                except Exception:
+                    pass
+
+
 class Plugin:
     async def _main(self):
         decky_plugin.logger.info("SkullKey starting up...")
@@ -788,6 +911,32 @@ class Plugin:
 
     async def get_autoupdate(self):
         return updater.is_autoupdate_enabled()
+
+    # ── Emplacement des préfixes (SkullKey #5) ─────────────────────────────
+    # La logique vit dans scripts/shared/prefixes.py (partagée avec les scripts
+    # des magasins) ; ici, seulement lire / écrire le dossier choisi.
+    @staticmethod
+    def _prefixes_mod():
+        os.environ["DECKY_PLUGIN_RUNTIME_DIR"] = decky_plugin.DECKY_PLUGIN_RUNTIME_DIR
+        d = os.path.join(decky_plugin.DECKY_PLUGIN_DIR, "scripts", "shared")
+        if d not in sys.path:
+            sys.path.insert(0, d)
+        import prefixes
+        return prefixes
+
+    async def get_prefix_root(self):
+        try:
+            return self._prefixes_mod().load().get("root") or ""
+        except Exception as e:
+            decky_plugin.logger.warning(f"[prefixes] get: {e!r}")
+            return ""
+
+    async def set_prefix_root(self, path=""):
+        try:
+            return {"ok": True, "root": self._prefixes_mod().set_root(path or "")}
+        except Exception as e:
+            decky_plugin.logger.warning(f"[prefixes] set: {e!r}")
+            return {"ok": False, "error": str(e)}
 
     async def set_autoupdate(self, enabled):
         return updater.set_autoupdate_enabled(enabled)
@@ -871,6 +1020,27 @@ class Plugin:
         if BrowserLogin.state.get("status") == "waiting":
             BrowserLogin.state = {"status": "idle"}
         return {"ok": True}
+
+    async def proton_list(self):
+        out = []
+        for key in PROTON_SOURCES:
+            try:
+                out.append(await ProtonManager.latest(key))
+            except Exception as e:
+                out.append({"key": key, "name": PROTON_SOURCES[key]["name"], "error": str(e)})
+        return {"sources": out, "installed": ProtonManager.installed()}
+
+    async def proton_install(self, key):
+        if key not in PROTON_SOURCES:
+            return {"ok": False, "error": "unknown source"}
+        if ProtonManager.task and not ProtonManager.task.done():
+            return {"ok": False, "error": "busy"}
+        ProtonManager.state = {"status": "downloading", "key": key, "done": 0, "total": 0}
+        ProtonManager.task = asyncio.get_event_loop().create_task(ProtonManager.install(key))
+        return {"ok": True}
+
+    async def proton_status(self):
+        return ProtonManager.state
 
     async def get_websocket_port(self):
         return Helper.websocket_port

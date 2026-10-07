@@ -10,6 +10,7 @@ import urllib.parse
 from datetime import datetime, timedelta
 
 import GamesDb
+import prefixes
 
 
 class CmdException(Exception):
@@ -212,7 +213,7 @@ class Gog(GamesDb.GamesDb):
                 'Content':
                 {
                     'Exe': f"\"{task['exe']}\"".replace("$", "\\\\\\$"),
-                    'Options': f"{script_path} {game_id}%command%",
+                    'Options': f"{prefixes.env_for('GOG', game_id)}{script_path} {game_id}%command%",
                     'WorkingDir': task['working_dir'],
                     'Compatibility': True,
                     'Name': name

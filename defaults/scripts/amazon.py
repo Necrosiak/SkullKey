@@ -8,6 +8,7 @@ import time
 from datetime import datetime, timedelta
 
 import GamesDb
+import prefixes
 
 
 class CmdException(Exception):
@@ -181,7 +182,7 @@ class Amazon(GamesDb.GamesDb):
                 'Content':
                 {
                     'Exe': f"\"{task['exe']}\"".replace("$", "\\\\\\$"),
-                    'Options': f"{script_path} {game_id}%command%",
+                    'Options': f"{prefixes.env_for('Amazon', game_id)}{script_path} {game_id}%command%",
                     'WorkingDir': task['working_dir'],
                     'Compatibility': True,
                     'Name': name

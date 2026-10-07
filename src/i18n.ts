@@ -34,6 +34,8 @@ let _locale: Locale | null = null;
 
 const T: Record<Locale, Dict> = {
   en: {
+    sec_proton: "Proton", proton_valve_desc: "Valve's Proton is installed by Steam.", proton_community_desc: "Community builds: latest release, checked before install. Restart Steam afterwards to see them in the compatibility list.", proton_downloading: "Downloading", proton_verifying: "Checking the download…", proton_extracting: "Installing…", proton_done: "{tag} installed — restart Steam to use it.",
+    prefix_custom: "Custom prefix location", prefix_custom_desc: "Games installed from now on get their Proton prefix in this folder instead of Steam's compatdata. Games already installed keep theirs (their saves live inside).", prefix_folder: "Prefix folder",
     remove_client: "Remove client", remove_client_title: "Remove Ubisoft Connect?",
     remove_client_desc: "This deletes Ubisoft Connect and its Wine prefix ({size}), including the games installed inside it. Your Ubisoft account and purchases are not affected; signing in again reinstalls the client.",
     remove_client_games: "Installed games that will be deleted: {games}", remove_client_ok: "Remove",
@@ -92,6 +94,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} available",
   },
   fr: {
+    sec_proton: "Proton", proton_valve_desc: "Le Proton de Valve est installé par Steam.", proton_community_desc: "Versions communautaires : dernière release, vérifiée avant installation. Redémarre Steam ensuite pour les voir dans la liste de compatibilité.", proton_downloading: "Téléchargement", proton_verifying: "Vérification du téléchargement…", proton_extracting: "Installation…", proton_done: "{tag} installé — redémarre Steam pour l'utiliser.",
+    prefix_custom: "Emplacement de préfixe personnalisé", prefix_custom_desc: "Les jeux installés à partir de maintenant ont leur préfixe Proton dans ce dossier au lieu du compatdata de Steam. Les jeux déjà installés gardent le leur (leurs sauvegardes sont dedans).", prefix_folder: "Dossier des préfixes",
     remove_client: "Supprimer le client", remove_client_title: "Supprimer Ubisoft Connect ?",
     remove_client_desc: "Cela supprime Ubisoft Connect et son préfixe Wine ({size}), y compris les jeux installés dedans. Ton compte Ubisoft et tes achats ne sont pas touchés ; te reconnecter réinstalle le client.",
     remove_client_games: "Jeux installés qui seront supprimés : {games}", remove_client_ok: "Supprimer",
@@ -140,6 +144,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Mise à jour {version} disponible",
   },
   de: {
+    sec_proton: "Proton", proton_valve_desc: "Valves Proton wird von Steam installiert.", proton_community_desc: "Community-Versionen: neueste Version, vor der Installation geprüft. Starte Steam danach neu, um sie in der Kompatibilitätsliste zu sehen.", proton_downloading: "Herunterladen", proton_verifying: "Download wird geprüft…", proton_extracting: "Wird installiert…", proton_done: "{tag} installiert — Steam neu starten, um es zu nutzen.",
+    prefix_custom: "Eigener Präfix-Speicherort", prefix_custom_desc: "Ab jetzt installierte Spiele bekommen ihr Proton-Präfix in diesem Ordner statt in Steams compatdata. Bereits installierte Spiele behalten ihres (die Spielstände liegen darin).", prefix_folder: "Präfix-Ordner",
     remove_client: "Client entfernen", remove_client_title: "Ubisoft Connect entfernen?",
     remove_client_desc: "Dies löscht Ubisoft Connect und sein Wine-Präfix ({size}), einschließlich der darin installierten Spiele. Dein Ubisoft-Konto und deine Käufe bleiben erhalten; bei erneuter Anmeldung wird der Client neu installiert.",
     remove_client_games: "Installierte Spiele, die gelöscht werden: {games}", remove_client_ok: "Entfernen",
@@ -188,6 +194,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} verfügbar",
   },
   es: {
+    sec_proton: "Proton", proton_valve_desc: "El Proton de Valve lo instala Steam.", proton_community_desc: "Versiones de la comunidad: última versión, comprobada antes de instalar. Reinicia Steam después para verlas en la lista de compatibilidad.", proton_downloading: "Descargando", proton_verifying: "Comprobando la descarga…", proton_extracting: "Instalando…", proton_done: "{tag} instalado — reinicia Steam para usarlo.",
+    prefix_custom: "Ubicación de prefijos personalizada", prefix_custom_desc: "Los juegos que instales a partir de ahora tendrán su prefijo de Proton en esta carpeta en lugar del compatdata de Steam. Los ya instalados conservan el suyo (sus partidas guardadas están dentro).", prefix_folder: "Carpeta de prefijos",
     remove_client: "Eliminar cliente", remove_client_title: "¿Eliminar Ubisoft Connect?",
     remove_client_desc: "Esto borra Ubisoft Connect y su prefijo de Wine ({size}), incluidos los juegos instalados dentro. Tu cuenta de Ubisoft y tus compras no se ven afectadas; al volver a iniciar sesión se reinstala el cliente.",
     remove_client_games: "Juegos instalados que se borrarán: {games}", remove_client_ok: "Eliminar",
@@ -236,6 +244,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Actualización {version} disponible",
   },
   it: {
+    sec_proton: "Proton", proton_valve_desc: "Il Proton di Valve viene installato da Steam.", proton_community_desc: "Versioni della community: ultima release, verificata prima dell'installazione. Riavvia Steam dopo per vederle nell'elenco di compatibilità.", proton_downloading: "Download", proton_verifying: "Verifica del download…", proton_extracting: "Installazione…", proton_done: "{tag} installato — riavvia Steam per usarlo.",
+    prefix_custom: "Posizione dei prefissi personalizzata", prefix_custom_desc: "I giochi installati da ora in poi avranno il prefisso Proton in questa cartella invece che nel compatdata di Steam. Quelli già installati mantengono il loro (i salvataggi sono lì dentro).", prefix_folder: "Cartella dei prefissi",
     remove_client: "Rimuovi client", remove_client_title: "Rimuovere Ubisoft Connect?",
     remove_client_desc: "Questo elimina Ubisoft Connect e il suo prefisso Wine ({size}), compresi i giochi installati al suo interno. Il tuo account Ubisoft e gli acquisti non vengono toccati; accedendo di nuovo il client viene reinstallato.",
     remove_client_games: "Giochi installati che verranno eliminati: {games}", remove_client_ok: "Rimuovi",
@@ -284,6 +294,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Aggiornamento {version} disponibile",
   },
   pt: {
+    sec_proton: "Proton", proton_valve_desc: "O Proton da Valve é instalado pelo Steam.", proton_community_desc: "Versões da comunidade: última versão, verificada antes de instalar. Reinicie o Steam depois para vê-las na lista de compatibilidade.", proton_downloading: "A transferir", proton_verifying: "A verificar a transferência…", proton_extracting: "A instalar…", proton_done: "{tag} instalado — reinicie o Steam para usá-lo.",
+    prefix_custom: "Local de prefixo personalizado", prefix_custom_desc: "Os jogos instalados a partir de agora terão o prefixo do Proton nesta pasta em vez do compatdata do Steam. Os já instalados mantêm o seu (os saves estão lá dentro).", prefix_folder: "Pasta dos prefixos",
     remove_client: "Remover cliente", remove_client_title: "Remover o Ubisoft Connect?",
     remove_client_desc: "Isto apaga o Ubisoft Connect e o seu prefixo Wine ({size}), incluindo os jogos instalados nele. A tua conta Ubisoft e as compras não são afetadas; ao entrar de novo o cliente é reinstalado.",
     remove_client_games: "Jogos instalados que serão apagados: {games}", remove_client_ok: "Remover",
@@ -332,6 +344,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Atualização {version} disponível",
   },
   nl: {
+    sec_proton: "Proton", proton_valve_desc: "Valves Proton wordt door Steam geïnstalleerd.", proton_community_desc: "Communityversies: nieuwste release, gecontroleerd vóór installatie. Herstart Steam daarna om ze in de compatibiliteitslijst te zien.", proton_downloading: "Downloaden", proton_verifying: "Download controleren…", proton_extracting: "Installeren…", proton_done: "{tag} geïnstalleerd — herstart Steam om het te gebruiken.",
+    prefix_custom: "Eigen prefix-locatie", prefix_custom_desc: "Games die je vanaf nu installeert krijgen hun Proton-prefix in deze map in plaats van Steams compatdata. Al geïnstalleerde games houden die van hen (hun saves staan erin).", prefix_folder: "Prefix-map",
     remove_client: "Client verwijderen", remove_client_title: "Ubisoft Connect verwijderen?",
     remove_client_desc: "Dit verwijdert Ubisoft Connect en zijn Wine-prefix ({size}), inclusief de games die erin geïnstalleerd zijn. Je Ubisoft-account en aankopen blijven behouden; opnieuw inloggen installeert de client opnieuw.",
     remove_client_games: "Geïnstalleerde games die verwijderd worden: {games}", remove_client_ok: "Verwijderen",
@@ -380,6 +394,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} beschikbaar",
   },
   pl: {
+    sec_proton: "Proton", proton_valve_desc: "Proton od Valve instaluje Steam.", proton_community_desc: "Wersje społeczności: najnowsze wydanie, sprawdzane przed instalacją. Potem uruchom ponownie Steam, aby zobaczyć je na liście zgodności.", proton_downloading: "Pobieranie", proton_verifying: "Sprawdzanie pobranego pliku…", proton_extracting: "Instalowanie…", proton_done: "Zainstalowano {tag} — uruchom ponownie Steam, aby go użyć.",
+    prefix_custom: "Własna lokalizacja prefiksów", prefix_custom_desc: "Gry instalowane od teraz dostaną prefiks Protona w tym folderze zamiast w compatdata Steama. Już zainstalowane zachowują swój (są w nim zapisy).", prefix_folder: "Folder prefiksów",
     remove_client: "Usuń klienta", remove_client_title: "Usunąć Ubisoft Connect?",
     remove_client_desc: "To usuwa Ubisoft Connect i jego prefiks Wine ({size}), łącznie z zainstalowanymi w nim grami. Twoje konto Ubisoft i zakupy pozostają bez zmian; ponowne zalogowanie zainstaluje klienta ponownie.",
     remove_client_games: "Zainstalowane gry, które zostaną usunięte: {games}", remove_client_ok: "Usuń",
@@ -428,6 +444,8 @@ const T: Record<Locale, Dict> = {
     update_available: "Dostępna aktualizacja {version}",
   },
   ru: {
+    sec_proton: "Proton", proton_valve_desc: "Proton от Valve устанавливает Steam.", proton_community_desc: "Версии сообщества: последний выпуск, проверяется перед установкой. Затем перезапустите Steam, чтобы увидеть их в списке совместимости.", proton_downloading: "Загрузка", proton_verifying: "Проверка загрузки…", proton_extracting: "Установка…", proton_done: "{tag} установлен — перезапустите Steam, чтобы им пользоваться.",
+    prefix_custom: "Своё расположение префиксов", prefix_custom_desc: "Игры, установленные с этого момента, получат префикс Proton в этой папке вместо compatdata Steam. Уже установленные сохраняют свой (в нём их сохранения).", prefix_folder: "Папка префиксов",
     remove_client: "Удалить клиент", remove_client_title: "Удалить Ubisoft Connect?",
     remove_client_desc: "Будут удалены Ubisoft Connect и его префикс Wine ({size}), включая установленные в нём игры. Аккаунт Ubisoft и покупки не затрагиваются; при повторном входе клиент установится снова.",
     remove_client_games: "Установленные игры, которые будут удалены: {games}", remove_client_ok: "Удалить",

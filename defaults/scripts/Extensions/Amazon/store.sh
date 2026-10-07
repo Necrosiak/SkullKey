@@ -118,6 +118,7 @@ function Amazon_install(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     rm $PROGRESS_LOG &>> ${DECKY_PLUGIN_LOG_DIR}/${1}.log
     RESULT=$($AMAZONCONF --addsteamclientid "${1}" "${2}" --dbfile $DBFILE)
+    sk_prefix_assign Amazon "${1}" "${2}"
     TEMP=$($AMAZONCONF --update-umu-id "${1}" amazon --dbfile $DBFILE)
     mkdir -p "${INSTALL_DIR}"
     TEMP=$($AMAZONCONF --launchoptions "${1}" "" "" --dbfile $DBFILE $OFFLINE_MODE)
@@ -189,7 +190,7 @@ function Amazon_run-exe(){
     fi
     COMPAT_TOOL="${5}"
     GAME_PATH=$($AMAZONCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE)
-    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
+    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "$(sk_runexe_opts "${STEAM_ID}" "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log")" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
 }
 
 function Amazon_get-exe-list(){
@@ -197,7 +198,7 @@ function Amazon_get-exe-list(){
     STEAM_ID="${1}"
     GAME_SHORTNAME="${2}"
     GAME_PATH=$($AMAZONCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE)
-    export STEAM_COMPAT_DATA_PATH="${HOME}/.local/share/Steam/steamapps/compatdata/${STEAM_ID}"
+    export STEAM_COMPAT_DATA_PATH="$(sk_compatdir "${STEAM_ID}")"
     export STEAM_COMPAT_CLIENT_INSTALL_PATH="${GAME_PATH}"
     cd "${STEAM_COMPAT_CLIENT_INSTALL_PATH}"
     JSON="{\"Type\": \"FileContent\", \"Content\": {\"PathRoot\": \"${GAME_PATH}\", \"Files\": ["

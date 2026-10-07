@@ -12,6 +12,7 @@ import subprocess
 import time
 
 import GamesDb
+import prefixes
 import re
 from datetime import datetime, timedelta
 
@@ -251,7 +252,7 @@ class Epic(GamesDb.GamesDb):
                 'Content':
                 {
                     'Exe': f"\"{os.path.join(result['game_directory'], result['game_executable'])}\"".replace("$", "\\\\\\$"),
-                    'Options': f"{script_path} {game_id}%command%",
+                    'Options': f"{prefixes.env_for('Epic', game_id)}{script_path} {game_id}%command%",
                     'WorkingDir': result['working_directory'],
                     'Compatibility': True,
                     'Name': name

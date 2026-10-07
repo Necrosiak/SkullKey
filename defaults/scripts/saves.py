@@ -146,7 +146,12 @@ def canonical_title(binpath, title):
 def wine_prefix(app_id):
     if not app_id:
         return None
-    pfx = os.path.join(COMPAT_DATA, str(app_id), "pfx")
+    try:                                        # préfixe déplacé (SkullKey #5)
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "shared"))
+        import prefixes
+        pfx = os.path.join(prefixes.compat_dir(app_id), "pfx")
+    except Exception:
+        pfx = os.path.join(COMPAT_DATA, str(app_id), "pfx")
     return pfx if os.path.isdir(os.path.join(pfx, "drive_c")) else None
 
 

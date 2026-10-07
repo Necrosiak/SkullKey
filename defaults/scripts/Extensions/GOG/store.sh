@@ -127,6 +127,7 @@ function GOG_install(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     rm $PROGRESS_LOG &>> ${DECKY_PLUGIN_LOG_DIR}/${1}.log
     RESULT=$($GOGCONF --addsteamclientid "${1}" "${2}" --dbfile $DBFILE)
+    sk_prefix_assign GOG "${1}" "${2}"
     TEMP=$($GOGCONF --update-umu-id "${1}" gog --dbfile $DBFILE)
     mkdir -p "${INSTALL_DIR}"
     TEMP=$($GOGCONF --launchoptions "${1}" "" "" --dbfile $DBFILE $OFFLINE_MODE)
@@ -202,7 +203,7 @@ function GOG_run-exe(){
     fi
     COMPAT_TOOL="${5}"
     GAME_PATH=$($GOGCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE)
-    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
+    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "$(sk_runexe_opts "${STEAM_ID}" "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log")" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
 }
 
 function GOG_get-exe-list(){
@@ -210,7 +211,7 @@ function GOG_get-exe-list(){
     STEAM_ID="${1}"
     GAME_SHORTNAME="${2}"
     GAME_PATH=$($GOGCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE)
-    export STEAM_COMPAT_DATA_PATH="${HOME}/.local/share/Steam/steamapps/compatdata/${STEAM_ID}"
+    export STEAM_COMPAT_DATA_PATH="$(sk_compatdir "${STEAM_ID}")"
     export STEAM_COMPAT_CLIENT_INSTALL_PATH="${GAME_PATH}"
     cd "${STEAM_COMPAT_CLIENT_INSTALL_PATH}"
     JSON="{\"Type\": \"FileContent\", \"Content\": {\"PathRoot\": \"${GAME_PATH}\", \"Files\": ["

@@ -175,6 +175,7 @@ function Epic_install(){
     PROGRESS_LOG="${DECKY_PLUGIN_LOG_DIR}/${1}.progress"
     rm $PROGRESS_LOG &>> ${DECKY_PLUGIN_LOG_DIR}/${1}.log
     RESULT=$($EPICCONF --addsteamclientid "${1}" "${2}" --dbfile $DBFILE)
+    sk_prefix_assign Epic "${1}" "${2}"
     TEMP=$($EPICCONF --update-umu-id "${1}" egs --dbfile $DBFILE)
     mkdir -p "${HOME}/Games/epic/"
     ARGS=$($ARGS_SCRIPT "${1}")
@@ -232,13 +233,13 @@ function Epic_loginstatus(){
 
 function Epic_enable-eos-overlay(){
     APP_ID=$2
-    $LEGENDARY eos-overlay enable --prefix "${HOME}/.local/share/Steam/steamapps/compatdata/${APP_ID}/pfx"
+    $LEGENDARY eos-overlay enable --prefix "$(sk_compatdir "${APP_ID}")/pfx"
     echo "{\"Type\": \"Success\", \"Content\": {\"Message\": \"EOS overlay Enabled\"}}"
 }
 
 function Epic_disable-eos-overlay(){
     APP_ID=$2
-    $LEGENDARY eos-overlay disable --prefix "${HOME}/.local/share/Steam/steamapps/compatdata/${APP_ID}/pfx"
+    $LEGENDARY eos-overlay disable --prefix "$(sk_compatdir "${APP_ID}")/pfx"
     echo "{\"Type\": \"Success\", \"Content\": {\"Message\": \"EOS overlay Disabled\"}}"
 }
 
@@ -257,14 +258,14 @@ function Epic_run-exe(){
     fi
     COMPAT_TOOL="${5}"
     GAME_PATH=$($EPICCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE --offline)
-    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
+    launchoptions "\\\"${GAME_PATH}/${GAME_EXE}\\\""  "$(sk_runexe_opts "${STEAM_ID}" "${ARGS}  &> ${DECKY_PLUGIN_LOG_DIR}/run-exe.log")" "${GAME_PATH}" "Run exe" true "${COMPAT_TOOL}"
 }
 function Epic_get-exe-list(){
     get_steam_env
     STEAM_ID="${1}"
     GAME_SHORTNAME="${2}"
     GAME_PATH=$($EPICCONF --get-game-dir $GAME_SHORTNAME --dbfile $DBFILE --offline)
-    export STEAM_COMPAT_DATA_PATH="${HOME}/.local/share/Steam/steamapps/compatdata/${STEAM_ID}"
+    export STEAM_COMPAT_DATA_PATH="$(sk_compatdir "${STEAM_ID}")"
     export STEAM_COMPAT_CLIENT_INSTALL_PATH="${GAME_PATH}"
     cd "${STEAM_COMPAT_CLIENT_INSTALL_PATH}"
     JSON="{\"Type\": \"FileContent\", \"Content\": {\"PathRoot\": \"${GAME_PATH}\", \"Files\": ["

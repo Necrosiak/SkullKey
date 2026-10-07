@@ -1,5 +1,40 @@
 # Changelog
 
+## 1.15.0 — 2026-10-07
+
+### New
+
+- **Choose where Proton prefixes go.** Epic, GOG and Amazon games no longer
+  have to put their Wine prefix in Steam's `compatdata` folder: pick another
+  folder in the About tab (for example `~/Games/prefixes`) and new installs use
+  it. Existing games keep their current prefix. Requested by
+  [bastiHST90](https://github.com/bastiHST90) in
+  [#5](https://github.com/Necrosiak/SkullKey/issues/5).
+- **Proton manager.** The About tab can now download the latest GE-Proton or
+  CachyOS Proton build into Steam's `compatibilitytools.d`, without leaving
+  Game Mode. Restart Steam once afterwards so it lists the new version.
+- **16 new Classics (68 in total)**, each installed from the project's own
+  official release:
+  - N64: Banjo-Kazooie, Goemon 64, Harvest Moon 64, Donkey Kong 64 and
+    Bomberman 64 Recompiled
+  - Game Boy: Gen1Recomp (Pokémon Red/Blue/Yellow)
+  - Xbox 360: Lost Odyssey, The Simpsons Game, Spider-Man: Edge of Time,
+    'Splosion Man, Pacific Rim, Real Steel and The Maw
+  - Windows builds through Proton: Fable II Recompiled, Ninja's Dawn
+    (Ninja Gaiden II) and Halo: Combat Evolved (OpenCE)
+
+  As always, none of them ship game data: you need your own copy of the game.
+  For Fable II, drop your own disc image into the game folder and SkullKey
+  extracts what the recompilation needs; only the Game of the Year editions it
+  checks for are accepted.
+
+### Improved
+
+- **Proper Steam artwork for every Classic.** Each one now gets a matching
+  cover, banner, hero image, logo and icon instead of the developer's avatar
+  or a generated tile.
+- Classics whose release asset is a zip around a `.tar.gz` now unpack in one go.
+
 ## 1.14.2 — 2026-10-04
 
 ### Fix
