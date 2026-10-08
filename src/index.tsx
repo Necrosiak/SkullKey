@@ -12,6 +12,7 @@ import { notify } from "./Components/Styled";
 import { Content } from "./ContentTabs";
 import { About } from "./About";
 import { MainMenuModal } from "./MainMenuModal";
+import { clearClickableNotifications } from "./clickableNotify";
 
 
 // ── Auto-update: the frontend only REPORTS ───────────────────────────────────
@@ -41,6 +42,11 @@ async function reportFailedUpdate(serverApi: ServerAPI) {
         title: "SkullKey",
         body: `Update ${notice.version} could not be installed automatically. `
             + "Install it from Decky → Developer → Install plugin from URL.",
+        clickKey: `update-failed:${notice.version}`,
+        onClick: () => {
+          Navigation.CloseSideMenus();
+          Navigation.Navigate("/about-skullkey");
+        },
       });
       return;
     }
@@ -114,6 +120,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     content: <Content serverAPI={serverApi} initActionSet="init" initAction="InitActions" />,
     icon: <FaSkull />,
     onDismount() {
+      clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");
       unregister.unregister();

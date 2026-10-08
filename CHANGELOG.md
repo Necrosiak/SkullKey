@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.15.1 — 2026-10-08
+
+- Selecting a launch-options notification opens that game's Steam library page.
+  Selecting an automatic-update failure opens SkullKey's About/update page.
+- These status notices are silent instead of sounding like incoming chat.
+- Notification clicks use the safe Steam chat-route technique from
+  [Steamcord PR #71](https://github.com/Necrosiak/Steamcord/pull/71), isolated
+  from real Steam chats and the other plugins' notifications.
+
 ## 1.15.0 — 2026-10-07
 
 ### New

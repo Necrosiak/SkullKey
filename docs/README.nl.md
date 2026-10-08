@@ -1,5 +1,7 @@
 # 🗝️ SkullKey
 
+**Nieuw in v1.15.1:** meldingen over startopties openen de Steam-bibliotheekpagina van het spel; updatefouten openen de Info-/Updatepagina van SkullKey.
+
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **De sleutel die elke winkel opent.** Speel je Epic Games-, GOG- en Amazon Games-bibliotheken rechtstreeks vanuit de gamemodus op SteamOS / Bazzite — inloggen, installeren, starten. Zonder ooit de desktopmodus te gebruiken.

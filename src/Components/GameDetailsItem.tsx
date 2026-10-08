@@ -393,7 +393,14 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                 SteamClient.Apps.SpecifyCompatTool(id, "");
             }
             setInstalling(false);
-            notify({ title: "SkullKey", body: t("launch_options_set") });
+            notify({
+                title: "SkullKey", body: t("launch_options_set"),
+                clickKey: `launch-options:${id}`,
+                onClick: () => {
+                    Navigation.CloseSideMenus();
+                    Navigation.Navigate(`/library/app/${id}`);
+                },
+            });
             await appDetailsCache.FetchDataForApp(id)
             await appDetailsStore.RequestAppDetails(id);
             setSteamClientID(id.toString());

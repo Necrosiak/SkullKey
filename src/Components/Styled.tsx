@@ -5,6 +5,7 @@ import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
 import { SiBattledotnet, SiEpicgames, SiGogdotcom, SiMihoyo, SiUbisoft } from "react-icons/si";
 import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull } from "react-icons/fa";
+import { notifyClickable } from "../clickableNotify";
 
 const Btn = DialogButton as any;
 
@@ -54,9 +55,11 @@ function streamerActive(): boolean {
 }
 const STREAMER_RETRY_MS = 15000;
 
-export function notify(data: { title?: string; body: string; duration?: number }) {
+export function notify(data: { title?: string; body: string; duration?: number; clickKey?: string; onClick?: () => void }) {
     if (streamerActive()) { setTimeout(() => notify(data), STREAMER_RETRY_MS); return; }
     try {
+        if (data.clickKey && data.onClick && notifyClickable("skullkey", data.clickKey,
+            data.title || "SkullKey", data.body, data.onClick)) return;
         const App = (window as any).App;
         const steamid = App?.GetCurrentUser?.()?.strSteamID || App?.m_CurrentUser?.strSteamID || "";
         // steamid is mandatory: without it the entry is malformed and crashes

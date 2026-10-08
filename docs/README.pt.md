@@ -1,5 +1,7 @@
 # 🗝️ SkullKey
 
+**Novo na v1.15.1:** notificações sobre opções de inicialização abrem a página do jogo na biblioteca Steam; falhas de atualização abrem a página Sobre/Atualizações do SkullKey.
+
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **A chave que abre todas as lojas.** Joga as tuas bibliotecas Epic Games, GOG e Amazon Games diretamente no modo de jogo em SteamOS / Bazzite — sessão, instalação, arranque. Sem nunca passar pelo modo de secretária.

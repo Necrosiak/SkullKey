@@ -1,5 +1,7 @@
 # 🗝️ SkullKey
 
+**Новое в v1.15.1:** уведомления о параметрах запуска открывают страницу игры в библиотеке Steam; ошибки обновления открывают страницу «О программе / Обновления» SkullKey.
+
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **Ключ, открывающий все магазины.** Играйте в библиотеки Epic Games, GOG и Amazon Games прямо из игрового режима на SteamOS / Bazzite — вход, установка, запуск. Без рабочего стола.

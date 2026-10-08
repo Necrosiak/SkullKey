@@ -1,5 +1,7 @@
 # 🗝️ SkullKey
 
+**Novità della v1.15.1:** le notifiche sulle opzioni di avvio aprono la pagina del gioco nella libreria Steam; gli errori di aggiornamento aprono la pagina Informazioni/Aggiornamento di SkullKey.
+
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)
 
 **La chiave che apre tutti i negozi.** Gioca alle tue librerie Epic Games, GOG e Amazon Games direttamente dalla modalità gioco su SteamOS / Bazzite: accesso, installazione, avvio. Senza mai passare dalla modalità desktop.
