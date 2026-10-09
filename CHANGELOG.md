@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.15.4 — 2026-10-09
+
+- Restore the missing Fall Guys artwork in Steam. The game is retired from
+  Steam's store search but its official transparent library logo is still
+  hosted by Steam. SkullKey now uses that verified artwork when it refreshes
+  the shortcut, without reinstalling the game.
+
 ## 1.15.3 — 2026-10-09
 
 - Stop logging full Epic, GOG and Amazon game-launch arguments. Epic launch

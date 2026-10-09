@@ -25,19 +25,26 @@ class GamesDb(GameSet.GameSet):
         conn.close()
     
     STEAM_CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps"
+    # Retired store pages are absent from storesearch even while their
+    # official library artwork remains on Steam's CDN. Keep verified exact
+    # title mappings here so those games still get a proper transparent logo.
+    RETIRED_STEAM_APPIDS = {"fallguys": 1097150}
 
     def get_steam_appid(self, title):
         # Resolve the game on the Steam store by normalized-exact title so
         # shortcuts can reuse Steam's own official artwork. Exact match only:
         # wrong artwork is worse than fallback artwork.
+        def norm(s):
+            return ''.join(ch for ch in s.lower() if ch.isalnum())
+        normalized_title = norm(title)
+        if normalized_title in self.RETIRED_STEAM_APPIDS:
+            return self.RETIRED_STEAM_APPIDS[normalized_title]
         try:
-            def norm(s):
-                return ''.join(ch for ch in s.lower() if ch.isalnum())
             url = f"https://store.steampowered.com/api/storesearch/?term={urllib.parse.quote(title)}&l=english&cc=US"
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
             data = json.loads(urllib.request.urlopen(req, timeout=15).read())
             for item in data.get('items', []):
-                if norm(item.get('name', '')) == norm(title):
+                if norm(item.get('name', '')) == normalized_title:
                     return item['id']
         except Exception as e:
             print(f"steam appid lookup failed for {title}: {e}", file=sys.stderr)
