@@ -51,7 +51,14 @@ def save(d):
 
 def root():
     r = (load().get("root") or "").strip()
-    return os.path.expanduser(r) if r else ""
+    if not r:
+        return ""
+    home = os.environ.get("DECKY_USER_HOME") or os.path.expanduser("~")
+    if r == "~":
+        return home
+    if r.startswith("~/"):
+        return os.path.join(home, r[2:].replace("/", os.sep))
+    return os.path.expanduser(r)
 
 
 def set_root(path):
@@ -107,8 +114,84 @@ def compat_dir(steam_id):
 def _env(path):
     if not path:
         return ""
-    os.makedirs(path, exist_ok=True)        # Proton exige que le dossier existe
+    # Les actions Decky tournent en root, mais Steam/Proton tourne avec le
+    # compte du joueur. Un mkdir root ici créait un dossier vide inaccessible
+    # à Proton (SkullKey #7). On donne au joueur seulement les dossiers du
+    # préfixe que SkullKey vient de créer ; on répare aussi un préfixe déjà
+    # créé par cette ancienne version.
+    target = os.path.realpath(path)
+    missing = []
+    cursor = target
+    while not os.path.lexists(cursor):
+        missing.append(cursor)
+        parent = os.path.dirname(cursor)
+        if parent == cursor:
+            break
+        cursor = parent
+    os.makedirs(target, exist_ok=True)
+    if hasattr(os, "geteuid") and os.geteuid() == 0:
+        home = os.path.realpath(os.environ.get("DECKY_USER_HOME")
+                                or os.environ.get("HOME") or os.path.expanduser("~"))
+        owner = os.stat(home)
+        if owner.st_uid != 0:
+            for directory in reversed(missing):
+                os.chown(directory, owner.st_uid, owner.st_gid)
+            # Un ancien essai peut avoir laissé le root configuré et le
+            # dossier de ce jeu en root. Ne touche jamais aux ancêtres hors
+            # du dossier utilisateur (montage SD, /mnt, etc.).
+            selected_root = root()
+            configured_root = os.path.realpath(selected_root) if selected_root else ""
+            repair = [target]
+            if configured_root and os.path.dirname(target) == configured_root:
+                repair.insert(0, configured_root)
+            for directory in repair:
+                # Hors du home, seules les nouvelles entrées créées ici
+                # changent de propriétaire : un ancien dossier root d'un
+                # montage externe ne doit pas être repris arbitrairement.
+                if directory not in missing and os.path.commonpath(
+                        (home, directory)) != home:
+                    continue
+                current = os.lstat(directory)
+                if current.st_uid == 0 and os.path.isdir(directory):
+                    os.chown(directory, owner.st_uid, owner.st_gid)
     return f"STEAM_COMPAT_DATA_PATH={shlex.quote(path)} "
+
+
+def repair_existing():
+    """Répare les anciens préfixes du home, sans créer ni déplacer de dossier.
+
+    Au chargement du plugin, Steam peut déjà avoir un raccourci dont les
+    options de lancement sont correctes : il faut alors corriger les droits
+    sans imposer une réinstallation ou une nouvelle génération du raccourci.
+    """
+    if not hasattr(os, "geteuid") or os.geteuid() != 0:
+        return 0
+    home = os.path.realpath(os.environ.get("DECKY_USER_HOME")
+                            or os.environ.get("HOME") or os.path.expanduser("~"))
+    selected_root = root()
+    if not selected_root:
+        return 0
+    configured_root = os.path.abspath(selected_root)
+    if (os.path.realpath(configured_root) != configured_root
+            or os.path.commonpath((home, configured_root)) != home):
+        return 0
+    games = load().get("games", {})
+    if not isinstance(games, dict):
+        return 0
+    count = 0
+    for key, entry in games.items():
+        if not isinstance(key, str) or ":" not in key or not isinstance(entry, dict):
+            continue
+        store, game_id = key.split(":", 1)
+        expected = os.path.join(configured_root,
+                                f"{_safe(store).lower()}-{_safe(game_id)}")
+        path = entry.get("path")
+        if (not isinstance(path, str) or os.path.abspath(path) != expected
+                or os.path.realpath(path) != expected or not os.path.isdir(path)):
+            continue
+        _env(path)
+        count += 1
+    return count
 
 
 def env_for(store, game_id):

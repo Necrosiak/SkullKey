@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Test custom prefix ownership
+        run: python3 -m unittest discover -s tests -v
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

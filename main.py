@@ -871,6 +871,12 @@ class Plugin:
             decky_plugin.logger.info("SkullKey initializing")
             result = await Helper.execute_action("init", "init")
             decky_plugin.logger.info("SkullKey initialized")
+            try:
+                repaired = self._prefixes_mod().repair_existing()
+                if repaired:
+                    decky_plugin.logger.info(f"[prefixes] checked {repaired} existing custom prefixes")
+            except Exception as e:
+                decky_plugin.logger.warning(f"[prefixes] repair: {e!r}")
             if Helper.verbose:
                 decky_plugin.logger.info(f"init result: {result}")
             await Helper.start_ws_server()
@@ -918,6 +924,7 @@ class Plugin:
     @staticmethod
     def _prefixes_mod():
         os.environ["DECKY_PLUGIN_RUNTIME_DIR"] = decky_plugin.DECKY_PLUGIN_RUNTIME_DIR
+        os.environ["DECKY_USER_HOME"] = decky_plugin.DECKY_USER_HOME
         d = os.path.join(decky_plugin.DECKY_PLUGIN_DIR, "scripts", "shared")
         if d not in sys.path:
             sys.path.insert(0, d)
@@ -956,6 +963,10 @@ class Plugin:
             )
             # pass cmd argument to _call_script method
             result = await Helper.execute_action("init", "init")
+            try:
+                self._prefixes_mod().repair_existing()
+            except Exception as e:
+                decky_plugin.logger.warning(f"[prefixes] repair: {e!r}")
             if Helper.verbose:
                 decky_plugin.logger.info(f"init result: {result}")
         except Exception as e:

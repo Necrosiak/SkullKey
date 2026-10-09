@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.15.2 — 2026-10-09
+
+- **Custom Proton prefix location:** fixed an empty, unusable prefix after
+  installing an Epic, GOG or Amazon game. Decky creates the directory as root;
+  SkullKey now gives the newly created prefix to the Steam user before Proton
+  starts. It also repairs the empty root-owned prefix left by the earlier
+  version inside the user's home directory. Reported in [#7](https://github.com/Necrosiak/SkullKey/issues/7).
+
 ## 1.15.1 — 2026-10-08
 
 - Selecting a launch-options notification opens that game's Steam library page.
