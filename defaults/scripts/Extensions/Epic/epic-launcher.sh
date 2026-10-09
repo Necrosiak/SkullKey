@@ -137,7 +137,6 @@ else
 fi
 
 
-echo "ARGS: ${ARGS}" &>> "${DECKY_PLUGIN_LOG_DIR}/${ID}.log"
 for arg in $ARGS; do
     QUOTED_ARGS+=" ${arg}" 
     
@@ -177,8 +176,6 @@ else
     eval "$(echo -e "$ALL_BUT_LAST_ARG")"  # &>> "${DECKY_PLUGIN_LOG_DIR}/${ID}.log"
     popd
 fi
-
-echo -e "Running: ${QUOTED_ARGS}" >> "${DECKY_PLUGIN_LOG_DIR}/${ID}.log"
 
 UMU_ID=""
 

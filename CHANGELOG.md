@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.15.3 — 2026-10-09
+
+- Stop logging full Epic, GOG and Amazon game-launch arguments. Epic launch
+  arguments can contain a temporary authentication code, so per-game logs
+  must not copy them. Existing log files are not changed; redact them before
+  sharing. Discovered while investigating [#7](https://github.com/Necrosiak/SkullKey/issues/7).
+- The remaining Fall Guys custom-prefix failure reported in #7 is still under
+  investigation; the reporter's prefix was already user-owned before v1.15.2.
+
 ## 1.15.2 — 2026-10-09
 
 - **Custom Proton prefix location:** fixed an empty, unusable prefix after

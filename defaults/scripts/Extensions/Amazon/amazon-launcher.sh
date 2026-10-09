@@ -104,7 +104,6 @@ else
     ARGS="${ARGS} ${ADVANCED_ARGUMENTS}"
 fi
 
-echo "ARGS: ${ARGS}" &>> "${DECKY_PLUGIN_LOG_DIR}/${ID}.log"
 for arg in $ARGS; do
     QUOTED_ARGS+=" ${arg}"
 done
@@ -118,8 +117,6 @@ if [[ "${ADVANCED_SET_STEAM_COMPAT_LIBRARY_PATHS}" == "true" ]]; then
     export STEAM_COMPAT_LIBRARY_PATHS=${STEAM_COMPAT_LIBRARY_PATHS}:${GAME_PATH}
 fi
 export PROTON_SET_GAME_DRIVE="gamedrive"
-
-echo -e "Running: ${QUOTED_ARGS}" >> "${DECKY_PLUGIN_LOG_DIR}/${ID}.log"
 
 UMU_ID=""
 if [[ "${AMAZON_ENABLE_UMU_FIXES}" != "false" ]]; then
