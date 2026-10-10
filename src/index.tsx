@@ -13,6 +13,7 @@ import { Content } from "./ContentTabs";
 import { About } from "./About";
 import { MainMenuModal } from "./MainMenuModal";
 import { clearClickableNotifications } from "./clickableNotify";
+import { portUpdateNotice } from "./portUpdateNotice";
 
 
 // ── Auto-update: the frontend only REPORTS ───────────────────────────────────
@@ -58,6 +59,33 @@ async function reportFailedUpdate(serverApi: ServerAPI) {
 export default definePlugin((serverApi: ServerAPI) => {
 
   reportFailedUpdate(serverApi);
+  let checkingPorts = false;
+  let disposed = false;
+  const checkPortUpdates = async () => {
+    if (checkingPorts || disposed) return;
+    checkingPorts = true;
+    try {
+      const reply = await serverApi.callPluginMethod<{}, any[]>("take_port_update_events", {});
+      if (!disposed && reply.success && Array.isArray(reply.result)) {
+        for (const event of reply.result) {
+          if (!event || typeof event.name !== "string" || typeof event.version !== "string" || typeof event.success !== "boolean") continue;
+          notify({
+            title: "SkullKey — " + event.name,
+            body: portUpdateNotice(event.success, event.version),
+            clickKey: `port-update:${event.appid}:${event.version}:${event.success}`,
+            onClick: () => {
+              Navigation.CloseSideMenus();
+              const id = Number(event.appid);
+              Navigation.Navigate(id > 0 ? `/library/app/${id}` : "/about-skullkey");
+            },
+          });
+        }
+      }
+    } catch (error) { console.debug("[SkullKey] port update poll", error); }
+    finally { checkingPorts = false; }
+  };
+  checkPortUpdates();
+  const portsTimer = setInterval(checkPortUpdates, 30000);
 
   // One-shot migration of the pre-rename localStorage keys (js_* → sk_*).
   try {
@@ -120,6 +148,8 @@ export default definePlugin((serverApi: ServerAPI) => {
     content: <Content serverAPI={serverApi} initActionSet="init" initAction="InitActions" />,
     icon: <FaSkull />,
     onDismount() {
+      disposed = true;
+      clearInterval(portsTimer);
       clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");

@@ -495,6 +495,11 @@ const T: Record<Locale, Dict> = {
   },
 };
 
+export function currentLocale(): Locale {
+  if (!_locale) _locale = detectLocale();
+  return _locale;
+}
+
 export function t(key: string, vars?: Record<string, string | number>): string {
   if (!_locale) _locale = detectLocale();
   const dict = T[_locale] ?? T.en;

@@ -8,7 +8,7 @@ port needs files from a game copy YOU own (ROM, disc image, MPQ…), and the
 game details explain exactly which file goes where (Desktop Mode required to
 copy it).
 
-Three install kinds:
+Install kinds:
   - "appimage": single AppImage asset, dropped into the port's folder
   - "archive":  zip / tar.* asset, extracted into the port's folder
   - "flatpak":  .flatpak bundle (possibly zipped), installed per-user with
@@ -23,6 +23,8 @@ Three install kinds:
                 Recomps that need a disc image may set "iso_import": the user
                 drops the .iso into <port>/<subdir>/ and SkullKey extracts the
                 listed root entries from it (scripts/xiso_extract.py).
+  - "ptsetup": official Linux setup executable, which imports the player's
+               own P.T. fake PKG and installs the game in the port folder.
 
 Modeled on media.py: standalone (no GameSet/sqlite), JSON state, detached
 install worker + progress file, Pillow-composed Steam artwork, and a daily
@@ -38,7 +40,9 @@ import signal
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
+import urllib.error
 import urllib.request
 import zipfile
 from io import BytesIO
@@ -447,9 +451,10 @@ PORTS = [
          needs=("files", "Freelancer",
                 "DATA/ + EXE/ — installation/CD")),
     dict(shortname="openenroth", title="OpenEnroth (Might & Magic VI–VIII)",
-         repo="OpenEnroth/OpenEnroth", kind="archive",
-         asset=r"^Linux_nightly_RelWithDebInfo_x86_64\.zip$",
-         exe="openenroth",
+         repo="OpenEnroth/OpenEnroth", kind="flatpak",
+         appid="io.github.openenroth.openenroth",
+         asset=r"^OpenEnroth_nightly_Linux_x86_64_RelWithDebInfo\.flatpak$",
+         exe="", datadir=str(HOME / ".var/app/io.github.openenroth.openenroth/data/mm7/data"),
          logo="https://github.com/OpenEnroth.png?size=256",
          color="#8f6f2f",
          needs=("files", "Might and Magic VI–VIII",
@@ -529,29 +534,44 @@ PORTS = [
          needs=("pick", "Bomberman 64", "N64 US — .z64")),
     dict(shortname="edgeoftimerecomp", title="Spider-Man: Edge of Time Recompiled",
          repo="goliathret/EdgeOfTimeRecomp", kind="appimage",
-         asset=r"x86_64\\.AppImage$", exe="",
+         asset=r"x86_64\.AppImage$", exe="",
          logo="", color="#b02020",
          needs=("pick", "Spider-Man: Edge of Time", "Xbox 360 US + title update — your own dump")),
     dict(shortname="splosionmanrecomp", title="'Splosion Man Recomp",
          repo="thefixinhixon/SplosionManRecomp", kind="appimage",
-         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         asset=r"x86_64-v[\d.]+\.AppImage$", exe="",
          logo="", color="#e07020",
          needs=("pick", "'Splosion Man", "Xbox 360 XBLA package — your own")),
     dict(shortname="pacificrimrecomp", title="Pacific Rim Recomp",
          repo="thefixinhixon/PacificRimRecomp", kind="appimage",
-         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         asset=r"x86_64-v[\d.]+\.AppImage$", exe="",
          logo="", color="#2a5a8a",
          needs=("pick", "Pacific Rim", "Xbox 360 XBLA package — your own")),
     dict(shortname="realsteelrecomp", title="Real Steel Recomp",
          repo="thefixinhixon/RealSteelRecomp", kind="appimage",
-         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         asset=r"x86_64-v[\d.]+\.AppImage$", exe="",
          logo="", color="#707880",
          needs=("pick", "Real Steel", "Xbox 360 XBLA package — your own")),
     dict(shortname="themawrecomp", title="The Maw Recomp",
          repo="thefixinhixon/TheMawRecomp", kind="appimage",
-         asset=r"x86_64-v[\\d.]+\\.AppImage$", exe="",
+         asset=r"x86_64-v[\d.]+\.AppImage$", exe="",
          logo="", color="#6a9a3a",
          needs=("pick", "The Maw", "Xbox 360 XBLA package — your own")),
+    # Upstream currently publishes a Windows-only, 32-bit playtest. Run it
+    # through Proton until its planned native Linux build is available.
+    dict(shortname="acgc-pc-port", title="Animal Crossing (GameCube) PC Port",
+         repo="flyngmt/ACGC-PC-Port", kind="winarchive",
+         asset=r"^ACGC-PC-Port[\d.]+\.zip$", exe="AnimalCrossing.exe",
+         datadir=str(PORTS_DIR / "acgc-pc-port" / "rom"),
+         logo="", color="#51a8ba",
+         needs=("folder", "Animal Crossing", "GameCube USA GAFE01 Rev 0 — .iso/.gcm/.ciso")),
+    dict(shortname="pt-pc", title="P.T. PC Port",
+         repo="LoreanXavier/pt-pc", kind="ptsetup",
+         asset=r"^P\.T\.PC\.Port\.Setup-linux$", exe="pt",
+         pkg_source=str(PORTS_DIR / "pt-pc-source.pkg"),
+         datadir=str(PORTS_DIR),
+         logo="", color="#776b69",
+         needs=("package", "P.T.", "PS4 fake PKG from your own dump, preferably CUSA01127", "pt-pc-source.pkg")),
 ]
 
 APPS = {p["shortname"]: p for p in PORTS}
@@ -597,27 +617,33 @@ def release_info(state, port, max_age=6 * 3600):
     cache = state.setdefault("releases", {}).get(port["shortname"])
     if cache and time.time() - cache.get("ts", 0) < max_age:
         return cache
+    rels = []
     try:
         rels = [http_json(
             f"https://api.github.com/repos/{port['repo']}/releases/latest")]
-    except Exception:
+    except urllib.error.HTTPError as e:
+        if e.code != 404:
+            raise
+    rx = re.compile(port["asset"], re.IGNORECASE)
+    if not any(rx.search(a.get("name", "")) for rel in rels
+               for a in rel.get("assets", [])):
         # repos that only publish pre-releases (e.g. OpenGothic) 404 on
         # /latest — fall back to the newest entries of the release list
         rels = http_json(
-            f"https://api.github.com/repos/{port['repo']}/releases?per_page=5")
-    rx = re.compile(port["asset"], re.IGNORECASE)
+            f"https://api.github.com/repos/{port['repo']}/releases?per_page=20")
     info = None
-    for rel, a in ((rel, a) for rel in rels for a in rel.get("assets", [])):
+    for rel, a in ((rel, a) for rel in rels if not rel.get("draft")
+                   for a in rel.get("assets", [])):
         if rx.search(a.get("name", "")):
             info = {"tag": f"{rel.get('tag_name', '')}"
-                           f"@{(a.get('updated_at') or '')[:10]}",
+                           f"@{a.get('updated_at') or ''}",
                     "url": a.get("browser_download_url", ""),
                     "size": int(a.get("size", 0)),
                     "name": a.get("name", ""),
                     "ts": int(time.time())}
             break
     if not info:
-        raise RuntimeError(f"no Linux asset in latest {port['repo']} release")
+        raise RuntimeError(f"no compatible asset in {port['repo']} releases")
     state["releases"][port["shortname"]] = info
     return info
 
@@ -689,6 +715,25 @@ def _mark_executables(root):
             pass
 
 
+def _install_archive(archive, pdir, shortname, title, updating=False):
+    """Stage release files and preserve user ROMs, saves, mods and settings."""
+    RUNTIME_DIR.mkdir(parents=True, exist_ok=True)
+    protected = {"save", "saves", "rom", "roms", "mods", "texture_pack", "game"}
+    with tempfile.TemporaryDirectory(prefix="port-stage-", dir=RUNTIME_DIR) as staging:
+        _extract(archive, staging, shortname, title)
+        for source in Path(staging).rglob("*"):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(staging)
+            destination = pdir / relative
+            if updating and destination.exists() and (
+                    any(part.lower() in protected for part in relative.parts[:-1])
+                    or source.suffix.lower() in {".ini", ".cfg"}):
+                continue
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+
 def find_exe(port):
     """Locate the port's main executable inside its folder: exact hint first,
     then the biggest AppImage, then the biggest ELF (excluding .so)."""
@@ -752,16 +797,46 @@ def _flatpak_install_bundle(bundle):
         raise RuntimeError(f"flatpak install failed: {tail}")
 
 
-def worker_install(shortname):
+def _install_pt_setup(port, info, pdir, shortname):
+    """Use upstream's integrity-checked setup to import a user's fake PKG."""
+    source = Path(port["pkg_source"])
+    game_data = pdir / "CUSA01127"
+    already_imported = all((game_data / name).is_file() for name in
+                           ("chunk1.psarc", "texture.qar"))
+    if not source.is_file() and not already_imported:
+        raise RuntimeError(f"Copy your own P.T. fake PKG to {source} before installing")
+    setup = RUNTIME_DIR / "port_setups" / info["name"]
+    download_file(info["url"], setup, shortname, 5, 70,
+                  f"Downloading {port['title']} {info['tag']}…")
+    setup.chmod(setup.stat().st_mode | 0o111)
+    result = RUNTIME_DIR / "port_setups" / "pt-pc-result.txt"
+    result.unlink(missing_ok=True)
+    write_progress(shortname, 80, "Importing P.T. game files…", pid=os.getpid())
+    # Empty source means an existing installation can be updated while the
+    # validated archives are preserved by upstream's installer.
+    r = subprocess.run([str(setup), "--install",
+                        str(source) if source.is_file() else "",
+                        str(pdir), str(result)],
+                       capture_output=True, text=True, timeout=7200)
+    report = result.read_text(errors="replace").strip() if result.exists() else ""
+    if r.returncode or not report.startswith("PASS "):
+        tail = (report or r.stderr or r.stdout or "P.T. setup failed").strip()
+        raise RuntimeError(tail[-500:])
+
+
+def worker_install(shortname, release=None):
     port = APPS[shortname]
     state = load_state()
     try:
         write_progress(shortname, 2, f"Checking {port['title']} release…",
                        pid=os.getpid())
-        info = release_info(state, port)
+        info = release or release_info(state, port, max_age=0)
+        state.setdefault("releases", {})[shortname] = info
         pdir = port_dir(port)
         pdir.mkdir(parents=True, exist_ok=True)
-        if port["kind"] == "appimage":
+        if port["kind"] == "ptsetup":
+            _install_pt_setup(port, info, pdir, shortname)
+        elif port["kind"] == "appimage":
             dest = pdir / f"{shortname}.AppImage"
             download_file(info["url"], dest, shortname, 5, 95,
                           f"Downloading {port['title']} {info['tag']}…")
@@ -787,7 +862,8 @@ def worker_install(shortname):
             archive = pdir / f"_dl_{info['name']}"
             download_file(info["url"], archive, shortname, 5, 70,
                           f"Downloading {port['title']} {info['tag']}…")
-            _extract(archive, pdir, shortname, port["title"])
+            _install_archive(archive, pdir, shortname, port["title"],
+                             updating=bool(state.get("apps", {}).get(shortname, {}).get("installed")))
             archive.unlink(missing_ok=True)
             _mark_executables(pdir)
         if port["kind"] == "flatpak":
@@ -804,8 +880,10 @@ def worker_install(shortname):
         st["exe"] = str(exe)
         save_state(state)
         write_progress(shortname, 100, "Done")
+        return True
     except Exception as e:
         write_progress(shortname, 0, "Installation failed", error=str(e))
+        return False
 
 
 def iso_import(port):
@@ -839,6 +917,17 @@ def iso_import(port):
     return iso_status("busy")
 
 
+def _update_event(port, info, installed, success):
+    events = RUNTIME_DIR / "ports_update_events"
+    events.mkdir(parents=True, exist_ok=True)
+    event = {"name": port["title"], "version": info["tag"].split("@")[0],
+             "appid": installed.get("steamClientID", ""), "success": success}
+    destination = events / f"{time.time_ns()}-{port['shortname']}.json"
+    temporary = destination.with_suffix(".tmp")
+    temporary.write_text(json.dumps(event))
+    temporary.replace(destination)
+
+
 def worker_autoupdate():
     """Silent daily maintenance: re-download a port when its release tag (or
     rolling asset date) changed. User files in the folder are untouched."""
@@ -849,8 +938,15 @@ def worker_autoupdate():
             continue
         try:
             info = release_info(state, port, max_age=0)
+            legacy = st.get("tag", "")
+            if legacy == info["tag"].split("T")[0]:
+                # Upgrade old date-only stamps without reinstalling every port.
+                st["tag"] = info["tag"]
+                save_state(state)
             if info["tag"] and info["tag"] != st.get("tag"):
-                worker_install(shortname)
+                # Pass the freshly checked release, not the stale on-disk cache.
+                success = worker_install(shortname, release=info)
+                _update_event(port, info, st, success)
                 state = load_state()      # worker_install saved its own state
         except Exception as e:
             print(f"ports autoupdate {shortname}: {e}", file=sys.stderr)

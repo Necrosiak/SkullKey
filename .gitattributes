@@ -1,0 +1,4 @@
+# These executable Linux scripts must remain usable after a Windows checkout.
+defaults/scripts/ports.py text eol=lf
+defaults/scripts/ports_i18n.py text eol=lf
+defaults/scripts/autoupdate_games.py text eol=lf

@@ -918,6 +918,26 @@ class Plugin:
     async def get_autoupdate(self):
         return updater.is_autoupdate_enabled()
 
+    async def take_port_update_events(self):
+        """Relay completed automatic game updates once, even with QAM closed."""
+        directory = os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "ports_update_events")
+        events = []
+        if not os.path.isdir(directory):
+            return events
+        for name in sorted(os.listdir(directory))[:20]:
+            if not name.endswith(".json"):
+                continue
+            path = os.path.join(directory, name)
+            try:
+                with open(path) as handle:
+                    event = json.load(handle)
+                if isinstance(event, dict) and event.get("name"):
+                    events.append(event)
+                os.unlink(path)
+            except Exception as error:
+                decky_plugin.logger.warning(f"[portsupd] event read failed: {error}")
+        return events
+
     # ── Emplacement des préfixes (SkullKey #5) ─────────────────────────────
     # La logique vit dans scripts/shared/prefixes.py (partagée avec les scripts
     # des magasins) ; ici, seulement lire / écrire le dossier choisi.

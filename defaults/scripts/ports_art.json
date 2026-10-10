@@ -1,4 +1,18 @@
 {
+ "acgc-pc-port": {
+  "grid": "https://cdn2.steamgriddb.com/grid/d43260809c8c21f3e1f9ab15b15e6811.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/20b0e005a3702cbd9969efd00c59d706.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/99590b9dee0da5b4dad9ebc4ba39a132.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/e3350ca8675573e0158f73d116234534.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/2239c5c0b811e03e98d6505a46e0811b.png"
+ },
+ "pt-pc": {
+  "grid": "https://cdn2.steamgriddb.com/grid/1c8965b1092800bb5986159e08a85b9a.png",
+  "gridh": "https://cdn2.steamgriddb.com/grid/86845eb60971b389a256301f9e47cd74.png",
+  "hero": "https://cdn2.steamgriddb.com/hero/808f27a268245e509a9bb0b5fbf03cc7.png",
+  "logo": "https://cdn2.steamgriddb.com/logo/050228794105d572af1ba92e33121ad5.png",
+  "icon": "https://cdn2.steamgriddb.com/icon/413b3c848ce6956827c9c877d400f18c.png"
+ },
  "2s2h": {
   "grid": "https://cdn2.steamgriddb.com/grid/958c6e525626a72dc5722a63f638a80b.png",
   "gridh": "https://cdn2.steamgriddb.com/grid/3258bb70c96330b7eaadc3458bc8f00d.png",

@@ -119,6 +119,17 @@ _NEEDS_TMPL = {
         "pl": "Wymaga własnej kopii {game} ({spec}): aplikacja poprosi o plik przy pierwszym uruchomieniu.",
         "ru": "Требуется ваша собственная копия {game} ({spec}): приложение запросит файл при первом запуске.",
     },
+    "package": {
+        "en": "Before installing, place your own {game} package ({spec}) at <b>{fname}</b>. Encrypted store PKGs cannot be used.",
+        "fr": "Avant l'installation, placez votre propre paquet {game} ({spec}) sous le nom <b>{fname}</b>. Un PKG chiffré du Store ne peut pas être utilisé.",
+        "de": "Lege vor der Installation dein eigenes {game}-Paket ({spec}) als <b>{fname}</b> ab. Verschlüsselte Store-PKGs funktionieren nicht.",
+        "es": "Antes de instalar, coloca tu propio paquete de {game} ({spec}) como <b>{fname}</b>. Los PKG cifrados de la tienda no sirven.",
+        "it": "Prima di installare, metti il tuo pacchetto di {game} ({spec}) come <b>{fname}</b>. I PKG cifrati dello Store non funzionano.",
+        "pt": "Antes de instalar, coloque o seu pacote de {game} ({spec}) com o nome <b>{fname}</b>. Os PKG cifrados da loja não funcionam.",
+        "nl": "Plaats vóór installatie je eigen {game}-pakket ({spec}) als <b>{fname}</b>. Versleutelde winkel-PKGs werken niet.",
+        "pl": "Przed instalacją umieść własny pakiet {game} ({spec}) jako <b>{fname}</b>. Zaszyfrowane sklepowe PKG nie zadziałają.",
+        "ru": "Перед установкой поместите свой пакет {game} ({spec}) под именем <b>{fname}</b>. Зашифрованные PKG из магазина не подходят.",
+    },
 }
 
 _HOWTO = {
@@ -883,6 +894,28 @@ DESCS = {
         "pl": "Might and Magic VI, VII i VIII na jednym nowoczesnym otwartym silniku (OpenEnroth): natywny Linux, jeden wspólny silnik dla trzech klasycznych RPG z poprawkami wygody — wymaga danych gry z GOG.",
         "ru": "Might and Magic VI, VII и VIII на одном современном открытом движке (OpenEnroth): нативный Linux, единый движок для трёх классических RPG с улучшениями удобства — нужны данные игры из GOG.",
     },
+    "acgc-pc-port": {
+        "en": "Unofficial Animal Crossing (GameCube) PC port. The current upstream release is a Windows-only 32-bit playtest, launched through Proton on SteamOS; Linux support is planned but not yet published. Back up your saves before updating.",
+        "fr": "Port PC non officiel d'Animal Crossing (GameCube). La version actuelle est une préversion Windows 32 bits, lancée via Proton sur SteamOS ; la version Linux est prévue mais pas encore publiée. Sauvegardez vos parties avant une mise à jour.",
+        "de": "Inoffizieller PC-Port von Animal Crossing (GameCube). Die aktuelle Version ist ein Windows-Playtest in 32 Bit und läuft unter SteamOS über Proton; Linux-Support ist geplant, aber noch nicht veröffentlicht. Sichere deine Spielstände vor Updates.",
+        "es": "Port no oficial de Animal Crossing (GameCube) para PC. La versión actual es una prueba de Windows de 32 bits que se ejecuta con Proton en SteamOS; la versión Linux aún no está publicada. Haz una copia de tus partidas antes de actualizar.",
+        "it": "Port PC non ufficiale di Animal Crossing (GameCube). La versione attuale è un playtest Windows a 32 bit eseguito con Proton su SteamOS; il supporto Linux non è ancora disponibile. Salva una copia dei dati prima di aggiornare.",
+        "pt": "Port não oficial de Animal Crossing (GameCube) para PC. A versão atual é um teste para Windows de 32 bits, executado via Proton no SteamOS; o suporte Linux ainda não foi publicado. Faça uma cópia dos seus saves antes de atualizar.",
+        "nl": "Onofficiële pc-port van Animal Crossing (GameCube). De huidige versie is een 32-bits Windows-playtest via Proton op SteamOS; Linux-ondersteuning is gepland maar nog niet uitgebracht. Maak een back-up van je saves voor updates.",
+        "pl": "Nieoficjalny port Animal Crossing (GameCube) na PC. Obecna wersja to 32-bitowy test na Windows uruchamiany przez Proton w SteamOS; wersja Linux nie została jeszcze wydana. Przed aktualizacją zrób kopię zapisów.",
+        "ru": "Неофициальный ПК-порт Animal Crossing (GameCube). Текущая версия — 32-битная тестовая сборка Windows через Proton в SteamOS; поддержка Linux пока не выпущена. Перед обновлением сохраните копию данных.",
+    },
+    "pt-pc": {
+        "en": "Native Linux port of P.T. SkullKey uses the official setup to import game files from your own PS4 fake PKG. Encrypted store PKGs are not supported; Vulkan 1.3 is required.",
+        "fr": "Port Linux natif de P.T. SkullKey utilise l'installateur officiel pour importer les fichiers depuis votre propre faux PKG PS4. Les PKG chiffrés du Store ne sont pas pris en charge ; Vulkan 1.3 est requis.",
+        "de": "Nativer Linux-Port von P.T. SkullKey verwendet den offiziellen Installer und importiert Dateien aus deinem eigenen PS4-Fake-PKG. Verschlüsselte Store-PKGs werden nicht unterstützt; Vulkan 1.3 ist nötig.",
+        "es": "Port nativo de P.T. para Linux. SkullKey usa el instalador oficial para importar archivos de tu propio fake PKG de PS4. Los PKG cifrados de la tienda no son compatibles; requiere Vulkan 1.3.",
+        "it": "Port nativo Linux di P.T. SkullKey usa l'installer ufficiale per importare i file dal tuo fake PKG PS4. I PKG cifrati dello Store non sono supportati; serve Vulkan 1.3.",
+        "pt": "Port nativo de P.T. para Linux. SkullKey usa o instalador oficial para importar ficheiros do seu fake PKG PS4. PKG cifrados da loja não são suportados; requer Vulkan 1.3.",
+        "nl": "Native Linux-port van P.T. SkullKey gebruikt de officiële installer om bestanden uit je eigen PS4-fake-PKG te importeren. Versleutelde winkel-PKGs worden niet ondersteund; Vulkan 1.3 is vereist.",
+        "pl": "Natywny port P.T. na Linux. SkullKey używa oficjalnego instalatora do importu plików z własnego fake PKG PS4. Zaszyfrowane sklepowe PKG nie są obsługiwane; wymagany jest Vulkan 1.3.",
+        "ru": "Нативный порт P.T. для Linux. SkullKey использует официальный установщик для импорта файлов из вашего PS4 fake PKG. Зашифрованные PKG из магазина не поддерживаются; требуется Vulkan 1.3.",
+    },
 }
 
 
@@ -902,6 +935,14 @@ def needs_line(port):
 
 
 def howto_line(directory):
+    # Presentation only: all ports share this hint. Keep the real installation
+    # paths unchanged, but show the user's home as ~ on every distribution.
+    directory = str(directory)
+    home = os.path.expanduser("~").rstrip("/\\")
+    if directory == home:
+        directory = "~"
+    elif directory.startswith(home + os.sep):
+        directory = "~" + directory[len(home):]
     return _pick(_HOWTO).format(dir=directory)
 
 

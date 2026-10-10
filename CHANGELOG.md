@@ -1,5 +1,33 @@
 # Changelog
 
+## 1.16.0 — 2026-10-11
+
+- Notify after automatic Classics updates, including failed installations;
+  selecting the notice opens the game's Steam library page.
+- Fix stale release-cache reuse during automatic updates, detect rolling
+  assets updated twice on the same day, and fall back to a compatible official
+  release when the latest release has no suitable asset.
+- Fix five release asset filters and use OpenEnroth's official Linux Flatpak.
+  Existing native OpenEnroth data is retained but may need copying into the
+  Flatpak data directory shown on its page. Ninja's Dawn's upstream currently
+  returns HTTP 404; existing installs remain, but downloads/updates cannot
+  succeed until its official source is available again.
+- Preserve existing ROMs, saves and configuration files when merging archive
+  updates. Allow long-running port installers to finish during daily updates.
+- Include Steam covers, banners, heroes, logos and icons for both new ports.
+- Fix automatic Proton selection using Steam's actual compatibility-tool name.
+
+- Show file-copy paths relative to the user's home (`~/…`) for all Classics
+  ports and all nine languages. Real paths remain calculated per user, not
+  tied to Bazzite or any particular distribution.
+- Add Animal Crossing (GameCube) PC Port to Classics from its official
+  Windows-only playtest release, configured for Proton until the upstream
+  native Linux build exists. Requires the user's own USA disc image.
+- Add P.T. PC Port to Classics using its official Linux setup, which imports
+  game files from the user's own PS4 fake PKG before creating the shortcut.
+  Encrypted store PKGs are not supported. Neither entry downloads or includes
+  game data.
+
 ## 1.15.5 — 2026-10-10
 
 - Close SkullKey game-detail dialogs when Steam navigates away, and dispose

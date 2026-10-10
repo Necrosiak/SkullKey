@@ -80,8 +80,12 @@ def mihoyo():
 def ports():
     r = subprocess.run(
         ["python3", "./scripts/ports.py", "autoupdate"],
-        capture_output=True, text=True, timeout=1200)
+        capture_output=True, text=True, timeout=24 * 3600)
     log(f"Ports autoupdate → {(r.stdout or '').strip()[:300]}")
+    if r.stderr:
+        log(f"Ports diagnostics → {r.stderr.strip()[:2000]}")
+    if r.returncode:
+        raise RuntimeError(f"Ports updater exited with status {r.returncode}")
 
 
 def minecraft():

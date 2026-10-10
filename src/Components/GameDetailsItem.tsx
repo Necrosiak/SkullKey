@@ -391,7 +391,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                     const compatTools = await SteamClient.Apps.GetAvailableCompatTools(1)
                     const firstAvailable = compatTools.filter(tool => tool.strToolName.startsWith('proton') && tool.strToolName.indexOf('experimental') == -1)
                     if (firstAvailable.length > 0) {
-                        SteamClient.Apps.SpecifyCompatTool(id, firstAvailable[0].CompatToolName);
+                        SteamClient.Apps.SpecifyCompatTool(id, firstAvailable[0].strToolName || firstAvailable[0].CompatToolName);
                     }
                 }
             }
