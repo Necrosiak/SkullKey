@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.15.5 — 2026-10-10
+
+- Close SkullKey game-detail dialogs when Steam navigates away, and dispose
+  their navigation observers when the dialogs close. This prevents stale modal
+  callbacks from affecting later Steam navigation. Candidate fix for the UI
+  sound regression reported in [#8](https://github.com/Necrosiak/SkullKey/issues/8);
+  validation on the affected Steam Deck is still pending.
+
 ## 1.15.4 — 2026-10-09
 
 - Restore the missing Fall Guys artwork in Steam. The game is retired from
