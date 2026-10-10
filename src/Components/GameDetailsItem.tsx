@@ -43,7 +43,6 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     logger.log("GameDetailsItem shouldUpdateshortcut", shouldUpdateShortcut);
 
     const originRoute = location.pathname.replace('/routes', '');
-    // useEffect(() => reaction(() => SteamUIStore.WindowStore.GamepadUIMainWindowInstance?.LocationPathName, closeModal), []);
 
     const [progress, setProgress] = useState<ProgressUpdate>({
         Percentage: 0,
@@ -63,8 +62,16 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     //const [] = useState("Play Game");
     useEffect(() => {
         logger.log("GameDetailsItem onInit");
-        reaction(() => SteamUIStore.WindowStore.GamepadUIMainWindowInstance?.LocationPathName, closeModal)
+        // A details dialog must not keep reacting to Steam navigation after it
+        // closes. Without disposal, every visit leaves another global observer.
+        const disposeNavigation = closeModal
+            ? reaction(
+                () => SteamUIStore.WindowStore.GamepadUIMainWindowInstance?.LocationPathName,
+                () => closeModal()
+            )
+            : undefined;
         onInit();
+        return () => disposeNavigation?.();
     }, []);
 
     const reloadData = async () => {

@@ -211,7 +211,6 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 serverAPI={serverAPI}
                 games={content.Games ?? []}
                 initActionSet={initActionSet}
-                initAction=""
             />
         </Focusable>
     );
@@ -221,10 +220,9 @@ interface GridItemsProperties {
     games: GameData[];
     serverAPI: ServerAPI;
     initActionSet: string;
-    initAction: string;
 }
 
-const GridItems: VFC<GridItemsProperties> = memo(({ serverAPI, games, initActionSet, initAction }) => {
+const GridItems: VFC<GridItemsProperties> = memo(({ serverAPI, games, initActionSet }) => {
     const logger = new Logger("GridContainer");
 
     const imgAreaWidth = '120px';
@@ -252,13 +250,12 @@ const GridItems: VFC<GridItemsProperties> = memo(({ serverAPI, games, initAction
                             logger.debug("onClick game: ", game);
                             // logger.debug("setActiveGame", game.ShortName);
                             // setActiveGame(game.ShortName);
-                            showModal(
+                            const modal = showModal(
                                 <GameDetailsItem
                                     serverAPI={serverAPI}
                                     shortname={game.ShortName}
                                     initActionSet={initActionSet}
-                                    initAction={initAction}
-                                    clearActiveGame={() => { }}
+                                    closeModal={() => modal.Close()}
                                 />
                             );
                         }}
