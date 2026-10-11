@@ -44,6 +44,17 @@ while queue:
                     print(f"Error parsing JSON from {entry.path}: {e}")
 
 
+# Tab order must not depend on the directory listing order (os.scandir is
+# arbitrary): stores first, then miHoYo, Minecraft and the Classics last.
+TAB_ORDER = ["GetEpicActions", "GetGOGActions", "GetAmazonActions", "GetBattleNetActions",
+             "GetUbisoftActions", "GetEAActions",
+             "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions"]
+for fragment in json_fragments.values():
+    tabs = fragment.get("Content", {}).get("Tabs") if isinstance(fragment, dict) else None
+    if isinstance(tabs, list):
+        tabs.sort(key=lambda tab: TAB_ORDER.index(tab.get("ActionId"))
+                  if tab.get("ActionId") in TAB_ORDER else len(TAB_ORDER))
+
 # Check if an argument is provided
 if len(sys.argv) < 2:
     error = {

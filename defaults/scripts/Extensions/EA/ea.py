@@ -1,0 +1,924 @@
+#!/usr/bin/env python3
+"""Experimental Maxima adapter. No automatic login; no secrets in plugin output."""
+import fcntl
+from contextlib import contextmanager
+import hashlib
+import html
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import selectors
+import signal
+import tempfile
+import time
+import uuid
+import urllib.parse
+import urllib.request
+
+VERSION = "v0.14.3"
+SHA256 = "5a0a23e80a88c43d18c88df061b8c1e927a622c625b028ea41fa37e7c3de70ee"
+URL = f"https://github.com/Starkka15/Maxima/releases/download/{VERSION}/maxima-cli-linux-x86_64"
+# maxima-cli pads slug/name/offer to 35/35/25 columns as a MINIMUM: a slug or
+# title of 35+ characters is followed by a single space. Parse from the right
+# instead (slug has no spaces, offer has none, the title may contain " - ").
+ROW = re.compile(r"^\s*(?P<slug>\S+)\s+-\s(?P<name>.+)\s-\s(?P<offer>\S+)\s+-\sInstalled:\s(?P<installed>true|false)\s*$")
+
+
+def root():
+    account = os.environ.get("SK_ACCOUNT_DIR")
+    if not account or not Path(account).is_absolute():
+        raise RuntimeError("EA requires the current SkullKey Steam-account directory.")
+    path = Path(account) / "ea"
+    path.mkdir(parents=True, exist_ok=True, mode=0o700)
+    path.chmod(0o700)
+    return path
+
+
+def env():
+    result = os.environ.copy()
+    # Browser/protocol resolution belongs to the desktop session, not Maxima's
+    # account-isolated storage. Preserve only these non-secret XDG overrides.
+    for key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
+        result.pop("SK_EA_BROWSER_" + key, None)
+        if key in os.environ:
+            result["SK_EA_BROWSER_" + key] = os.environ[key]
+    result["XDG_DATA_HOME"] = str(root() / "data")
+    result["XDG_CONFIG_HOME"] = str(root() / "config")
+    result["XDG_CACHE_HOME"] = str(root() / "cache")
+    # v0.14.3 accepts only maxima-qrc.desktop and otherwise tries to create a
+    # missing bootstrap handler inside the isolated data directory. SkullKey
+    # installs its own callback explicitly; upstream must not replace it.
+    result["MAXIMA_DISABLE_QRC"] = "1"
+    result["BROWSER"] = str(Path(__file__).with_name("open_browser.py").resolve())
+    # Never pass arbitrary runtime overrides or tracing into the EA process.
+    for key in ("MAXIMA_WINE_COMMAND", "RUST_LOG", "RUST_BACKTRACE", "LD_PRELOAD", "MAXIMA_LOG_LEVEL"):
+        result.pop(key, None)
+    # Decky starts store actions with an almost empty environment (measured
+    # 11/10/2026: no PATH, USER, XDG_RUNTIME_DIR or DISPLAY). umu-run is a
+    # `#!/usr/bin/env python3` script, so the post-download Touchup.exe step
+    # failed silently and maxima-cli then waited forever at 99 %.
+    import pwd
+    uid = os.getuid()
+    defaults = {"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "XDG_RUNTIME_DIR": f"/run/user/{uid}"}
+    try:
+        defaults["USER"] = defaults["LOGNAME"] = pwd.getpwuid(uid).pw_name
+    except KeyError:
+        pass
+    if not (result.get("DISPLAY") or result.get("WAYLAND_DISPLAY")):
+        defaults["DISPLAY"] = ":0"
+    for key, value in defaults.items():
+        if not result.get(key):
+            result[key] = value
+    # Maxima v0.14.3 hard-codes en_US as the game locale; our bootstrap
+    # stand-in replaces it with the language picked in the EA tab settings.
+    result["SK_EA_LOCALE"] = game_locale()
+    return result
+
+
+STEAM_LANGUAGES = {
+    "english": "en_US", "french": "fr_FR", "german": "de_DE", "spanish": "es_ES",
+    "latam": "es_MX", "italian": "it_IT", "brazilian": "pt_BR", "polish": "pl_PL",
+    "russian": "ru_RU", "dutch": "nl_NL", "japanese": "ja_JP", "koreana": "ko_KR",
+    "tchinese": "zh_TW", "schinese": "zh_CN", "arabic": "ar_SA",
+}
+
+
+def steam_locale():
+    # Default: the Steam (= SteamOS/SkullKey) UI language, like the EA app
+    # defaulting to the system language when it asks before an install.
+    try:
+        text = Path(os.path.expanduser("~/.steam/registry.vdf")).read_text(errors="replace")
+        match = re.search(r'"language"\s+"([a-z]+)"', text)
+        if match:
+            return STEAM_LANGUAGES.get(match[1], "en_US")
+    except OSError:
+        pass
+    return "en_US"
+
+
+def game_locale():
+    # Steam shortcuts run without Decky's variables: the runtime dir is also
+    # two levels above the account dir (<runtime>/accounts/<steam id>).
+    account = os.environ.get("SK_ACCOUNT_DIR")
+    runtime = str(Path(account).parent.parent) if account else None
+    for base in (os.environ.get("DECKY_PLUGIN_RUNTIME_DIR"), runtime,
+                 str(Path(__file__).resolve().parents[3])):
+        if not base:
+            continue
+        try:
+            config = json.loads((Path(base) / "conf_schemas/eatabconfig.json").read_text())
+            for section in config.get("Sections", []):
+                for option in section.get("Options", []):
+                    if option.get("Key") == "Language":
+                        if re.fullmatch(r"[a-z]{2}_[A-Z]{2}", option.get("Value", "")):
+                            return option["Value"]
+                        return steam_locale()  # "auto"
+        except Exception:
+            pass
+    return steam_locale()
+
+
+@contextmanager
+def session_lock():
+    # OAuth listens on one fixed machine-wide port, even across accounts.
+    with (root().parent.parent / "skullkey-ea-session.lock").open("a") as shared, (root() / "session.lock").open("a") as account:
+        fcntl.flock(shared, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(account, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        yield
+
+
+def state():
+    try:
+        return json.loads((root() / "state.json").read_text())
+    except (OSError, ValueError):
+        return {"games": [], "settings": {}, "shortcuts": {}, "validated": False}
+
+
+def save(value):
+    with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+        json.dump(value, stream)
+        path = Path(stream.name)
+    path.replace(root() / "state.json")
+
+
+def client():
+    # Pinned version, verified digest. No latest/auto-upgrade during a game.
+    path = root() / "maxima-cli"
+    if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == SHA256:
+        return path
+    part = root() / "maxima-cli.part"
+    with urllib.request.urlopen(URL, timeout=60) as response, part.open("wb") as out:
+        while data := response.read(1024 * 1024):
+            out.write(data)
+    if hashlib.sha256(part.read_bytes()).hexdigest() != SHA256:
+        part.unlink()
+        raise RuntimeError("Maxima download integrity check failed.")
+    part.chmod(0o700)
+    part.replace(path)
+    return path
+
+
+def localized_client(locale=None):
+    # Maxima v0.14.3 hard-codes the active language: Locale::EnUs, the LSX
+    # answer games ask for (InstalledLanguage => "en_US", maxima-lib
+    # src/lsx/request/game.rs), and "-locale en_US" for Touchup.exe. Games
+    # follow the LSX answer, so registry/env alone leave them in English.
+    # Every standalone "en_US" literal in the binary is that active language;
+    # the only other one is inside the list of available languages, which
+    # stays intact. Same length, so a byte swap on a copy of the verified
+    # binary (the original is never modified; GPL-3.0 allows it).
+    locale = locale or game_locale()
+    original = client()
+    if locale == "en_US" or not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
+        return original
+    path = original.with_name(f"maxima-cli-{locale}")
+    stamp = original.with_name(f".maxima-cli-{locale}.sha256")
+    if path.exists() and stamp.exists() and stamp.read_text() == SHA256:
+        return path
+    data = original.read_bytes()
+    keep = b"de_DE,en_US,es_ES"
+    data = data.replace(keep, b"\0KEEP\0LIST\0").replace(b"en_US", locale.encode()).replace(b"\0KEEP\0LIST\0", keep)
+    part = path.with_suffix(".part")
+    part.write_bytes(data)
+    part.chmod(0o700)
+    part.replace(path)
+    stamp.write_text(SHA256)
+    return path
+
+
+def parse_library(output):
+    output = re.sub(r"\x1b\[[0-9;]*m", "", output)
+    if re.search(r"\bERROR\b", output) or "Owned games:" not in output:
+        raise RuntimeError("EA library could not be validated. Sign in and retry.")
+    games = []
+    for line in output.splitlines():
+        # Maxima log prefix precedes the fixed-width record.
+        line = re.sub(r"^INFO\s+-\s+\[[^]]*\]\s+-\s+", "", line)
+        match = ROW.match(line)
+        if match:
+            g = match.groupdict()
+            games.append({"slug": g["slug"], "name": g["name"].strip(), "offer": g["offer"],
+                          "installed": g["installed"] == "true"})
+        elif " - Installed:" in line:
+            raise RuntimeError("Unexpected Maxima library format; no partial import.")
+    return games
+
+
+def login_diagnostic(stage, error=None, **fields):
+    # Whitelisted metadata only; neither exception text nor argv are safe.
+    allowed = {"validated", "display_available", "exit_code", "elapsed_seconds",
+               "failure_category"}
+    data = {"stage": stage, "version": VERSION,
+            **{k: v for k, v in fields.items() if k in allowed}}
+    if error is not None:
+        data["error_type"] = type(error).__name__
+        if isinstance(error, subprocess.CalledProcessError):
+            data["exit_code"] = error.returncode
+    with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+        json.dump(data, stream)
+        temporary = Path(stream.name)
+    temporary.replace(root() / "login-diagnostic.json")
+
+
+def refresh():
+    # Capture only in memory. Never log account-info/auth-env or raw CLI output.
+    started = time.monotonic()
+    login_diagnostic("cli-start", validated=False)
+    try:
+        result = subprocess.run([str(client()), "list-games"], env=env(),
+                                capture_output=True, text=True, timeout=600)
+    except Exception as error:
+        login_diagnostic("cli-start", error, validated=False)
+        raise
+    # Diagnostic metadata only: never store raw CLI output, URLs or tokens.
+    diagnostic = {"stage": "list-games", "version": VERSION, "exit_code": result.returncode,
+                  "elapsed_seconds": round(time.monotonic() - started, 1), "validated": False}
+    output = result.stdout + "\n" + result.stderr
+    try:
+        if result.returncode:
+            raise RuntimeError("Maxima library request failed.")
+        games = parse_library(output)
+        diagnostic["validated"] = True
+    except RuntimeError:
+        # Fixed categories only. Upstream errors may contain URLs or tokens.
+        lower = output.lower()
+        diagnostic["failure_category"] = next((category for category, markers in (
+            ("protocol-handler", ("qrc protocol", "mime type", "query mime")),
+            ("filesystem", ("no such file or directory", "permission denied")),
+            ("network", ("connection refused", "timed out", "dns error")),
+            ("browser", ("xdg-open", "failed to open browser")),
+        ) if any(marker in lower for marker in markers)), "upstream-or-library-format")
+        raise
+    finally:
+        with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+            json.dump(diagnostic, stream)
+            temporary = Path(stream.name)
+        temporary.replace(root() / "login-diagnostic.json")
+    s = state()
+    s.update(games=games, validated=True)
+    save(s)
+
+
+# Artwork works for any EA library, not a fixed list: Steam's official
+# library art when the title matches a Steam store page exactly, otherwise
+# GOG's public games database, which knows every Origin/EA offer ID (measured
+# 11/10/2026: 38/38 offers found, 23/38 on Steam). Only public URLs are
+# cached; nothing account-related is sent besides the game title/offer ID.
+STEAM_CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps"
+GAMESDB = "https://gamesdb.gog.com/platforms/origin/external_releases/"
+
+
+def _http_json(url):
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(request, timeout=15) as response:
+        return json.loads(response.read())
+
+
+def _norm(text):
+    return "".join(c for c in text.lower() if c.isalnum())
+
+
+def _steam_appid(name):
+    clean = re.sub(r"[™®©]", "", name).strip()
+    try:
+        url = "https://store.steampowered.com/api/storesearch/?l=english&cc=US&term=" + urllib.parse.quote(clean)
+        for item in _http_json(url).get("items", []):
+            if _norm(item.get("name", "")) == _norm(clean):
+                return item["id"]
+    except Exception as error:
+        print(f"steam lookup failed: {type(error).__name__}", file=sys.stderr)
+    return None
+
+
+def _gamesdb_art(offer):
+    try:
+        data = _http_json(GAMESDB + urllib.parse.quote(offer, safe=""))
+    except Exception as error:
+        print(f"gamesdb lookup failed: {type(error).__name__}", file=sys.stderr)
+        return {}
+    info = data.get("game") or {}
+
+    def url(*keys):
+        for key in keys:
+            fmt = (info.get(key) or {}).get("url_format")
+            if fmt:
+                return fmt.replace("{formatter}", "").replace("{ext}", "jpg")
+        return None
+    art = {"grid": url("vertical_cover", "cover"), "gridh": url("horizontal_artwork", "background"),
+           "hero": url("background", "horizontal_artwork"), "icon": url("square_icon")}
+    # gamesdb's "logo" is usually the box art; images() only keeps it when it
+    # really looks like a logo (landscape PNG with transparency).
+    logo = url("logo")
+    if logo:
+        art["logo"] = logo.replace(".jpg", ".png")
+    art["title"] = (info.get("title") or {}).get("*")
+    return {k: v for k, v in art.items() if v}
+
+
+def _looks_like_logo(data):
+    # PNG IHDR: width/height at 16..24, colour type 6 (RGBA) at 25. No Pillow.
+    if data[:8] != b"\x89PNG\r\n\x1a\n" or len(data) < 26:
+        return False
+    width, height = int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    return data[25] in (4, 6) and width > height * 1.3
+
+
+def artwork(g):
+    path = root() / "artwork.json"
+    try:
+        cache = json.loads(path.read_text())
+    except Exception:
+        cache = {}
+    key = g.get("offer") or g["slug"]
+    if key in cache:
+        return cache[key]
+    # Candidates per slot, best first; older Steam apps lack some library art.
+    gamesdb = _gamesdb_art(g["offer"]) if g.get("offer") else {}
+    art = {slot: [gamesdb[slot]] if slot in gamesdb else [] for slot in ("grid", "gridh", "hero", "logo", "icon")}
+    # EA's library names are often short ("Command & Conquer 3"); gamesdb's
+    # official title ("…: Tiberium Wars") finds more Steam pages.
+    appid = _steam_appid(g["name"]) or (gamesdb.get("title") and _steam_appid(gamesdb["title"]))
+    if appid:
+        base = f"{STEAM_CDN}/{appid}"
+        for slot, name in (("grid", "library_600x900_2x.jpg"), ("gridh", "header.jpg"),
+                           ("hero", "library_hero.jpg"), ("logo", "logo.png")):
+            art[slot].insert(0, f"{base}/{name}")
+    cache[key] = art
+    with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+        json.dump(cache, stream)
+        temporary = Path(stream.name)
+    temporary.replace(path)
+    return art
+
+
+def images(g):
+    # Steam-style slots, each downloaded and sent as base64 with its type.
+    import base64
+    content = {"Grid": None, "GridH": None, "Hero": None, "Logo": None}
+    art = artwork(g)
+    for slot, key in (("Grid", "grid"), ("GridH", "gridh"), ("Hero", "hero"), ("Logo", "logo")):
+        for url in art.get(key, []):
+            try:
+                request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(request, timeout=20) as response:
+                    data = response.read()
+                if slot == "Logo" and STEAM_CDN not in url and not _looks_like_logo(data):
+                    continue
+                content[slot] = base64.b64encode(data).decode()
+                content[slot + "Type"] = "png" if url.split("?")[0].endswith(".png") else "jpg"
+                break
+            except Exception as error:
+                print(f"artwork {slot} failed: {type(error).__name__}", file=sys.stderr)
+    # Shortcut icon: Steam wants a local file path.
+    for url in art.get("icon", []):
+        icon = root() / "art" / (hashlib.sha256(url.encode()).hexdigest()[:24] + ".png")
+        try:
+            if not icon.exists():
+                icon.parent.mkdir(parents=True, exist_ok=True)
+                request = urllib.request.Request(url.replace(".jpg", ".png"), headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(request, timeout=20) as response:
+                    icon.write_bytes(response.read())
+            content["IconPath"] = str(icon)
+            break
+        except Exception as error:
+            print(f"artwork icon failed: {type(error).__name__}", file=sys.stderr)
+    return content
+
+
+def cover(g):
+    # Grid tile in SkullKey: first candidate URL, no download needed.
+    try:
+        # Last candidate = gamesdb, which always exists; Steam's 2x capsule
+        # is missing for some older apps and would show a broken tile.
+        return (artwork(g).get("grid") or [None])[-1]
+    except Exception:
+        return None
+
+
+def set_registry_locale(locale):
+    # EA's Touchup.exe writes the game language to the registry at install
+    # time ("Locale"="en_US" under the game's key, measured on Dead Space 2
+    # and Jedi: Fallen Order) and Maxima always passes en_US to it. Games read
+    # that value, so rewrite it to the chosen language before every launch.
+    # Only plain xx_XX values are touched (Windows' own "Locale" entries are
+    # "*", "" or hex codes).
+    registry = root() / "data/maxima/wine/prefix/system.reg"
+    if not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale) or not registry.is_file():
+        return
+    text = registry.read_text(encoding="utf-8", errors="surrogateescape")
+    updated = re.sub(r'^"Locale"="[a-z]{2}_[A-Z]{2}"$', f'"Locale"="{locale}"', text, flags=re.M)
+    if updated != text:
+        temporary = registry.with_suffix(".reg.skullkey")
+        temporary.write_text(updated, encoding="utf-8", errors="surrogateescape")
+        temporary.replace(registry)
+
+
+def game_dir(slug):
+    # Where this game is installed: the drive picked at install time
+    # (<drive>/SkullKey/ea/<slug>, stored in state "paths") or the default.
+    path = state().get("paths", {}).get(slug)
+    return Path(path) if path else root() / "games" / slug
+
+
+def clear_download_state(slug):
+    # Maxima keeps per-offer resume state (data/maxima/temp/downloader/<offer>)
+    # regardless of the install path. Resuming it into a fresh folder writes
+    # chunks at the wrong offsets: measured 11/10/2026, a cancelled install
+    # then restarted on another drive produced corrupt files (DirectX cab
+    # "not trusted", Touchup stuck on an invisible error). Start clean.
+    g = game(slug)
+    offer = (g or {}).get("offer")
+    if not offer or "/" in offer or offer in (".", ".."):
+        return
+    shutil.rmtree(root() / "data/maxima/temp/downloader" / offer, ignore_errors=True)
+
+
+def choose_game_dir(slug):
+    # Fresh install: honour the drive picked in SkullKey's install dialog.
+    previous = game_dir(slug)
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "shared"))
+    import drives
+    base = Path(drives.install_dir("ea", str(root() / "games")))
+    s = state()
+    paths = s.setdefault("paths", {})
+    if base.resolve() == (root() / "games").resolve():
+        paths.pop(slug, None)
+    else:
+        paths[slug] = str(base / slug)
+    save(s)
+    if game_dir(slug) != previous or not any(game_dir(slug).glob("*")):
+        clear_download_state(slug)
+
+
+def merge_case_duplicates(directory):
+    # EA builds come from Windows, where paths ignore case. Maxima writes each
+    # file with the case its manifest uses, so one folder can end up split
+    # (measured on Theme Hospital: data/Game/DOSBOX and data/Game/DOSBox) and
+    # the game's own launcher is then "not found". Merge such siblings into
+    # one folder; never overwrite a file that exists on both sides.
+    if not directory.is_dir():
+        return
+    groups = {}
+    for child in directory.iterdir():
+        if child.is_dir() and not child.is_symlink():
+            groups.setdefault(child.name.lower(), []).append(child)
+    for folders in groups.values():
+        folders.sort(key=lambda p: sum(1 for _ in p.rglob("*")), reverse=True)
+        keep = folders[0]
+        for other in folders[1:]:
+            for item in list(other.iterdir()):
+                target = next((c for c in keep.iterdir() if c.name.lower() == item.name.lower()), None)
+                if target is None:
+                    item.rename(keep / item.name)
+                elif target.is_dir() and item.is_dir():
+                    # Same subfolder on both sides: move its content across.
+                    for sub in list(item.iterdir()):
+                        if not any(c.name.lower() == sub.name.lower() for c in target.iterdir()):
+                            sub.rename(target / sub.name)
+            try:
+                other.rmdir()
+            except OSError:
+                pass  # leftovers (true conflicts) stay where they were
+    for child in directory.iterdir():
+        if child.is_dir() and not child.is_symlink():
+            merge_case_duplicates(child)
+
+
+def game(slug):
+    if not re.fullmatch(r"[\w-][\w.-]{0,119}", slug) or slug in (".", ".."):
+        raise RuntimeError("Invalid EA game identifier.")
+    return next((g for g in state()["games"] if g["slug"] == slug), None)
+
+
+def job_path(slug):
+    if not game(slug):
+        raise RuntimeError("Game is not owned by this EA account.")
+    return root() / f"job-{slug}.json"
+
+
+def read_job(slug):
+    try:
+        data = json.loads(job_path(slug).read_text())
+        if data.get("active"):
+            pid = data.get("worker_pid")
+            dead = (pid and process_identity(pid) != data.get("worker_start"))
+            abandoned = not pid and time.time() - data.get("created", time.time()) > 30
+            if dead or abandoned:
+                data.update(active=False, Percentage=0, Description="Installation interrupted",
+                            Error="Worker stopped; downloaded files kept")
+        return data
+    except (OSError, ValueError):
+        return {"Percentage": 0, "Description": "Waiting…", "Error": None}
+
+
+def process_identity(pid):
+    try:
+        # Field 22, after comm (which may itself contain spaces).
+        return Path(f"/proc/{int(pid)}/stat").read_text().rsplit(")", 1)[1].split()[19]
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def write_job(slug, data):
+    with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+        json.dump(data, stream)
+        temporary = Path(stream.name)
+    temporary.replace(job_path(slug))
+
+
+def cancelled(slug, token):
+    try:
+        return (root() / f"cancel-{slug}").read_text() == token
+    except OSError:
+        return False
+
+
+def installation_verified(slug, directory, output):
+    # Maxima sometimes logs an error and exits zero. Require independent
+    # installed metadata plus actual downloaded files, not its exit code.
+    if re.search(r"\bERROR\b", output):
+        return False
+    records = []
+    for line in output.splitlines():
+        try:
+            records.append(json.loads(line))
+        except ValueError:
+            pass
+    return (any(isinstance(item, dict) and item.get("slug") == slug
+                and item.get("installed") is True for item in records)
+            and directory.is_dir() and any(p.is_file() for p in directory.rglob("*")))
+
+
+def install_worker(slug, token):
+    process = None
+    job = read_job(slug)
+    if job.get("token") != token:
+        return
+    job.update(worker_pid=os.getpid(), worker_start=process_identity(os.getpid()))
+    write_job(slug, job)
+    try:
+        with session_lock():
+            if not state().get("validated") or not (root() / "data/maxima/auth.toml").is_file():
+                raise RuntimeError("Explicit EA authentication required")
+            directory = game_dir(slug)
+            directory.mkdir(parents=True, exist_ok=True)
+            process = subprocess.Popen([str(localized_client()), "install", slug, "--path", str(directory)],
+                                       env=env(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       start_new_session=True)
+            # Bounded streaming; raw logs and account identifiers never persist.
+            selector = selectors.DefaultSelector()
+            selector.register(process.stdout, selectors.EVENT_READ)
+            pending = b""
+            failed = False
+            deadline = time.monotonic() + 12 * 3600
+            try:
+                while selector.get_map() or process.poll() is None:
+                    current = read_job(slug)
+                    if current.get("token") != token or cancelled(slug, token):
+                        raise InterruptedError("Cancelled")
+                    if time.monotonic() > deadline:
+                        raise TimeoutError("Installation timed out")
+                    for key, _ in selector.select(timeout=0.25):
+                        chunk = os.read(key.fileobj.fileno(), 8192)
+                        if not chunk:
+                            selector.unregister(key.fileobj)
+                            continue
+                        pending += chunk
+                        while b"\n" in pending or len(pending) > 16384:
+                            if b"\n" in pending:
+                                line, pending = pending.split(b"\n", 1)
+                            else:
+                                line, pending = pending[:8192], pending[8192:]
+                            text = re.sub(r"\x1b\[[0-9;]*m", "", line.decode("utf-8", "replace"))
+                            failed |= bool(re.search(r"\bERROR\b", text))
+                            progress = re.search(r"Progress:\s*(\d+(?:\.\d+)?)", text)
+                            if progress:
+                                job.update(Percentage=min(99, float(progress[1])), Description="Downloading EA game…")
+                                # Keep any cancellation request written during this read.
+                                if cancelled(slug, token):
+                                    raise InterruptedError("Cancelled")
+                                write_job(slug, job)
+                failed |= bool(re.search(rb"\bERROR\b", pending))
+            finally:
+                selector.close()
+                process.stdout.close()
+            if process.wait() or failed:
+                raise RuntimeError("Maxima installation failed")
+            check = subprocess.run([str(client()), "game-info", slug], env=env(),
+                                   capture_output=True, text=True, timeout=120)
+            if check.returncode or not installation_verified(slug, directory, check.stdout + "\n" + check.stderr):
+                raise RuntimeError("Installed metadata could not be confirmed")
+            refresh()
+            if not game(slug)["installed"]:
+                raise RuntimeError("Library installation state not confirmed")
+            job.update(Percentage=100, Description="Done", Error=None)
+    except InterruptedError:
+        job.update(Percentage=0, Description="Cancelled — downloaded files kept", Error=None)  # a user cancel is not a failure: no error dialog
+    except Exception:
+        job.update(Percentage=0, Description="EA installation could not be validated", Error="EA installation failed; no game files removed")
+    finally:
+        if process is not None and process.poll() is None:
+            # Only our own live child/session. Never trust a stored PID.
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+        job["active"] = False
+        if read_job(slug).get("token") == token:
+            write_job(slug, job)
+
+
+def setup_callback():
+    handler = subprocess.run(["xdg-mime", "query", "default", "x-scheme-handler/qrc"],
+                             capture_output=True, text=True, timeout=10, check=True).stdout.strip()
+    if handler:
+        # Preserve a pre-existing user's handler, including other Maxima apps.
+        return
+    directory = Path.home() / ".local/share/applications"
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "skullkey-ea-qrc.desktop"
+    helper = Path(__file__).with_name("qrc_callback.py").resolve()
+    # Desktop Exec has its own quoting rules, not shell quoting. Escape percent
+    # field-code markers in paths; only the final %u may expand.
+    def quote(value):
+        return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%").replace("`", "\\`").replace("$", "\\$") + '"'
+    path.write_text("[Desktop Entry]\nType=Application\nName=SkullKey EA callback\nNoDisplay=true\n"
+                    + f"Exec={quote(python_command())} {quote(helper)} %u\nMimeType=x-scheme-handler/qrc;\n")
+    subprocess.run(["xdg-mime", "default", path.name, "x-scheme-handler/qrc"],
+                   capture_output=True, check=True, timeout=10)
+
+
+def python_command():
+    # Decky's embedded interpreter can expose an empty sys.executable.
+    executable = sys.executable or shutil.which("python3")
+    if not executable or not Path(executable).is_file():
+        raise RuntimeError("Python 3 is unavailable for the EA launcher")
+    return executable
+
+
+def launch_options(action, slug=""):
+    path = root() / ("login-desktop.sh" if action == "_desktop-login" else "login.sh" if action == "_login" else f"launch-{slug}.sh")
+    command = [python_command(), str(Path(__file__).resolve()), action]
+    if slug:
+        if not game(slug):
+            raise RuntimeError("Game is not in this EA library.")
+        command.append(slug)
+    path.write_text("#!/usr/bin/env bash\nset -eu\numask 077\n"
+                    + "export SK_ACCOUNT_DIR=" + shlex.quote(str(root().parent)) + "\n"
+                    + "exec " + shlex.join(command) + "\n")
+    path.chmod(0o700)
+    return {"Exe": str(path), "Options": "", "WorkingDir": str(root()),
+            "Compatibility": False, "Name": "EA / Maxima (experimental)" if not slug else game(slug)["name"]}
+
+
+def dispatch(action, args):
+    slug = args[0] if args else ""
+    if action == "_prepare":
+        with session_lock():
+            probe = dispatch("_probe", [])
+            setup_callback()
+            options = launch_options("_desktop-login")
+            desktop = subprocess.run(["xdg-user-dir", "DESKTOP"], capture_output=True,
+                                     text=True, timeout=10, check=True).stdout.strip()
+            directory = Path(desktop)
+            if not directory.is_absolute():
+                raise RuntimeError("Desktop directory is not absolute")
+            directory.mkdir(parents=True, exist_ok=True)
+            path = directory / "SkullKey-EA.desktop"
+            marker = "# Managed by SkullKey EA preparation"
+            if path.exists() and marker not in path.read_text():
+                raise RuntimeError("Existing desktop shortcut must be preserved")
+            exe = options["Exe"].replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%").replace("`", "\\`").replace("$", "\\$")
+            path.write_text(marker + "\n[Desktop Entry]\nType=Application\n"
+                            "Name=SkullKey — Connexion EA\nName[en]=SkullKey — EA Sign-in\n"
+                            "Comment=Connect EA, then reopen the EA tab in SkullKey\n"
+                            f'Exec="{exe}"\nIcon=applications-games\nTerminal=false\n')
+            path.chmod(0o700)
+            return {"Type": "Success", "Content": {"Message": probe["Content"]["Message"],
+                    "DesktopShortcut": str(path), "AccountDirectory": str(root().parent),
+                    "Authenticated": False}}
+    if action == "_desktop-login":
+        # Same single-window GTK/WebKit flow as GOG/Epic, also in Game Mode.
+        started = time.monotonic()
+        login_diagnostic("embedded-window-start", validated=False)
+        result = subprocess.run([python_command(), str(Path(__file__).with_name("login_gui.py"))],
+                                env=os.environ.copy(), stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL)
+        if result.returncode:
+            previous = json.loads((root() / "login-diagnostic.json").read_text())
+            if previous.get("stage") == "embedded-window-start":
+                login_diagnostic("embedded-window-exit", validated=False, exit_code=result.returncode,
+                                 elapsed_seconds=round(time.monotonic() - started, 1))
+        connected = (result.returncode == 0 and state().get("validated")
+                     and (root() / "data/maxima/auth.toml").is_file())
+        return {"Type": "RefreshContent" if connected else "Error", "Content": {
+            "Message": "EA library refreshed" if connected else "Connexion EA non confirmée. Aucun fichier de jeu supprimé."}}
+    if action == "_external-login":
+        # Only reached when the user explicitly opens the prepared shortcut.
+        login_diagnostic("desktop-entered", validated=False,
+                         display_available=bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")))
+        dialog = None
+        try:
+            if shutil.which("zenity"):
+                dialog = subprocess.Popen(["zenity", "--progress", "--pulsate", "--no-cancel", "--auto-close",
+                                       "--title=SkullKey — EA", "--text=Connexion EA : le navigateur va s’ouvrir. Au premier lancement, Maxima peut préparer Proton. Terminez la connexion dans le navigateur."],
+                                          stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            result = dispatch("_login", [])
+        except Exception as error:
+            # Covers failures before list-games (e.g. desktop callback setup).
+            try:
+                previous = json.loads((root() / "login-diagnostic.json").read_text())
+                stage = previous.get("stage", "desktop-login")
+                login_diagnostic(stage, error, validated=False,
+                                 **{k: previous[k] for k in ("exit_code", "elapsed_seconds", "failure_category")
+                                    if k in previous})
+            except (OSError, ValueError):
+                pass
+            result = {"Type": "Error", "Content": {"Message": "Connexion EA non confirmée. Aucun fichier de jeu supprimé."}}
+        finally:
+            if dialog is not None:
+                try:
+                    dialog.stdin.close()
+                except BrokenPipeError:
+                    pass
+                try:
+                    dialog.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    dialog.terminate()
+                    dialog.wait(timeout=3)
+        success = result["Type"] != "Error"
+        if shutil.which("zenity"):
+            subprocess.run(["zenity", "--info" if success else "--error", "--title=SkullKey — EA",
+                        "--text=" + ("Connexion EA validée. Retournez en mode Jeu et rouvrez SkullKey → EA / Maxima pour voir vos jeux."
+                                     if success else "Connexion EA non confirmée. Vérifiez que le navigateur a terminé la connexion, puis réessayez le raccourci. Aucun fichier de jeu supprimé.")],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return result
+    if action == "_install-worker":
+        install_worker(slug, args[1])
+        return {"Type": "Success", "Content": {}}
+    if action == "download":
+        if not game(slug) or not state().get("validated") or not (root() / "data/maxima/auth.toml").is_file():
+            raise RuntimeError("Sign in before installing an owned EA game")
+        with (root() / "jobs.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            # Reserve session while the worker starts; a second worker will
+            # fail safely rather than invoking Maxima concurrently.
+            with session_lock():
+                if read_job(slug).get("active"):
+                    raise RuntimeError("Installation already active")
+                if not game(slug)["installed"]:
+                    choose_game_dir(slug)
+                token = uuid.uuid4().hex
+                write_job(slug, {"token": token, "active": True, "cancel": False,
+                                "created": time.time(),
+                                "Percentage": 0, "Description": "Starting EA installation…", "Error": None})
+            # Release the reservation before spawning: the worker acquires it.
+            try:
+                subprocess.Popen([python_command(), str(Path(__file__).resolve()), "_install-worker", slug, token],
+                                 env=os.environ.copy(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                 start_new_session=True)
+            except Exception:
+                job = read_job(slug)
+                job.update(active=False, Error="Unable to start installation worker")
+                write_job(slug, job)
+                raise
+        return {"Type": "Progress", "Content": {"Message": "Installing"}}
+    if action == "getprogress":
+        data = read_job(slug)
+        return {"Type": "ProgressUpdate", "Content": {k: data[k] for k in ("Percentage", "Description", "Error")}}
+    if action == "cancelinstall":
+        with (root() / "jobs.lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            job = read_job(slug)
+            (root() / f"cancel-{slug}").write_text(job.get("token", ""))
+        return {"Type": "Success", "Content": {"Message": "Cancellation requested; downloaded files kept"}}
+    if action == "_probe":
+        r = subprocess.run([str(client()), "--help"], env=env(), capture_output=True, text=True, timeout=20)
+        if r.returncode or "list-games" not in r.stdout:
+            raise RuntimeError("Maxima CLI startup failed.")
+        return {"Type": "Success", "Content": {"Message": f"Maxima {VERSION}: help verified; no EA authentication."}}
+    if action in ("_login", "_launch", "refresh"):
+        if action == "refresh" and not (root() / "data/maxima/auth.toml").exists():
+            raise RuntimeError("Sign in explicitly before refreshing the EA library.")
+        if action == "_login":
+            login_diagnostic("session-lock", validated=False)
+        with session_lock():
+            os.umask(0o077)
+            if action == "_launch":
+                if not game(slug) or not game(slug)["installed"]:
+                    raise RuntimeError("This EA game is not installed.")
+                # Maxima drives umu/Proton. The Steam shortcut stays native.
+                # maxima-cli needs a `maxima-bootstrap` next to it to start the
+                # game, which the release does not ship: install our stand-in.
+                bootstrap = client().with_name("maxima-bootstrap")
+                source = Path(__file__).with_name("maxima_bootstrap.py")
+                if not bootstrap.exists() or bootstrap.read_bytes() != source.read_bytes():
+                    shutil.copyfile(source, bootstrap)
+                    bootstrap.chmod(0o700)
+                merge_case_duplicates(game_dir(slug))
+                set_registry_locale(game_locale())
+                subprocess.run([str(localized_client()), "launch", slug], env=env(),
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            else:
+                # Explicit action only. Browser OAuth callback requires desktop
+                # qrc handler; do not change a global protocol handler silently.
+                if not (root() / "data/maxima/auth.toml").exists():
+                    login_diagnostic("callback-setup", validated=False)
+                    setup_callback()
+                refresh()
+        return {"Type": "RefreshContent", "Content": {"Message": "EA library refreshed"}}
+    if action in ("login", "login-launch-options"):
+        return {"Type": "RunExe" if action == "login" else "LaunchOptions", "Content": launch_options("_desktop-login")}
+    if action == "loginstatus":
+        connected = state().get("validated", False) and (root() / "data/maxima/auth.toml").exists()
+        return {"Type": "LoginStatus", "Content": {"Username": "EA / Maxima", "LoggedIn": connected}}
+    if action == "getgames":
+        s = state()
+        games = [g for g in s["games"] if slug.lower() in g["name"].lower()
+                 and (len(args) < 2 or args[1] != "true" or g["installed"])]
+        return {"Type": "GameGrid", "Content": {"NeedsLogin": "true", "storeURL": "https://www.ea.com/",
+                "Games": [{"ID": i, "Name": g["name"], "ShortName": g["slug"], "Images": [c] if (c := cover(g)) else [],
+                           "SteamClientID": s.get("shortcuts", {}).get(g["slug"], "")} for i, g in enumerate(games, 1)]}}
+    if action in ("install", "getlaunchoptions"):
+        if not game(slug) or not game(slug)["installed"]:
+            raise RuntimeError("Install this EA game first.")
+        if action == "install" and len(args) > 1 and args[1]:
+            s = state(); s.setdefault("shortcuts", {})[slug] = args[1]; save(s)
+        return {"Type": "LaunchOptions", "Content": launch_options("_launch", slug)}
+    if action == "getgamedetails":
+        g = game(slug)
+        if not g:
+            raise RuntimeError("Unknown EA game.")
+        return {"Type": "GameDetails", "Content": {"Name": g["name"], "ShortName": slug,
+                "Description": "EA / Maxima — experimental installation and native launch via umu/Proton. Integrated sign-in works in Game Mode with GTK/WebKit, like GOG/Epic. Compatibility and cloud saves remain game-dependent and need real-account validation.",
+                "Images": [c] if (c := cover(g)) else [], "Editors": [],
+                "SteamClientID": state().get("shortcuts", {}).get(slug, "")}}
+    if action == "getjsonimages":
+        g = game(slug)
+        return {"Type": "Images", "Content": images(g) if g else {}}
+    if action == "getgamesize":
+        return {"Type": "GameSize", "Content": {"Size": "EA / Maxima (experimental)"}}
+    if action == "uninstall":
+        # maxima-cli v0.14.3 has no uninstall command; it considers a game
+        # installed while its executable exists. Remove only SkullKey's own
+        # install folder for this game, never anything outside games/.
+        g = game(slug)
+        if not g:
+            raise RuntimeError("Unknown EA game.")
+        job = read_job(slug)
+        if job and job.get("active"):
+            raise RuntimeError("Cancel the running EA installation first.")
+        # Only SkullKey's own EA folders: <account>/ea/games/<slug> or
+        # <drive>/SkullKey/ea/<slug>.
+        target = game_dir(slug).resolve()
+        default = (root() / "games").resolve()
+        if target.name == slug and target.is_dir() and (
+                target.parent == default or target.parent.parts[-2:] == ("SkullKey", "ea")):
+            shutil.rmtree(target)
+        s = state()
+        for entry in s["games"]:
+            if entry["slug"] == slug:
+                entry["installed"] = False
+        s.get("shortcuts", {}).pop(slug, None)
+        s.get("paths", {}).pop(slug, None)
+        save(s)
+        clear_download_state(slug)
+        try:
+            job_path(slug).unlink()
+        except OSError:
+            pass
+        return {"Type": "Success", "Content": {"Message": f"{g['name']} uninstalled"}}
+    if action == "getsetting":
+        return {"Type": "Setting", "Content": {"name": slug, "value": state().get("settings", {}).get(slug, "")}}
+    if action == "savesetting":
+        s = state(); s.setdefault("settings", {})[slug] = args[1] if len(args) > 1 else ""; save(s)
+        return dispatch("getsetting", [slug])
+    if action == "logout":
+        # Forget credentials only. Never delete the prefix, games or cloud saves.
+        with session_lock():
+            (root() / "data/maxima/auth.toml").unlink(missing_ok=True)
+            s = state(); s.update(games=[], validated=False); save(s)
+        return dispatch("loginstatus", [])
+    raise RuntimeError("This EA action is not yet supported by the experimental adapter.")
+
+
+if __name__ == "__main__":
+    try:
+        print(json.dumps(dispatch(sys.argv[1], sys.argv[2:])))
+    except Exception:
+        # Deliberately no raw exception/CLI output: it may contain EA secrets.
+        print(json.dumps({"Type": "Error", "Content": {"Message": "EA / Maxima experimental action failed. Check desktop OAuth setup, authentication and runtime; no game data was removed."}}))

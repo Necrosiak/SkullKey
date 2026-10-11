@@ -105,3 +105,10 @@ fi
 
 
 
+
+# Drive picked in SkullKey's install dialog (fresh installs only): the game
+# goes to <drive>/SkullKey/epic/ instead of the usual folder.
+if [[ -n "${SK_INSTALL_ROOT}" ]]; then
+    INSTALL_DIR=$(python3 "${DECKY_PLUGIN_DIR}/scripts/shared/drives.py" dir epic "${INSTALL_DIR}")
+    export INSTALL_DIR
+fi

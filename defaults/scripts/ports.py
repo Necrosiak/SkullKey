@@ -596,8 +596,17 @@ def app_state(state, shortname):
         shortname, {"steamClientID": "", "installed": False, "tag": ""})
 
 
+def _drives():
+    shared = str(Path(__file__).resolve().parent / "shared")
+    if shared not in sys.path:
+        sys.path.insert(0, shared)
+    import drives
+    return drives
+
+
 def port_dir(port):
-    return PORTS_DIR / port["shortname"]
+    # Drive picked in the install dialog, remembered per Classic.
+    return Path(_drives().game_path("ports", port["shortname"], PORTS_DIR / port["shortname"]))
 
 
 # ── GitHub releases (cached: shared by size / install / autoupdate) ─────────
@@ -1177,6 +1186,8 @@ def action_getjsonimages(shortname):
 
 
 def action_download(shortname):
+    if shortname not in load_state().get("apps", {}):
+        _drives().assign("ports", shortname, PORTS_DIR / shortname)
     PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
     write_progress(shortname, 0, "Starting…")
     subprocess.Popen([PYEXE, os.path.abspath(__file__), "worker", shortname],
@@ -1256,9 +1267,10 @@ def action_uninstall(shortname):
                        capture_output=True, timeout=600)
     # safety: only ever delete inside our own ports root. NB: this removes the
     # whole folder, including ROMs the user dropped in it (documented choice).
-    if pdir.is_dir() and str(pdir.resolve()).startswith(
-            str(PORTS_DIR.resolve()) + os.sep):
+    if pdir.is_dir() and (str(pdir.resolve()).startswith(str(PORTS_DIR.resolve()) + os.sep)
+                          or _drives().owned_folder("ports", str(pdir), PORTS_DIR)):
         shutil.rmtree(pdir, ignore_errors=True)
+    _drives().forget("ports", shortname)
     state["apps"].pop(shortname, None)
     save_state(state)
     try:

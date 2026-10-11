@@ -952,8 +952,18 @@ _KNOWN_EXES = {
 CHUNK_THREADS = 8        # concurrent chunk downloads (CDN throttles per conn)
 
 
+def _drives():
+    import sys as _sys
+    shared = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "shared")
+    if shared not in _sys.path:
+        _sys.path.insert(0, shared)
+    import drives
+    return drives
+
+
 def _game_dir(biz):
-    return os.path.join(INSTALL_DIR, biz)
+    # Drive picked in the install dialog, remembered per game.
+    return _drives().game_path("mihoyo", biz, os.path.join(INSTALL_DIR, biz))
 
 
 def _pkg_dir(biz):
@@ -1423,6 +1433,8 @@ def action_download(biz, *_):
     # Fresh install: default the voice pack to the console language (existing
     # installs keep whatever they have — never force a big voice download).
     state = load_state()
+    if not state.get("games", {}).get(biz, {}).get("installed"):
+        _drives().assign("mihoyo", biz, os.path.join(INSTALL_DIR, biz))
     st = state["games"].setdefault(biz, {})
     if not st.get("installed") and "voice_langs" not in st:
         try:
@@ -1555,9 +1567,10 @@ def action_getlaunchoptions(biz, *_):
 def action_uninstall(biz, *_):
     gdir = _game_dir(biz)
     # safety: only ever delete inside our own install root
-    if os.path.isdir(gdir) and os.path.realpath(gdir).startswith(
-            os.path.realpath(INSTALL_DIR)):
+    if os.path.isdir(gdir) and (os.path.realpath(gdir).startswith(
+            os.path.realpath(INSTALL_DIR)) or _drives().owned_folder("mihoyo", gdir, INSTALL_DIR)):
         shutil.rmtree(gdir, ignore_errors=True)
+    _drives().forget("mihoyo", biz)
     state = load_state()
     st = state["games"].setdefault(biz, {})
     st.pop("installed", None)

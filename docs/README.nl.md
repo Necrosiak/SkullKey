@@ -17,6 +17,8 @@
 Nieuw in v1.16.0: Animal Crossing (USA-ROM, Proton) en P.T. (eigen fake PKG, native Linux), volledige Steam-afbeeldingen en meldingen na automatische Classics-updates.
 - ⛏️ **Minecraft** — Java Edition (via [Prism Launcher](https://prismlauncher.org), voorgeconfigureerd: log in met je Microsoft-account en speel), Bedrock Edition (via [mcpelauncher](https://mcpelauncher.readthedocs.io) van Flathub, native controllerondersteuning) en **Modrinth-modpacks** als één-klik-Steam-snelkoppelingen (live zoeken, versie vastzetten of dagelijkse auto-updates, automatische wereldenback-ups vóór elke versiewissel)
 - 🎯 **Battle.net & Ubisoft Connect** *(experimenteel)* — de officiële Windows-clients draaien elk in één gedeelde Proton-prefix: één keer inloggen, je games verschijnen in SkullKey, *Installeren* opent de client op de pagina van de game (één druk om te bevestigen), *Spelen* start de game direct en sluit de client wanneer je stopt
+- 🟦 **EA** *(experimenteel)* — je EA-bibliotheek via [Maxima](https://github.com/Starkka15/Maxima): inloggen vanuit de Gamemodus, installeren, spelen via Proton, cloudsaves; de speltaal volgt die van Steam
+- 💽 **Kies de schijf bij installatie** — systeemschijf, microSD, USB- of interne schijven (met vrije ruimte en SSD/HDD), voor Epic, GOG, Amazon, EA, miHoYo en Classics
 - 👥 **Eén winkelruimte per Steam-account (multi-account)** — elke Steam-gebruiker van de machine heeft eigen Epic/GOG/Amazon-logins en bibliotheken; wisselen van Steam-account schakelt alles automatisch om (bestaande logins blijven bij het account dat bij het eerste gebruik actief is)
 - 📦 **Auto-update van games** — een dagelijkse achtergrondronde houdt alle geïnstalleerde games actueel, in elke winkel en voor elk account
 - 💾 **Back-up & herstel van saves** — maak met één actie vanaf de spelpagina een back-up van de voortgang (via [ludusavi](https://github.com/mtkennerly/ludusavi), automatisch voorzien) en herstel die op verzoek — Epic-, GOG- en Amazon-games, back-ups in `~/.local/share/skullkey-saves`
@@ -86,7 +88,7 @@ waardevol — ze vertellen ons wat we hierna moeten ondersteunen.
 
 ## Credits
 
-SkullKey is een fork van [Junk-Store](https://github.com/ebenbruyns/junkstore) van **Eben Bruyns** (BSD-3-Clause) — bedankt voor het solide fundament. Winkel-engines: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) en [nile](https://github.com/imLinguin/nile).
+SkullKey is een fork van [Junk-Store](https://github.com/ebenbruyns/junkstore) van **Eben Bruyns** (BSD-3-Clause) — bedankt voor het solide fundament. Winkel-engines: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) en [nile](https://github.com/imLinguin/nile). EA: [Maxima](https://github.com/Starkka15/Maxima) (GPL-3.0, fork of [ArmchairDevelopers/Maxima](https://github.com/ArmchairDevelopers/Maxima)).
 
 Onafhankelijk communityproject, niet gelieerd aan Junk-Store, Valve, Epic Games, GOG of Amazon.
 

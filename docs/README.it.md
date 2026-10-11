@@ -17,6 +17,8 @@
 Novità in v1.16.0: Animal Crossing (ROM USA, Proton) e P.T. (il tuo fake PKG, Linux nativo), immagini Steam complete e notifiche dopo gli aggiornamenti automatici dei classici.
 - ⛏️ **Minecraft** — Java Edition (tramite [Prism Launcher](https://prismlauncher.org), preconfigurato: accedi con il tuo account Microsoft e gioca), Bedrock Edition (tramite [mcpelauncher](https://mcpelauncher.readthedocs.io) da Flathub, controller nativo) e **modpack Modrinth** come scorciatoie Steam in un clic (ricerca live, versione bloccabile o aggiornamenti automatici quotidiani, backup automatico dei mondi prima di ogni cambio di versione)
 - 🎯 **Battle.net e Ubisoft Connect** *(sperimentale)* — i client Windows ufficiali girano ciascuno in un prefisso Proton condiviso: accedi una volta, i tuoi giochi compaiono in SkullKey, *Installa* apre il client sulla pagina del gioco (una pressione per confermare), *Gioca* avvia direttamente il gioco e chiude il client quando esci
+- 🟦 **EA** *(sperimentale)* — la tua libreria EA tramite [Maxima](https://github.com/Starkka15/Maxima): accesso dalla modalità Gioco, installazione, avvio con Proton, salvataggi cloud; la lingua del gioco segue quella di Steam
+- 💽 **Scegli il disco all'installazione** — disco di sistema, microSD, dischi USB o interni (con spazio libero e SSD/HDD), per Epic, GOG, Amazon, EA, miHoYo e Classics
 - 👥 **Uno spazio store per account Steam (multi-account)** — ogni utente Steam della macchina ha i propri login e librerie Epic/GOG/Amazon; cambiare account Steam cambia tutto automaticamente (i login esistenti restano all'account attivo al primo uso)
 - 📦 **Aggiornamento automatico dei giochi** — un passaggio quotidiano in background tiene aggiornati tutti i giochi installati, su ogni store e per ogni account
 - 💾 **Backup e ripristino dei salvataggi** — salva i progressi di un gioco dalla sua pagina con un'azione (via [ludusavi](https://github.com/mtkennerly/ludusavi), fornito automaticamente) e ripristinali su richiesta — giochi Epic, GOG e Amazon, backup in `~/.local/share/skullkey-saves`
@@ -87,7 +89,7 @@ valgono altrettanto — ci dicono cosa supportare dopo.
 
 ## Riconoscimenti
 
-SkullKey è un fork di [Junk-Store](https://github.com/ebenbruyns/junkstore) di **Eben Bruyns** (BSD-3-Clause): grazie per le solide fondamenta. Motori dei negozi: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) e [nile](https://github.com/imLinguin/nile).
+SkullKey è un fork di [Junk-Store](https://github.com/ebenbruyns/junkstore) di **Eben Bruyns** (BSD-3-Clause): grazie per le solide fondamenta. Motori dei negozi: [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) e [nile](https://github.com/imLinguin/nile). EA: [Maxima](https://github.com/Starkka15/Maxima) (GPL-3.0, fork of [ArmchairDevelopers/Maxima](https://github.com/ArmchairDevelopers/Maxima)).
 
 Progetto comunitario indipendente, non affiliato a Junk-Store, Valve, Epic Games, GOG o Amazon.
 

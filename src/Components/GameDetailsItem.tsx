@@ -13,6 +13,7 @@ import { ErrorModal } from "../ErrorModal";
 import { notify } from "./Styled";
 
 import { t } from "../i18n";
+import { pickInstallDrive } from "./DrivePicker";
 
 const shortcutCreation = new Map<string, Promise<number>>();
 
@@ -241,6 +242,14 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     };
     const download = async (update: boolean) => {
         try {
+            // Fresh installs ask which drive to use (system drive by default);
+            // updates stay where the game already is.
+            // Ubisoft/Battle.net install through their own client (which has
+            // its own folder picker); Minecraft/media have nothing to place.
+            const drivePicker = /^(Epic|GOG|Amazon|EA|MiHoYo|Ports)Actions$/.test(initActionSet);
+            const drive = update || !drivePicker ? "" : await pickInstallDrive(serverAPI);
+            if (drive === null) return;
+            await serverAPI.callPluginMethod("set_install_root", { path: drive });
 
             const result = await executeAction<ExecuteGetGameDetailsArgs, ContentType>(
                 serverAPI,

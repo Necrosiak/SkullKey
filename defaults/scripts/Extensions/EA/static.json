@@ -1,0 +1,222 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetEAActions",
+     "Title": "GetEAActions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ea-actions"
+    }
+   ]
+  }
+ },
+ "main-menu-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetEAActions",
+     "Title": "GetEAActions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ea-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "EA / Maxima (Experimental)",
+     "Type": "GameGrid",
+     "ActionId": "GetEAActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "ea-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "EAActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "GetContent",
+     "Type": "GameGrid",
+     "Command": "./scripts/skullkey.sh EA getgames"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "GetDetails",
+     "Type": "GameDetails",
+     "Command": "./scripts/skullkey.sh EA getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "GetJsonImages",
+     "Type": "GameImages",
+     "Command": "./scripts/skullkey.sh EA getjsonimages"
+    },
+    {
+     "Id": "GetLaunchOptions",
+     "Title": "GetLaunchOptions",
+     "Type": "GetLaunchOptions",
+     "Command": "./scripts/skullkey.sh EA getlaunchoptions"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install",
+     "Type": "Install",
+     "Command": "./scripts/skullkey.sh EA install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download",
+     "Type": "Download",
+     "Command": "./scripts/skullkey.sh EA download"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel installation",
+     "Type": "CancelInstall",
+     "Command": "./scripts/skullkey.sh EA cancelinstall"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall game",
+     "Type": "Uninstall",
+     "Command": "./scripts/skullkey.sh EA uninstall"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "GetGameSize",
+     "Type": "GameSize",
+     "Command": "./scripts/skullkey.sh EA getgamesize"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "GetProgress",
+     "Type": "GetProgress",
+     "Command": "./scripts/skullkey.sh EA getprogress"
+    },
+    {
+     "Id": "GetLoginActions",
+     "Title": "GetLoginActions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ea-login-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "GetScriptActions",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ea-script-actions"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "GetGameScriptActions",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py ea-game-script-actions"
+    },
+    {
+     "Id": "GetTabConfigActions",
+     "Title": "Get EA tab config file actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py ea-tab-config-actions"
+    },
+    {
+     "Id": "Refresh",
+     "Title": "Refresh",
+     "Type": "Refresh",
+     "Command": "./scripts/skullkey.sh EA refresh"
+    }
+   ]
+  }
+ },
+ "ea-login-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "EALoginActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "GetContent",
+     "Type": "Status",
+     "Command": "./scripts/skullkey.sh EA loginstatus"
+    },
+    {
+     "Id": "Login",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh EA login"
+    },
+    {
+     "Id": "LoginLaunchOptions",
+     "Title": "LoginLaunchOptions",
+     "Type": "Login",
+     "Command": "./scripts/skullkey.sh EA login-launch-options"
+    },
+    {
+     "Id": "Logout",
+     "Title": "Logout",
+     "Type": "Logout",
+     "Command": "./scripts/skullkey.sh EA logout"
+    },
+    {
+     "Id": "GetSetting",
+     "Title": "GetSetting",
+     "Type": "GetSettings",
+     "Command": "./scripts/skullkey.sh EA getsetting"
+    },
+    {
+     "Id": "SaveSetting",
+     "Title": "SaveSetting",
+     "Type": "SaveSettings",
+     "Command": "./scripts/skullkey.sh EA savesetting"
+    }
+   ]
+  }
+ },
+ "ea-tab-config-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "EATabConfigEditor",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get the ini files as json",
+     "Type": "IniEditor",
+     "Command": "./scripts/skullkey.sh EA gettabconfig"
+    },
+    {
+     "Id": "SaveContent",
+     "Title": "Save the ini files as json",
+     "Type": "IniEditor",
+     "Command": "./scripts/skullkey.sh EA savetabconfig"
+    }
+   ]
+  }
+ },
+ "ea-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": [
+    {
+     "ActionId": "Refresh",
+     "Title": "Refresh EA library",
+     "Type": "ScriptAction",
+     "InstalledOnly": "False"
+    }
+   ]
+  }
+ },
+ "ea-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ }
+}

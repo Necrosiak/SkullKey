@@ -66,3 +66,10 @@ fi
 if [[ -f "${DECKY_PLUGIN_RUNTIME_DIR}/gog_overrides.sh" ]]; then
    source "${DECKY_PLUGIN_RUNTIME_DIR}/gog_overrides.sh"
 fi
+
+# Drive picked in SkullKey's install dialog (fresh installs only): the game
+# goes to <drive>/SkullKey/gog/ instead of the usual folder.
+if [[ -n "${SK_INSTALL_ROOT}" ]]; then
+    INSTALL_DIR=$(python3 "${DECKY_PLUGIN_DIR}/scripts/shared/drives.py" dir gog "${INSTALL_DIR}")
+    export INSTALL_DIR
+fi

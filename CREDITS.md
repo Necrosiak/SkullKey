@@ -48,3 +48,9 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
   in the runtime root — which is what exposed the login helpers writing outside
   the account space they are read from, on all three stores
   ([#3](https://github.com/Necrosiak/SkullKey/issues/3), fixed in v1.12.3)
+
+### [@zavaro](https://github.com/zavaro)
+
+- The EA request, pointing at Maxima and at the fork with the non-interactive
+  install commands that made an in-Game-Mode EA store possible
+  ([#6](https://github.com/Necrosiak/SkullKey/issues/6), added in v1.17.0)

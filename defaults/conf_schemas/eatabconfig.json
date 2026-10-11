@@ -1,0 +1,42 @@
+{
+  "Sections": [
+    {
+      "Name": "EA",
+      "Visible": true,
+      "Description": "Settings specific to EA / Maxima",
+      "ModeLevel": 0,
+      "Options": [
+        {
+          "Key": "Language",
+          "Label": "Game Language",
+          "Description": "Language EA games are installed and started in (when the game includes it). Automatic follows the Steam language.",
+          "DefaultValue": "auto",
+          "Value": "auto",
+          "Type": "Enum",
+          "Min": 0,
+          "Max": 0,
+          "ModeLevel": 0,
+          "Parents": [],
+          "EnumValues": [
+            { "Key": "auto", "Description": "Automatic (Steam language)" },
+            { "Key": "en_US", "Description": "English (US)" },
+            { "Key": "en_GB", "Description": "English (UK)" },
+            { "Key": "fr_FR", "Description": "Français" },
+            { "Key": "de_DE", "Description": "Deutsch" },
+            { "Key": "es_ES", "Description": "Español (España)" },
+            { "Key": "es_MX", "Description": "Español (México)" },
+            { "Key": "it_IT", "Description": "Italiano" },
+            { "Key": "pt_BR", "Description": "Português (BR)" },
+            { "Key": "pl_PL", "Description": "Polski" },
+            { "Key": "ru_RU", "Description": "Русский" },
+            { "Key": "nl_NL", "Description": "Nederlands" },
+            { "Key": "ja_JP", "Description": "日本語" },
+            { "Key": "ko_KR", "Description": "한국어" },
+            { "Key": "zh_TW", "Description": "繁體中文" }
+          ]
+        }
+      ]
+    }
+  ],
+  "Autoexec": ""
+}

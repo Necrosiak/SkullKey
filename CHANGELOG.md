@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.17.0 — 2026-10-11
+
+### New
+
+- **EA games** *(experimental)* — a new EA tab, powered by
+  [Maxima](https://github.com/Starkka15/Maxima). Sign in from Game Mode, see
+  your whole EA library with its artwork, install, play through Proton and
+  uninstall. Tested on Dead Space 2, Theme Hospital and STAR WARS Jedi: Fallen
+  Order. Requested by [zavaro](https://github.com/zavaro) in
+  [#6](https://github.com/Necrosiak/SkullKey/issues/6).
+- **Game language for EA** — follows your Steam language by default, or pick
+  one in the EA tab settings. A few games (Jedi: Fallen Order) still start in
+  English and have no language option of their own.
+- **Choose the drive at install** — Epic, GOG, Amazon, EA, miHoYo and Classics
+  now ask where to install: system drive (default, same folders as before),
+  microSD, USB or internal drives, with free space and SSD/HDD shown. Games go
+  to `SkullKey/<store>/<game>` on the chosen drive.
+
+### Fixes
+
+- Store tabs always appear in the same order: stores first, then miHoYo,
+  Minecraft and Classics.
+
 ## 1.16.0 — 2026-10-11
 
 - Notify after automatic Classics updates, including failed installations;

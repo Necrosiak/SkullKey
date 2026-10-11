@@ -343,7 +343,14 @@ class Helper:
             "HOME": os.path.abspath(decky_plugin.DECKY_USER_HOME),
             "PLATFORM": platform,
         }
+        # Drive picked in the install dialog, only for the Download action
+        # that follows it (see execute_action).
+        if Helper.active_install_root:
+            env["SK_INSTALL_ROOT"] = Helper.active_install_root
         return env
+
+    pending_install_root = ""
+    active_install_root = ""
 
     @staticmethod
     async def call_script(cmd: str, *args, input_data="", app_id="", game_id=""):
@@ -965,6 +972,27 @@ class Plugin:
             decky_plugin.logger.warning(f"[prefixes] set: {e!r}")
             return {"ok": False, "error": str(e)}
 
+    async def list_drives(self):
+        try:
+            self._prefixes_mod()  # puts scripts/shared on sys.path
+            import drives
+            return drives.list_drives(decky_plugin.DECKY_USER_HOME)
+        except Exception as e:
+            decky_plugin.logger.warning(f"[drives] list: {e!r}")
+            return []
+
+    async def set_install_root(self, path=""):
+        try:
+            self._prefixes_mod()
+            import drives
+            allowed = [d["path"] for d in drives.list_drives(decky_plugin.DECKY_USER_HOME) if not d["system"]]
+            Helper.pending_install_root = path if path in allowed else ""
+            return {"ok": True, "root": Helper.pending_install_root}
+        except Exception as e:
+            decky_plugin.logger.warning(f"[drives] set: {e!r}")
+            Helper.pending_install_root = ""
+            return {"ok": False, "error": str(e)}
+
     async def set_autoupdate(self, enabled):
         return updater.set_autoupdate_enabled(enabled)
 
@@ -1090,15 +1118,23 @@ class Plugin:
             if isinstance(inputData, (dict, list)):
                 inputData = json.dumps(inputData)
 
-            result = await Helper.execute_action(
-                actionSet,
-                actionName,
-                *args,
-                *kwargs.values(),
-                input_data=inputData,
-                game_id=gameId,
-                app_id=appId,
-            )
+            # The drive chosen in the install dialog applies to this one
+            # Download only, never to later actions.
+            if actionName == "Download":
+                Helper.active_install_root = Helper.pending_install_root
+            Helper.pending_install_root = ""
+            try:
+                result = await Helper.execute_action(
+                    actionSet,
+                    actionName,
+                    *args,
+                    *kwargs.values(),
+                    input_data=inputData,
+                    game_id=gameId,
+                    app_id=appId,
+                )
+            finally:
+                Helper.active_install_root = ""
             if Helper.verbose:
                 decky_plugin.logger.info(f"execute_action result: {result}")
             return result
