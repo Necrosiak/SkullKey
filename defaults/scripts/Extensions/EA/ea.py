@@ -20,9 +20,13 @@ import uuid
 import urllib.parse
 import urllib.request
 
-VERSION = "v0.14.3"
-SHA256 = "5a0a23e80a88c43d18c88df061b8c1e927a622c625b028ea41fa37e7c3de70ee"
-URL = f"https://github.com/Starkka15/Maxima/releases/download/{VERSION}/maxima-cli-linux-x86_64"
+# Maxima v0.14.3 (Starkka15/Maxima, GPL-3.0) rebuilt with the small patch in
+# maxima-patches/: game language over LSX via MAXIMA_LOCALE, and the 32-bit
+# Origin registry key games need to reach LSX at all. The binary is attached
+# to the SkullKey release that introduced it and pinned by digest.
+VERSION = "v0.14.3-skullkey1"
+SHA256 = "1049cb6977de1dbb913f3b200fece59778ca81b970591f27672471a9da6f95f8"
+URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.18.0/maxima-cli-skullkey-linux-x86_64"
 # maxima-cli pads slug/name/offer to 35/35/25 columns as a MINIMUM: a slug or
 # title of 35+ characters is followed by a single space. Parse from the right
 # instead (slug has no spaces, offer has none, the title may contain " - ").
@@ -78,6 +82,7 @@ def env():
     # Maxima v0.14.3 hard-codes en_US as the game locale; our bootstrap
     # stand-in replaces it with the language picked in the EA tab settings.
     result["SK_EA_LOCALE"] = game_locale()
+    result["MAXIMA_LOCALE"] = result["SK_EA_LOCALE"]
     return result
 
 
@@ -165,31 +170,8 @@ def client():
 
 
 def localized_client(locale=None):
-    # Maxima v0.14.3 hard-codes the active language: Locale::EnUs, the LSX
-    # answer games ask for (InstalledLanguage => "en_US", maxima-lib
-    # src/lsx/request/game.rs), and "-locale en_US" for Touchup.exe. Games
-    # follow the LSX answer, so registry/env alone leave them in English.
-    # Every standalone "en_US" literal in the binary is that active language;
-    # the only other one is inside the list of available languages, which
-    # stays intact. Same length, so a byte swap on a copy of the verified
-    # binary (the original is never modified; GPL-3.0 allows it).
-    locale = locale or game_locale()
-    original = client()
-    if locale == "en_US" or not re.fullmatch(r"[a-z]{2}_[A-Z]{2}", locale):
-        return original
-    path = original.with_name(f"maxima-cli-{locale}")
-    stamp = original.with_name(f".maxima-cli-{locale}.sha256")
-    if path.exists() and stamp.exists() and stamp.read_text() == SHA256:
-        return path
-    data = original.read_bytes()
-    keep = b"de_DE,en_US,es_ES"
-    data = data.replace(keep, b"\0KEEP\0LIST\0").replace(b"en_US", locale.encode()).replace(b"\0KEEP\0LIST\0", keep)
-    part = path.with_suffix(".part")
-    part.write_bytes(data)
-    part.chmod(0o700)
-    part.replace(path)
-    stamp.write_text(SHA256)
-    return path
+    # The patched build reads the game language from MAXIMA_LOCALE (env()).
+    return client()
 
 
 def parse_library(output):
@@ -391,6 +373,68 @@ def images(g):
     return content
 
 
+def game_info(g):
+    # Summary, developer, publisher, genres and release date for any EA game,
+    # in the chosen language when possible: the Steam store page of the same
+    # game (already matched for artwork) is localized; GOG's games database
+    # (found by offer ID for every EA game) is the English fallback. Cached
+    # per offer and language; only public store data, nothing account-related.
+    locale = game_locale()
+    path = root() / "info.json"
+    try:
+        cache = json.loads(path.read_text())
+    except Exception:
+        cache = {}
+    key = (g.get("offer") or g["slug"]) + "|" + locale
+    if key in cache:
+        return cache[key]
+    info = {}
+    steam = next((re.search(r"/steam/apps/(\d+)/", u) for u in artwork(g).get("grid", []) if "/steam/apps/" in u), None)
+    if steam:
+        language = next((k for k, v in STEAM_LANGUAGES.items() if v == locale), "english")
+        try:
+            data = _http_json("https://store.steampowered.com/api/appdetails?appids=%s&l=%s" % (steam[1], language))
+            d = (data.get(steam[1]) or {}).get("data") or {}
+            info = {"summary": html.unescape(re.sub(r"<[^>]+>", "", d.get("short_description") or "")).strip(),
+                    "developers": d.get("developers") or [], "publishers": d.get("publishers") or [],
+                    "genres": [x.get("description") for x in d.get("genres") or [] if x.get("description")],
+                    "released": (d.get("release_date") or {}).get("date") or ""}
+        except Exception as error:
+            print(f"steam details failed: {type(error).__name__}", file=sys.stderr)
+    if not info.get("summary") and g.get("offer"):
+        try:
+            d = (_http_json(GAMESDB + urllib.parse.quote(g["offer"], safe="")).get("game") or {})
+            name = lambda x: (x.get("name") or {}).get("*") if isinstance(x.get("name"), dict) else x.get("name")
+            info = {"summary": html.unescape(re.sub(r"<[^>]+>", "", (d.get("summary") or {}).get("*") or "")).strip(),
+                    "developers": [x["name"] for x in d.get("developers") or [] if x.get("name")],
+                    "publishers": [x["name"] for x in d.get("publishers") or [] if x.get("name")],
+                    "genres": [n for n in map(name, d.get("genres") or []) if n],
+                    "released": (d.get("first_release_date") or "")[:10]}
+        except Exception as error:
+            print(f"gamesdb details failed: {type(error).__name__}", file=sys.stderr)
+    cache[key] = info
+    with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+        json.dump(cache, stream)
+        temporary = Path(stream.name)
+    temporary.replace(path)
+    return info
+
+
+def description(g):
+    # Same layout as the GOG/Epic game pages (shared/GameSet.py).
+    info = game_info(g)
+    esc = html.escape
+    out = ("<div style=' width: 100%;'><p style='width:100%; white-space: pre-wrap;'>"
+           + esc(info.get("summary") or g["name"]) + "</p></div><div>")
+    for label, value in (("Publisher", ", ".join(info.get("publishers") or [])),
+                         ("Developer", ", ".join(info.get("developers") or [])),
+                         ("Genre", ", ".join(info.get("genres") or [])),
+                         ("Release Date", info.get("released") or "")):
+        if value:
+            out += "<p>%s: %s</p>" % (label, esc(value))
+    return out + "<p>EA / Maxima (experimental)</p></div>"
+
+
 def cover(g):
     # Grid tile in SkullKey: first candidate URL, no download needed.
     try:
@@ -399,6 +443,42 @@ def cover(g):
         return (artwork(g).get("grid") or [None])[-1]
     except Exception:
         return None
+
+
+def apply_locale_filter(directory, locale):
+    # The EA app only installs the language files of the language picked at
+    # install time: __Installer/installerdata.xml lists them per locale in
+    # <localeFilters> (Jedi: Fallen Order: French = pakchunk3, English =
+    # pakchunk2…). Maxima ignores that table and installs every language, and
+    # games then start in the first one they find (measured 12/10/2026: same
+    # install on Windows in French = only pakchunk3; Maxima = pakchunk1–10,
+    # game in English). Remove files that belong to OTHER languages only.
+    import fnmatch
+    import xml.etree.ElementTree as ET
+    manifest = directory / "__Installer" / "installerdata.xml"
+    try:
+        root_el = ET.parse(manifest).getroot()
+    except (OSError, ET.ParseError):
+        return 0
+    filters = {}
+    for inc in root_el.iter("includes"):
+        loc = inc.get("locale")
+        if loc:
+            filters.setdefault(loc, []).extend(
+                (i.text or "").strip().replace("\\", "/").lstrip("/").lower() for i in inc.iter("include"))
+    if locale not in filters:
+        return 0  # language not offered by this game: keep everything
+    keep = [p for p in filters[locale] if p]
+    other = {p for loc, pats in filters.items() if loc != locale for p in pats if p} - set(keep)
+    removed = 0
+    for path in directory.rglob("*"):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(directory).as_posix().lower()
+        if any(fnmatch.fnmatch(rel, p) for p in other) and not any(fnmatch.fnmatch(rel, p) for p in keep):
+            path.unlink()
+            removed += 1
+    return removed
 
 
 def set_registry_locale(locale):
@@ -488,6 +568,31 @@ def merge_case_duplicates(directory):
     for child in directory.iterdir():
         if child.is_dir() and not child.is_symlink():
             merge_case_duplicates(child)
+
+
+LAUNCH_ERRORS = {
+    "not_entitled": {
+        "en": "EA refused to start {name}: this account no longer owns it (for example a Game Pass or EA Play title that has ended). You can uninstall it from SkullKey.",
+        "fr": "EA a refusé de lancer {name} : ce compte ne possède plus ce jeu (par exemple un jeu Game Pass ou EA Play terminé). Vous pouvez le désinstaller depuis SkullKey.",
+        "de": "EA hat den Start von {name} verweigert: Dieses Konto besitzt das Spiel nicht mehr (z. B. ein beendetes Game-Pass- oder EA-Play-Spiel). Du kannst es in SkullKey deinstallieren.",
+        "es": "EA se ha negado a iniciar {name}: esta cuenta ya no posee el juego (por ejemplo, un juego de Game Pass o EA Play que ha terminado). Puedes desinstalarlo desde SkullKey.",
+        "it": "EA ha rifiutato di avviare {name}: questo account non possiede più il gioco (ad esempio un titolo Game Pass o EA Play terminato). Puoi disinstallarlo da SkullKey.",
+        "pt": "A EA recusou iniciar {name}: esta conta já não possui o jogo (por exemplo, um jogo do Game Pass ou EA Play que terminou). Pode desinstalá-lo no SkullKey.",
+        "nl": "EA weigert {name} te starten: dit account bezit het spel niet meer (bijvoorbeeld een beëindigde Game Pass- of EA Play-titel). Je kunt het verwijderen in SkullKey.",
+        "pl": "EA odmówiło uruchomienia {name}: to konto nie posiada już tej gry (np. zakończony tytuł Game Pass lub EA Play). Możesz ją odinstalować w SkullKey.",
+        "ru": "EA отказала в запуске {name}: этот аккаунт больше не владеет игрой (например, закончилась подписка Game Pass или EA Play). Игру можно удалить в SkullKey.",
+    },
+}
+
+
+def show_error(name, kind):
+    # Launched from a Steam shortcut: a zenity dialog is shown by gamescope
+    # like the game window would be (zenity ships with SteamOS and Bazzite).
+    text = LAUNCH_ERRORS[kind].get(game_locale()[:2], LAUNCH_ERRORS[kind]["en"]).format(name=name)
+    print(text, file=sys.stderr)
+    if shutil.which("zenity"):
+        subprocess.run(["zenity", "--error", "--title", "SkullKey — EA", "--width", "600", "--text", text],
+                       env=dict(os.environ, DISPLAY=os.environ.get("DISPLAY") or ":0"), check=False)
 
 
 def game(slug):
@@ -614,6 +719,7 @@ def install_worker(slug, token):
                                    capture_output=True, text=True, timeout=120)
             if check.returncode or not installation_verified(slug, directory, check.stdout + "\n" + check.stderr):
                 raise RuntimeError("Installed metadata could not be confirmed")
+            apply_locale_filter(directory, game_locale())
             refresh()
             if not game(slug)["installed"]:
                 raise RuntimeError("Library installation state not confirmed")
@@ -831,8 +937,14 @@ def dispatch(action, args):
                     bootstrap.chmod(0o700)
                 merge_case_duplicates(game_dir(slug))
                 set_registry_locale(game_locale())
-                subprocess.run([str(localized_client()), "launch", slug], env=env(),
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+                apply_locale_filter(game_dir(slug), game_locale())
+                result = subprocess.run([str(localized_client()), "launch", slug], env=env(),
+                                        capture_output=True, text=True, errors="replace")
+                # Maxima exits 0 even when EA refuses the licence (e.g. a Game
+                # Pass / EA Play title that is no longer available): tell the
+                # player instead of silently returning to Steam.
+                if "NOT_ENTITLED" in result.stdout + result.stderr:
+                    show_error(game(slug)["name"], "not_entitled")
             else:
                 # Explicit action only. Browser OAuth callback requires desktop
                 # qrc handler; do not change a global protocol handler silently.
@@ -864,7 +976,7 @@ def dispatch(action, args):
         if not g:
             raise RuntimeError("Unknown EA game.")
         return {"Type": "GameDetails", "Content": {"Name": g["name"], "ShortName": slug,
-                "Description": "EA / Maxima — experimental installation and native launch via umu/Proton. Integrated sign-in works in Game Mode with GTK/WebKit, like GOG/Epic. Compatibility and cloud saves remain game-dependent and need real-account validation.",
+                "Description": description(g),
                 "Images": [c] if (c := cover(g)) else [], "Editors": [],
                 "SteamClientID": state().get("shortcuts", {}).get(slug, "")}}
     if action == "getjsonimages":

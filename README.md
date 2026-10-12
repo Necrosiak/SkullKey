@@ -12,9 +12,9 @@
 - 🏪 **Four stores, free** — Epic Games ([Legendary](https://github.com/derrod/legendary)), GOG ([gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl)), Amazon Games ([nile](https://github.com/imLinguin/nile)) and **miHoYo/HoYoverse**
 - ✨ **miHoYo store** — Genshin Impact, Honkai: Star Rail, Zenless Zone Zero and Honkai Impact 3rd, installed from HoYoverse's official *sophon* channel: parallel chunk downloads (~100 MB/s), updates that only fetch changed files, resume after reboot, anti-cheat handled automatically (jadeite) for HI3/HSR
 - 🩹 **miHoYo extras** — delta updates (download only the diff, ~4× smaller), voice-over language picker, integrity **check & repair**, and Zenless Zone Zero anti-cheat handled automatically
-- 🏛️ **Classics Reborn** — 70 open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island, Animal Crossing, P.T.…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
+- 🏛️ **Classics Reborn** — 150+ open-source native ports & recompilations of classics (Zelda, Mario 64, Perfect Dark, Diablo, Fallout, Doom, C&C Generals, Morrowind, Sonic Unleashed, Unreal Tournament, Freespace 2, LEGO Island, Animal Crossing, P.T.…), installed from each project's official releases, with clear instructions for your original game files (9 languages)
 
-New in v1.16.0: Animal Crossing (USA ROM, Proton) and P.T. (own fake PKG, native Linux), complete Steam artwork, and notifications after automatic Classics updates.
+New in v1.18.0: 82 more Classics (150+ in total: Metroid Prime, Silent Hill, GoldenEye, Super Mario Sunshine, Dead Rising 2, The Legend of Dragoon…), an Update button when a new build is out, and EA games in your language.
 - ⛏️ **Minecraft** — Java Edition (through [Prism Launcher](https://prismlauncher.org), pre-configured: sign in with your Microsoft account and play), Bedrock Edition (through [mcpelauncher](https://mcpelauncher.readthedocs.io) from Flathub, native controller support) and **Modrinth modpacks** as one-click Steam shortcuts (live search, version pinning or daily auto-updates, automatic world backups before every version change)
 - 🎯 **Battle.net & Ubisoft Connect** *(experimental)* — the official Windows clients run in one shared Proton prefix each: log in once, your owned games appear in SkullKey, *Install* opens the client on the game's page (one press to confirm), *Play* starts the game directly and closes the client when you quit
 - 🟦 **EA** *(experimental)* — your EA library through [Maxima](https://github.com/Starkka15/Maxima): sign in from Game Mode, install, play through Proton, cloud saves; the game language follows Steam's
@@ -94,7 +94,7 @@ valuable — they tell us what to support next.
 
 ## Credits
 
-SkullKey is a fork of [Junk-Store](https://github.com/ebenbruyns/junkstore) by **Eben Bruyns** (BSD-3-Clause) — thanks for the solid foundations. Store engines by the [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) and [nile](https://github.com/imLinguin/nile) projects, and EA support by [Maxima](https://github.com/Starkka15/Maxima) (GPL-3.0, fork of [ArmchairDevelopers/Maxima](https://github.com/ArmchairDevelopers/Maxima)), downloaded from its official release and verified.
+SkullKey is a fork of [Junk-Store](https://github.com/ebenbruyns/junkstore) by **Eben Bruyns** (BSD-3-Clause) — thanks for the solid foundations. Store engines by the [Legendary](https://github.com/derrod/legendary), [heroic-gogdl](https://github.com/Heroic-Games-Launcher/heroic-gogdl) and [nile](https://github.com/imLinguin/nile) projects, and EA support by [Maxima](https://github.com/Starkka15/Maxima) (GPL-3.0, fork of [ArmchairDevelopers/Maxima](https://github.com/ArmchairDevelopers/Maxima)), rebuilt with a small language patch (source in [`maxima-patches/`](maxima-patches/)) and verified by checksum.
 
 This is an independent community project, not affiliated with Junk-Store, Valve, Epic Games, GOG or Amazon.
 

@@ -29,7 +29,7 @@ import { appActionButtonClasses, basicAppDetailsClasses } from '../staticClasses
 import { executeAction } from '../Utils/executeAction';
 import { ActionCard, IconBtn, storeTheme } from './Styled';
 import { t } from '../i18n';
-import { FaPlay, FaDownload, FaTimes } from 'react-icons/fa';
+import { FaPlay, FaDownload, FaTimes, FaSync } from 'react-icons/fa';
 
 
 interface GameDisplayProperties {
@@ -51,6 +51,7 @@ interface GameDisplayProperties {
     actions: MenuAction[];
     resetLaunchOptions: () => void;
     updater: () => void;
+    updateAvailable?: string;
     scriptRunner: (actionSet: string, actionId: string, args: any) => void;
     reloadData: () => void;
     onExeExit: () => void;
@@ -69,6 +70,8 @@ const GameDisplay: VFC<GameDisplayProperties> = (
         uninstaller,
         cancelInstall,
         runner,
+        updateAvailable,
+        updater,
         description,
         installing,
         progress,
@@ -248,6 +251,14 @@ const GameDisplay: VFC<GameDisplayProperties> = (
                                     <span>{installing ? t('btn_cancel') : !isInstalled ? t('btn_install_game') : t('btn_play')}</span>
                                 </ActionCard>
                             </div>
+                            {isInstalled && !installing && !!updateAvailable && (
+                                <div style={{ flex: 1 }}>
+                                    <ActionCard big active color={'#ff9800'} onClick={updater}>
+                                        <FaSync size={14} />
+                                        <span style={{ whiteSpace: 'nowrap' }}>{t('btn_update')}</span>
+                                    </ActionCard>
+                                </div>
+                            )}
                             <IconBtn color={storeTheme(initActionSet).color} onClick={actionsMenu}>
                                 <FaSlidersH style={{ verticalAlign: 'middle' }} />
                             </IconBtn>

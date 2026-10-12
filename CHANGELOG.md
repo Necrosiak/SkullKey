@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.18.0 — 2026-10-12
+
+### New
+
+- **82 more Classics** (150+ in total), each installed from the project's
+  official release, with your own game files:
+  - **N64** — Rocket: Robot on Wheels, Glover, Castlevania 64, Mega Man 64,
+    Duke Nukem: Zero Hour, Pokémon Snap, GoldenEye 007, Wave Race 64, Body
+    Harvest, Blast Corps, Tetrisphere, Snowboard Kids 1 & 2, Pokémon Stadium,
+    Dr. Mario 64, Beetle Adventure Racing, Ogre Battle 64, the AKI wrestling
+    games and more
+  - **GameCube / Wii** — Metroid Prime, Super Mario Sunshine, Pikmin, Super
+    Smash Bros. Melee, Soulcalibur II, Super Mario Strikers, Mario Strikers
+    Charged, Kirby's Return to Dream Land
+  - **SNES / GBA / DS / GBC** — Super Mario World, Mega Man X, Super Metroid,
+    Donkey Kong Country, EarthBound, Mario Kart: Super Circuit, Pokémon
+    Emerald and Crystal, Zelda: Oracle of Ages / Seasons, Metroid Prime Hunters
+  - **PlayStation / PS2** — Silent Hill, The Legend of Dragoon, Crash Team
+    Racing, Vandal Hearts, Einhänder, Bloody Roar II, Syphon Filter, Yu-Gi-Oh!
+    Forbidden Memories, Serial Experiments Lain, Sly Cooper, ICO
+  - **Xbox 360** — Dead Rising 2: Case Zero & Case West, The Darkness, Army of
+    Two, Need for Speed: Most Wanted, Forza Horizon, Tony Hawk's Project 8,
+    Deadly Premonition, King Kong, Geometry Wars 2, Hard Corps: Uprising, Sonic
+    Free Riders, Dragon Ball Z: Burst Limit, Symphony of the Night (XBLA)
+  - **PC engines** — UZDoom, dsda-doom, Raze (Duke Nukem 3D, Blood, Shadow
+    Warrior…), NBlood, RBDOOM-3-BFG, vkQuake2, OpenLoco, Julius (Caesar III),
+    OpenTyrian, FreeSynd
+- **Update button for Classics** — when a newer build is out, an *Update*
+  button shows up next to *Play*, and the page says which version is
+  available. Your ROMs, saves and settings are kept. Automatic daily updates
+  keep working as before.
+- **EA games in your language** — EA now runs on Maxima rebuilt with a small
+  patch: games are told the language you picked (or your Steam language), like
+  the EA app does. STAR WARS Jedi: Fallen Order now starts in French when
+  Steam is in French. Only the localized files you need are kept after
+  install.
+- **EA game pages** — description, genres, developer, publisher and release date, in your language
+  when Steam has one.
+
+### Fixed
+
+- Classics shipped as `.7z` or `.rar` archives now extract.
+- Windows-only Classics find their game executable on their own.
+- EA: a game your account can no longer play (expired subscription) now says
+  so instead of failing silently.
+- EA: an install interrupted and restarted elsewhere no longer resumes from
+  stale files.
+
 ## 1.17.0 — 2026-10-11
 
 ### New

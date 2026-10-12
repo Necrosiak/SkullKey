@@ -67,6 +67,7 @@ export interface GameDetails extends ContentType {
   HasDosConfig: boolean;
   HasBatFiles: boolean;
   Editors: EditorAction[];
+  UpdateAvailable?: string;
 }
 export interface EditorAction {
   Type: string;

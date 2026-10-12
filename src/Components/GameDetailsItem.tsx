@@ -75,6 +75,19 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
         return () => disposeNavigation?.();
     }, []);
 
+    // Fin d install / mise à jour : relire les détails (version, bouton
+    // « Mettre à jour ») sans repasser par l écran de chargement.
+    const wasInstalling = useRef(false);
+    useEffect(() => {
+        if (wasInstalling.current && !installing) {
+            executeAction<ExecuteGetGameDetailsArgs, GameDetails>(
+                serverAPI, initActionSet, "GetDetails", { shortname: shortname }
+            ).then(r => { if (r?.Type === "GameDetails") setGameData(r); })
+             .catch(e => logger.error("refresh details", e));
+        }
+        wasInstalling.current = installing;
+    }, [installing]);
+
     const reloadData = async () => {
         setGameData({ Type: "Empty", Content: { Details: {} } });
         onInit();
@@ -575,6 +588,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                             cancelInstall={cancelInstall}
                             uninstaller={uninstall}
                             editors={(gameData.Content as GameDetails).Editors}
+                            updateAvailable={(gameData.Content as GameDetails).UpdateAvailable}
                             initActionSet={initActionSet}
                         runner={() => {
                                 closeModal && closeModal();
