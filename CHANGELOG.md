@@ -1,13 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.18.1 — 2026-10-14
 
-- Fix EA login being rejected as `unsupported store (EALoginActions)` when
-  SteamOS needs the Steam-browser fallback. The EA path keeps Maxima alive,
-  intercepts its owned OAuth redirect before Steam tries to open `qrc:`, and
-  validates the library before confirming login. No GTK installation required;
-  URLs/codes remain in memory/private pipes, with bounded cancellation/timeout.
-  Real Steam Deck sign-in still requires tester validation before release.
+### Fixed
+
+- **EA sign-in on a stock Steam Deck** — SkullKey signs in through Steam's
+  own browser there, and that path didn't handle EA yet, so login stopped
+  right away. EA now signs in that way too, with no extra install needed.
+  Reported by [bastiHST90](https://github.com/bastiHST90) in
+  [#9](https://github.com/Necrosiak/SkullKey/issues/9).
 
 ## 1.18.0 — 2026-10-12
 

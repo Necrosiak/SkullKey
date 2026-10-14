@@ -27,6 +27,8 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
 - The request for a custom Proton prefix location, to keep non-Steam games
   out of Steam's `compatdata` ([#5](https://github.com/Necrosiak/SkullKey/issues/5),
   added in v1.15.0)
+- EA login failing on a stock Steam Deck, with the log that showed where it
+  stopped ([#9](https://github.com/Necrosiak/SkullKey/issues/9), fixed in v1.18.1)
 
 ### [@arsaban](https://github.com/arsaban)
 
