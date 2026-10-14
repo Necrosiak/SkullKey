@@ -24,6 +24,12 @@ _uspec = _ilu.spec_from_file_location(
 updater = _ilu.module_from_spec(_uspec)
 _uspec.loader.exec_module(updater)
 
+_easpec = _ilu.spec_from_file_location(
+    "skullkey_ea_browser", os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "skullkey_ea_browser.py")
+)
+_ea_browser = _ilu.module_from_spec(_easpec)
+_easpec.loader.exec_module(_ea_browser)
+
 
 # Background tasks started by _main, kept here for two reasons: asyncio only
 # holds a weak reference to a running task, so one with no reference left can be
@@ -651,6 +657,8 @@ BROWSER_LOGIN = {
 class BrowserLogin:
     state = {"status": "idle"}          # idle | waiting | finishing | done | error
     task = None
+    ea = None
+    start_lock = asyncio.Lock()
 
     @staticmethod
     async def _cdp(ws, method, params=None, session=None, _ids=[0]):
@@ -1049,12 +1057,35 @@ class Plugin:
     async def browser_login_start(self, actionSet):
         """Démarre la connexion dans le navigateur de Steam pour le magasin de
         `actionSet` ; renvoie l'URL que l'interface ouvre."""
+        async with BrowserLogin.start_lock:
+            return await self._browser_login_start(actionSet)
+
+    async def _browser_login_start(self, actionSet):
         try:
             action = Helper.get_action(actionSet, "Login") or {}
             parts = (action.get("Command") or "").split()
-            platform = next((x for x in parts if x in BROWSER_LOGIN), None)
+            platform = next((x for x in parts if x in BROWSER_LOGIN or x == "EA"), None)
             if not platform:
                 return {"ok": False, "error": f"unsupported store ({actionSet})"}
+            if BrowserLogin.ea is not None:
+                await BrowserLogin.ea.close()
+                BrowserLogin.ea = None
+            if BrowserLogin.task and not BrowserLogin.task.done():
+                BrowserLogin.task.cancel()
+            if platform == "EA":
+                # Maxima needs its own live OAuth process and loopback callback,
+                # not the login-url/login-code protocol of Epic/GOG/Amazon.
+                worker = _ea_browser.EASteamBrowser()
+                BrowserLogin.ea = worker
+                BrowserLogin.state = {"status": "idle"}
+                environment = Helper.get_environment("EA")
+                environment["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+                result = await worker.start(
+                    ["/usr/bin/bash", "./scripts/skullkey.sh", "EA", "login-browser"],
+                    Helper.working_directory, environment)
+                # No result/URL/exception text in logger: OAuth stays private.
+                decky_plugin.logger.info("[browser-login] EA : " + ("ready" if result.get("ok") else "failed"))
+                return result
             out = await Helper.call_script(
                 "./scripts/skullkey.sh",
                 platform, "login-url")
@@ -1073,9 +1104,15 @@ class Plugin:
             return {"ok": False, "error": str(e)}
 
     async def browser_login_status(self):
+        if BrowserLogin.ea is not None:
+            return BrowserLogin.ea.state
         return BrowserLogin.state
 
     async def browser_login_cancel(self):
+        if BrowserLogin.ea is not None:
+            BrowserLogin.ea.state = {"status": "idle", "platform": "EA"}
+            await BrowserLogin.ea.close()
+            BrowserLogin.ea = None
         if BrowserLogin.state.get("status") == "waiting":
             BrowserLogin.state = {"status": "idle"}
         return {"ok": True}
@@ -1238,6 +1275,8 @@ class Plugin:
     async def _unload(self):
         try:
             decky_plugin.logger.info("Starting plugin unload...")
+            if BrowserLogin.ea is not None:
+                BrowserLogin.ea.abort()
 
             # Cancel our own background tasks — and only those.
             # This used to sweep asyncio.all_tasks(), which has two problems:

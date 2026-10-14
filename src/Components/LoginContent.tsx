@@ -29,6 +29,10 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
         return false;
     }
     browserLoginError = "";
+    if (res.complete) {
+        Navigation.Navigate(route);
+        return true;
+    }
     Navigation.NavigateToExternalWeb(res.url);
     if (browserPoll) clearInterval(browserPoll);
     const started = Date.now();

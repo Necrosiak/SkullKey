@@ -6,6 +6,7 @@ function _ea_py() { python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/EA/ea.py" "$
 function EA_getgames() { _ea_py getgames "$@"; }
 function EA_loginstatus() { _ea_py loginstatus "$@"; }
 function EA_login() { _ea_py login "$@"; }
+function EA_login-browser() { exec /usr/bin/python3 "${DECKY_PLUGIN_DIR}/scripts/Extensions/EA/browser_login.py"; }
 function EA_login-launch-options() { _ea_py login-launch-options "$@"; }
 function EA_logout() { _ea_py logout "$@"; }
 function EA_getsetting() { _ea_py getsetting "$@"; }

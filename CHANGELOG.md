@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Fix EA login being rejected as `unsupported store (EALoginActions)` when
+  SteamOS needs the Steam-browser fallback. The EA path keeps Maxima alive,
+  intercepts its owned OAuth redirect before Steam tries to open `qrc:`, and
+  validates the library before confirming login. No GTK installation required;
+  URLs/codes remain in memory/private pipes, with bounded cancellation/timeout.
+  Real Steam Deck sign-in still requires tester validation before release.
+
 ## 1.18.0 — 2026-10-12
 
 ### New
