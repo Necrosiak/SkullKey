@@ -53,6 +53,10 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
 
 ### [@zavaro](https://github.com/zavaro)
 
+- EA login failing immediately on Steam Machine, with a follow-up log and
+  details that helped investigate the Steam-browser startup regression
+  ([#9](https://github.com/Necrosiak/SkullKey/issues/9), fix in v1.18.2;
+  SteamOS testing still needed)
 - The EA request, pointing at Maxima and at the fork with the non-interactive
   install commands that made an in-Game-Mode EA store possible
   ([#6](https://github.com/Necrosiak/SkullKey/issues/6), added in v1.17.0)

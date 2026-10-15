@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.18.2 — 2026-10-15
+
+### Fixed
+
+- **Steam-browser sign-in** — fixed a startup regression introduced in
+  v1.18.1 that could stop login before the browser opened.
+- **Existing EA sessions** — an already signed-in Maxima session is now
+  accepted without requiring a new browser login.
+
+### Notes
+
+- **SteamOS testing needed** — please test EA sign-in from Game Mode on
+  SteamOS, especially on Steam Deck and Steam Machine. Automated tests pass,
+  but the Steam-browser login flow still needs confirmation on those systems.
+
 ## 1.18.1 — 2026-10-14
 
 ### Fixed
