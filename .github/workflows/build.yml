@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Test browser login frontend
+        run: node --test tests/test_browser_login_ui.cjs
+
       - name: Build plugin
         run: pnpm run build
 

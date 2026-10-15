@@ -24,7 +24,7 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
     const r = await serverAPI.callPluginMethod<{ actionSet: string }, any>(
         "browser_login_start", { actionSet });
     const res = r.success ? r.result : null;
-    if (!res?.ok || !res?.url) {
+    if (!res?.ok) {
         browserLoginError = res?.error || "browser login failed";
         return false;
     }
@@ -32,6 +32,10 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
     if (res.complete) {
         Navigation.Navigate(route);
         return true;
+    }
+    if (!res.url) {
+        browserLoginError = "browser login failed";
+        return false;
     }
     Navigation.NavigateToExternalWeb(res.url);
     if (browserPoll) clearInterval(browserPoll);

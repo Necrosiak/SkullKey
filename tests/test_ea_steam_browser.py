@@ -250,6 +250,52 @@ class BrowserTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.login.process.terminated)
 
 
+class StartupFailureTests(unittest.IsolatedAsyncioTestCase):
+    async def check_failure(self, endpoint=None, connection_error=False):
+        login = browser.EASteamBrowser()
+        response = types.SimpleNamespace(raise_for_status=Mock(),
+            json=AsyncMock(return_value={'webSocketDebuggerUrl': endpoint}))
+
+        class Request:
+            async def __aenter__(self):
+                if connection_error:
+                    raise OSError('fixture-sensitive-detail')
+                return response
+
+            async def __aexit__(self, *args):
+                pass
+
+        session = types.SimpleNamespace(get=Mock(return_value=Request()),
+            ws_connect=AsyncMock(side_effect=OSError('fixture-sensitive-detail')),
+            close=AsyncMock())
+        with patch.object(browser.aiohttp, 'ClientTimeout', create=True), \
+                patch.object(browser.aiohttp, 'ClientSession', return_value=session, create=True), \
+                patch.object(browser.asyncio, 'create_subprocess_exec', new_callable=AsyncMock) as spawn:
+            result = await login.start(['fixture-command'], '/fixture', {})
+        self.assertEqual(result, {'ok': False, 'error': 'ea-browser-start'})
+        self.assertNotIn('fixture-sensitive-detail', repr(result))
+        self.assertEqual(login.state['message'], 'ea-browser-start')
+        self.assertTrue(login.closed)
+        session.close.assert_awaited_once()
+        spawn.assert_not_awaited()
+        return session
+
+    async def test_cdp_unavailable_is_categorized_not_generic_browser_login_failed(self):
+        session = await self.check_failure(connection_error=True)
+        session.ws_connect.assert_not_awaited()
+
+    async def test_untrusted_cdp_endpoint_rejected_before_worker(self):
+        for endpoint in ('ws://evil.invalid:8080/', 'wss://127.0.0.1:8080/',
+                         'ws://127.0.0.1:9999/', 'ws://user@127.0.0.1:8080/'):
+            with self.subTest(endpoint=endpoint):
+                session = await self.check_failure(endpoint)
+                session.ws_connect.assert_not_awaited()
+
+    async def test_cdp_websocket_failure_is_controlled_and_cleaned_up(self):
+        session = await self.check_failure('ws://127.0.0.1:8080/devtools/browser/fixture')
+        session.ws_connect.assert_awaited_once()
+
+
 @unittest.skipIf(os.name == 'nt', 'Actual private Unix socket; run on Linux')
 class WorkerTests(unittest.TestCase):
     def test_headless_worker_socket_callback_and_library_without_ea_account(self):

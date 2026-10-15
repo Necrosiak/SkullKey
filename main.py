@@ -1058,7 +1058,9 @@ class Plugin:
         """Démarre la connexion dans le navigateur de Steam pour le magasin de
         `actionSet` ; renvoie l'URL que l'interface ouvre."""
         async with BrowserLogin.start_lock:
-            return await self._browser_login_start(actionSet)
+            # Decky's legacy API passes the Plugin class itself as self.
+            # An explicit call also works when invoked on a regular instance.
+            return await Plugin._browser_login_start(self, actionSet)
 
     async def _browser_login_start(self, actionSet):
         try:
