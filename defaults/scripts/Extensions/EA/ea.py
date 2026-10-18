@@ -657,7 +657,25 @@ def installation_verified(slug, directory, output):
             pass
     return (any(isinstance(item, dict) and item.get("slug") == slug
                 and item.get("installed") is True for item in records)
-            and directory.is_dir() and any(p.is_file() for p in directory.rglob("*")))
+            and directory.is_dir() and any(p.is_file() and p.stat().st_size > 0
+                                          for p in directory.rglob("*")))
+
+
+def install_diagnostic(slug, stage, started, **fields):
+    """Allowlisted metadata only: never CLI output, paths, OAuth or job tokens."""
+    allowed = {"progress", "cli_error_seen", "exit_code", "failure_category",
+               "activity_hint", "umu_available", "python_available", "display_available", "failed_stage"}
+    now = time.time()
+    data = {"version": VERSION, "stage": stage, "updated_at": now,
+            "elapsed_seconds": round(max(0, now - started), 1),
+            **{k: v for k, v in fields.items() if k in allowed}}
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+            json.dump(data, stream)
+            temporary = Path(stream.name)
+        temporary.replace(root() / f"install-diagnostic-{slug}.json")
+    except OSError:
+        pass  # A diagnostic write must not stop the user's installation.
 
 
 def install_worker(slug, token):
@@ -665,6 +683,23 @@ def install_worker(slug, token):
     job = read_job(slug)
     if job.get("token") != token:
         return
+    started = time.time()
+    phase = "starting"
+    last_report = 0
+    failed = False
+    activity_hint = "unknown"
+    tool_info = {}
+
+    def report(stage, **fields):
+        nonlocal phase, last_report
+        phase = stage
+        last_report = time.time()
+        job["Stage"] = stage
+        install_diagnostic(slug, stage, started,
+                           progress=job.get("Percentage", 0), cli_error_seen=failed,
+                           activity_hint=activity_hint, **tool_info, **fields)
+
+    report("starting")
     job.update(worker_pid=os.getpid(), worker_start=process_identity(os.getpid()))
     write_job(slug, job)
     try:
@@ -673,9 +708,16 @@ def install_worker(slug, token):
                 raise RuntimeError("Explicit EA authentication required")
             directory = game_dir(slug)
             directory.mkdir(parents=True, exist_ok=True)
+            environment = env()
+            tool_info.update(
+                umu_available=bool(shutil.which("umu-run", path=environment.get("PATH", ""))),
+                python_available=bool(shutil.which("python3", path=environment.get("PATH", ""))),
+                display_available=bool(environment.get("DISPLAY") or environment.get("WAYLAND_DISPLAY")))
+            report("starting-cli")
             process = subprocess.Popen([str(localized_client()), "install", slug, "--path", str(directory)],
-                                       env=env(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        start_new_session=True)
+            report("cli-running")
             # Bounded streaming; raw logs and account identifiers never persist.
             selector = selectors.DefaultSelector()
             selector.register(process.stdout, selectors.EVENT_READ)
@@ -689,6 +731,8 @@ def install_worker(slug, token):
                         raise InterruptedError("Cancelled")
                     if time.monotonic() > deadline:
                         raise TimeoutError("Installation timed out")
+                    if time.time() - last_report >= 30:
+                        report(phase)
                     for key, _ in selector.select(timeout=0.25):
                         chunk = os.read(key.fileobj.fileno(), 8192)
                         if not chunk:
@@ -701,10 +745,22 @@ def install_worker(slug, token):
                             else:
                                 line, pending = pending[:8192], pending[8192:]
                             text = re.sub(r"\x1b\[[0-9;]*m", "", line.decode("utf-8", "replace"))
+                            hint = next((label for marker, label in (
+                                ("touchup", "touchup"), ("umu", "proton-setup"),
+                                ("download complete", "download-complete")) if marker in text.lower()), None)
+                            if hint and hint != activity_hint:
+                                activity_hint = hint
+                                report(phase)
+                            was_failed = failed
                             failed |= bool(re.search(r"\bERROR\b", text))
+                            if failed and not was_failed:
+                                report(phase)
                             progress = re.search(r"Progress:\s*(\d+(?:\.\d+)?)", text)
                             if progress:
                                 job.update(Percentage=min(99, float(progress[1])), Description="Downloading EA game…")
+                                if float(progress[1]) >= 99:
+                                    job["Description"] = "Waiting for EA installation to finish…"
+                                    report("waiting-for-cli-exit")
                                 # Keep any cancellation request written during this read.
                                 if cancelled(slug, token):
                                     raise InterruptedError("Cancelled")
@@ -713,21 +769,29 @@ def install_worker(slug, token):
             finally:
                 selector.close()
                 process.stdout.close()
-            if process.wait() or failed:
+            exit_code = process.wait()
+            report("cli-exited", exit_code=exit_code)
+            if exit_code or failed:
                 raise RuntimeError("Maxima installation failed")
+            report("verifying-installation")
             check = subprocess.run([str(client()), "game-info", slug], env=env(),
                                    capture_output=True, text=True, timeout=120)
             if check.returncode or not installation_verified(slug, directory, check.stdout + "\n" + check.stderr):
                 raise RuntimeError("Installed metadata could not be confirmed")
             apply_locale_filter(directory, game_locale())
+            report("refreshing-library")
             refresh()
             if not game(slug)["installed"]:
                 raise RuntimeError("Library installation state not confirmed")
             job.update(Percentage=100, Description="Done", Error=None)
+            report("done", exit_code=0)
     except InterruptedError:
         job.update(Percentage=0, Description="Cancelled — downloaded files kept", Error=None)  # a user cancel is not a failure: no error dialog
-    except Exception:
+        report("cancelled")
+    except Exception as error:
         job.update(Percentage=0, Description="EA installation could not be validated", Error="EA installation failed; no game files removed")
+        report("failed", failed_stage=phase, failure_category="timeout" if isinstance(error, TimeoutError)
+               else "session-busy" if isinstance(error, BlockingIOError) else "installation-not-validated")
     finally:
         if process is not None and process.poll() is None:
             # Only our own live child/session. Never trust a stored PID.

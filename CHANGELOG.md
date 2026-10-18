@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.18.3 — 2026-10-18
+
+### Changed
+
+- **EA installs: clearer status at the end** — once the download reaches
+  99 %, SkullKey now says it's waiting for EA's installer to finish instead of
+  looking stuck, and keeps a small diagnostic of each install step (no logs,
+  paths or account data) to help track down installs that never finish
+  ([#10](https://github.com/Necrosiak/SkullKey/issues/10)).
+- **EA installs** — a game folder holding only empty files is no longer
+  counted as installed.
+
 ## 1.18.2 — 2026-10-15
 
 ### Fixed
