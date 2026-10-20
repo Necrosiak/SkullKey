@@ -122,6 +122,27 @@ class FlowTests(unittest.TestCase):
         g = self.wait_stage(slug)
         self.assertEqual((g["stage"], g["installer"]), ("ready", ""))
 
+    def test_image_extract_removed_after_setexe(self):
+        iso = Path(self.tmp.name) / "game.iso"
+        iso.write_bytes(b"x")
+        slug = self.add("image", iso, "Game")
+        g = self.wait_stage(slug)
+        self.assertTrue(Path(g["root"], "_extract").is_dir())
+        exe = Path(g["root"], "_extract", "disc1", "setup.exe")
+        self.run_disks("setexe", slug, str(Path(self.tmp.name) / "game.iso"))
+        self.assertFalse(Path(g["root"], "_extract").exists())
+
+    def test_image_without_installer_drops_extract(self):
+        stub = Path(self.tmp.name) / "bin" / "7z"
+        stub.write_text(stub.read_text().replace('"setup.exe"', '"Game.exe"'))
+        iso = Path(self.tmp.name) / "plain.iso"
+        iso.write_bytes(b"x")
+        slug = self.add("image", iso, "Plain")
+        g = self.wait_stage(slug)
+        self.assertEqual(g["stage"], "ready")
+        self.assertTrue(Path(g["root"], "game", "Game.exe").exists())
+        self.assertFalse(Path(g["root"], "_extract").exists())
+
     def test_cancel_cleans_up(self):
         src = Path(self.tmp.name) / "Ready"
         src.mkdir()

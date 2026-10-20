@@ -213,6 +213,7 @@ def worker(slug):
                 installer = found[0]
             else:
                 _copy_tree(dirs[0], root / "game", slug)
+                shutil.rmtree(root / "_extract", ignore_errors=True)
         elif kind == "ready":               # ready to play: never run a setup
             found = []
             _copy_tree(source, root / "game", slug)
@@ -315,6 +316,9 @@ def _real_case(base, lowered):
 def action_setexe(slug, exe):
     if not os.path.isfile(exe):
         return error("This file does not exist.")
+    g = load_state()["games"].get(slug) or {}
+    if g.get("root"):                     # the installer ran from here: done
+        shutil.rmtree(Path(g["root"]) / "_extract", ignore_errors=True)
     update_game(slug, exe=exe, stage="installed")
     emit("Success", {"Message": "OK"})
 
