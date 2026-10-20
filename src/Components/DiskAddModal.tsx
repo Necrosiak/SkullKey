@@ -4,6 +4,7 @@ import { t } from "../i18n";
 import { executeAction } from "../Utils/executeAction";
 import { configureShortcut, runApp } from "../Utils/utils";
 import { pickInstallDrive } from "./DrivePicker";
+import { notify } from "./Styled";
 import { Candidate, defaultCandidate, FlowEvent, FlowState, initialState, nextStep, SourceKind } from "../disksFlow";
 
 const SET = "DisksActions";
@@ -126,6 +127,7 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
                 else openDiskAdd(serverAPI, onDone, resume);
             });
             send({ type: "installerStarted" });
+            notify({ title: "SkullKey", body: t("disks_mouse_hint"), duration: 12000 });
             // Step aside: the installer needs the controller. Its exit
             // reopens this dialog on the exe step (alive = false).
             alive.current = false;
