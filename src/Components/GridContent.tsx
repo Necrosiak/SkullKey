@@ -158,7 +158,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                     />
                 </div>
                 {initActionSet === "DisksActions" && (
-                    <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 14px" }}
+                    <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 14px", whiteSpace: "nowrap" }}
                         onClick={() => openDiskAdd(serverAPI, () => refreshContent && refreshContent())}>
                         {t("disks_add_button")}
                     </DialogButton>

@@ -62,6 +62,18 @@ class DetailsTests(unittest.TestCase):
         self.assertEqual(res["Content"]["Grid"], "QUJD")
         self.assertTrue(any("/42/" in c.args[0] for c in fetch.call_args_list))
 
+    def test_grid_cover_uses_steam_or_tile(self):
+        cache = Path(os.environ["DECKY_PLUGIN_RUNTIME_DIR"]) / "disks" / "art.json"
+        cache.write_text(json.dumps({"foo": 42}))
+        self.assertIn("/42/library_600x900", self.disks.cover_url("foo"))
+        cache.write_text(json.dumps({"foo": None}))
+        with patch.object(self.disks, "tile_file", return_value=None):
+            self.assertEqual(self.disks.cover_url("foo"), "")
+        tile = Path(self.tmp.name) / "t.png"
+        tile.write_bytes(b"PNG")
+        with patch.object(self.disks, "tile_file", return_value=tile):
+            self.assertEqual(self.disks.cover_url("foo"), "data:image/png;base64,UE5H")
+
     def test_savecheck_lists_nonempty_only(self):
         self.make_save("Documents/Foo/save1.dat", 300)
         (self.pfx / "users" / "steamuser" / "Saved Games").mkdir(parents=True)

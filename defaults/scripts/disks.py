@@ -418,6 +418,32 @@ def _cached_appid(slug, title):
     return data[slug]
 
 
+def tile_file(slug):
+    """Title tile already generated for this game (ports.compose cache)."""
+    try:
+        import ports
+        path = ports.ART_DIR / f"disks-{slug}_600x900.png"
+        return path if path.exists() else None
+    except Exception:
+        return None
+
+
+def cover_url(slug):
+    """Grid cover: Steam's portrait art when the game is on Steam, else the
+    title tile (inline), else nothing. Never does a network call."""
+    try:
+        appid = json.loads((DATA_DIR / "art.json").read_text()).get(slug)
+    except Exception:
+        appid = None
+    if appid:
+        return CDN.format(id=appid, name="library_600x900_2x.jpg")
+    tile = tile_file(slug)
+    if tile:
+        import base64
+        return "data:image/png;base64," + base64.b64encode(Path(tile).read_bytes()).decode()
+    return ""
+
+
 def action_getjsonimages(slug):
     g = load_state()["games"].get(slug)
     if not g:
@@ -467,7 +493,7 @@ def action_getgamedetails(slug):
     emit("GameDetails", {
         "Name": g["title"], "Description": "<br><br>".join(lines),
         "ApplicationPath": "", "ManualPath": "", "RootFolder": "", "DatabaseID": slug,
-        "ConfigurationPath": "", "Images": [], "ShortName": slug,
+        "ConfigurationPath": "", "Images": [c for c in [cover_url(slug)] if c], "ShortName": slug,
         "SteamClientID": g.get("steamClientID", ""), "HasDosConfig": False,
         "HasBatFiles": False, "Editors": []})
 
@@ -543,7 +569,8 @@ def action_getgames(filter_str="", installed="false"):
             continue
         if installed.lower() == "true" and not g.get("steamClientID"):
             continue
-        games.append({"ID": i, "Name": g.get("title", slug), "Images": [],
+        cover = cover_url(slug)
+        games.append({"ID": i, "Name": g.get("title", slug), "Images": [cover] if cover else [],
                       "ShortName": slug, "SteamClientID": g.get("steamClientID", "")})
     emit("GameGrid", {"Games": games, "NeedsLogin": "false"})
 
