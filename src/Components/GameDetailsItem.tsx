@@ -1,6 +1,8 @@
 import { Focusable, ServerAPI, ModalRoot, sleep, gamepadDialogClasses, showModal, Navigation } from "decky-frontend-lib";
 import { useState, useEffect, VFC, useRef } from "react";
 import GameDisplay from "./GameDisplay";
+import { openDiskAdd } from "./DiskAddModal";
+import { ConfirmModal } from "decky-frontend-lib";
 import { ContentError, ContentResult, ContentType, EmptyContent, ExecuteGetGameDetailsArgs, ExecuteInstallArgs, GameDetails, GameImages, LaunchOptions, MenuAction, ProgressUpdate, ScriptActions } from "../Types/Types";
 import { focusShortcut, runApp, runHelperShortcut } from "../Utils/utils";
 import Logger from "../Utils/logger";
@@ -237,15 +239,30 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
             });
         }
     }, [installing]);
+    const askKeepSaves = async (): Promise<string | null> => {
+        // Discs & Installers: offer to keep saves found in the prefix.
+        const res = await executeAction<any, any>(serverAPI, initActionSet, "SaveCheck", { shortname });
+        const dirs = (res?.Content?.dirs || []) as { path_label: string; bytes: number }[];
+        if (!dirs.length) return "";
+        return new Promise(resolve => {
+            const list = dirs.map(d => `${d.path_label} (${Math.max(1, Math.round(d.bytes / 1048576))} MB)`).join(", ");
+            showModal(<ConfirmModal strTitle={t("disks_keep_saves_q")} strDescription={list}
+                strOKButtonText={t("disks_keep_saves")} strCancelButtonText={t("disks_delete_saves")}
+                onOK={() => resolve("keep")} onCancel={() => resolve("")} />);
+        });
+    };
     const uninstall = async () => {
         try {
+            const keep = initActionSet === "DisksActions" ? await askKeepSaves() : "";
+            if (keep === null) return;
             await executeAction<ExecuteGetGameDetailsArgs, ContentType>(
                 serverAPI,
                 initActionSet,
                 "Uninstall",
                 {
-                    shortname: shortname
-                }
+                    shortname: shortname,
+                    ...(keep ? { keep } : {})
+                } as any
             );
             SteamClient.Apps.RemoveShortcut(parseInt(steamClientID));
             setSteamClientID("");
@@ -297,6 +314,10 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     };
 
     const runScript = async (actionSet: string, actionId: string, args: any) => {
+        if (actionSet === "DisksActions" && actionId === "ChangeExe") {
+            openDiskAdd(serverAPI, reloadData, { slug: shortname, steamClientID });
+            return;
+        }
         const result = await executeAction<ExecuteGetGameDetailsArgs, ContentType>(serverAPI, actionSet, actionId, args, onExeExit);
 
         if (result?.Type == "Progress") {

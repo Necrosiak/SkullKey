@@ -1,4 +1,5 @@
 import { DialogButton, Focusable, Menu, MenuItem, Navigation, ServerAPI, Spinner, TextField, gamepadTabbedPageClasses, showContextMenu, showModal } from "decky-frontend-lib";
+import { openDiskAdd } from "./DiskAddModal";
 import { ContentResult, ContentType, ExecuteArgs, GameData, GameDataList, MenuAction, ScriptActions } from "../Types/Types";
 import { Dispatch, SetStateAction, VFC, memo, useEffect, useState } from "react";
 import GameGridItem from './GameGridItem';
@@ -156,6 +157,12 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                         }}
                     />
                 </div>
+                {initActionSet === "DisksActions" && (
+                    <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 14px" }}
+                        onClick={() => openDiskAdd(serverAPI, () => refreshContent && refreshContent())}>
+                        {t("disks_add_button")}
+                    </DialogButton>
+                )}
                 <IconBtn color={storeTheme(initActionSet).color} onClick={actionsMenu} disabled={!scriptActions}>
                     <FaSlidersH style={{ verticalAlign: 'middle' }} />
                 </IconBtn>

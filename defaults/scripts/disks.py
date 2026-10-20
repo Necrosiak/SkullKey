@@ -564,6 +564,7 @@ ACTIONS = {
     "getgamedetails": lambda a: action_getgamedetails(a[0]),
     "getgamesize": lambda a: action_getgamesize(a[0]),
     "savecheck": lambda a: action_savecheck(a[0]),
+    "stage": lambda a: emit("Success", {"Message": load_state()["games"].get(a[0], {}).get("stage", "")}),
     "uninstall": lambda a: action_uninstall(a[0], a[1] if len(a) > 1 else ""),
 }
 

@@ -28,7 +28,14 @@
  "disks-game-script-actions": {
   "Type": "ScriptSet",
   "Content": {
-   "Actions": []
+   "Actions": [
+    {
+     "ActionId": "ChangeExe",
+     "Title": "Change executable",
+     "Type": "ScriptAction",
+     "InstalledOnly": "True"
+    }
+   ]
   }
  },
  "disks-script-actions": {
@@ -101,6 +108,54 @@
      "Title": "",
      "Type": "ScriptActions",
      "Command": "./scripts/get-json.py disks-script-actions"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download",
+     "Type": "Download",
+     "Command": "./scripts/disks.py add"
+    },
+    {
+     "Id": "GetSources",
+     "Title": "GetSources",
+     "Type": "GetSources",
+     "Command": "./scripts/disks.py sources"
+    },
+    {
+     "Id": "Mount",
+     "Title": "Mount",
+     "Type": "Mount",
+     "Command": "./scripts/disks.py mount"
+    },
+    {
+     "Id": "Scan",
+     "Title": "Scan",
+     "Type": "Scan",
+     "Command": "./scripts/disks.py scan"
+    },
+    {
+     "Id": "GetStage",
+     "Title": "GetStage",
+     "Type": "GetStage",
+     "Command": "./scripts/disks.py stage"
+    },
+    {
+     "Id": "Finalize",
+     "Title": "Finalize",
+     "Type": "Finalize",
+     "Command": "./scripts/disks.py finalize"
+    },
+    {
+     "Id": "SetExe",
+     "Title": "SetExe",
+     "Type": "SetExe",
+     "Command": "./scripts/disks.py setexe"
+    },
+    {
+     "Id": "SaveCheck",
+     "Title": "SaveCheck",
+     "Type": "SaveCheck",
+     "Command": "./scripts/disks.py savecheck"
     }
    ]
   }
