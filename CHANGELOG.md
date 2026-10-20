@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- **Discs & Installers** — a new tab to install Windows games from your own
+  media, with no account: disc images (ISO, BIN/CUE, MDF/MDS, IMG, NRG),
+  inserted CDs, DVDs and Blu-rays (internal or USB drives), offline installers
+  such as GOG's, or ready-to-play folders. *Scan a folder* finds disc images
+  and installers in a folder like Downloads. The installer runs in Game Mode
+  as the game's own Steam shortcut (hold the STEAM button: right stick moves
+  the mouse, RT clicks); SkullKey then suggests the game's executable, points
+  the shortcut at it and adds artwork. Uninstalling can keep the game's saves.
+
 ## 1.18.3 — 2026-10-18
 
 ### Changed
