@@ -11,7 +11,9 @@ import unicodedata
 from pathlib import Path
 
 IMAGE_EXTS = {".iso", ".bin", ".cue", ".mdf", ".mds", ".img", ".nrg"}
-DESCRIPTOR_EXTS = (".cue", ".mds")      # describe a data file next to them
+DESCRIPTOR_EXTS = (".cue", ".mds")
+LONE_MIN_EXTS = {".bin", ".img"}       # without a descriptor, must look disc-sized
+LONE_MIN_SIZE = 50 << 20      # describe a data file next to them
 INSTALLER_NAME = re.compile(r"^(setup|install)", re.I)
 INSTALLER_MARKERS = (b"Inno Setup", b"Nullsoft", b"NullsoftInst", b"InstallShield")
 DISC_TAG = re.compile(r"[\s._-]*[\(\[]?\b(?:disc|disk|cd|dvd)[\s._-]*(\d+)\b[\)\]]?", re.I)
@@ -182,10 +184,12 @@ def scan_folder(root, max_depth=3):
                        and o.stem.lower() == f.stem.lower() and o.suffix.lower() in IMAGE_EXTS]
         used.update(group)
         entries.append({"kind": "image", "path": str(f), "parts": [str(p) for p in group], "label": f.stem})
-    # multi-disc images
+    # multi-disc images (a lone small .bin/.img is firmware, not a disc)
     groups = {}
     for f in files:
         if f in used or f.suffix.lower() not in IMAGE_EXTS:
+            continue
+        if f.suffix.lower() in LONE_MIN_EXTS and f.stat().st_size < LONE_MIN_SIZE:
             continue
         key, n = _disc_key(f)
         groups.setdefault(key or f, []).append((n, f))

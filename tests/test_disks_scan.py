@@ -45,6 +45,12 @@ class ScanTests(unittest.TestCase):
             self.assertEqual([e["kind"] for e in entries], ["image"])
             self.assertTrue(entries[0]["path"].endswith(".cue"))
 
+    def test_small_lone_bin_is_not_a_disc(self):
+        with tempfile.TemporaryDirectory() as d:
+            touch(d, "bios_dump.bin", 4096)
+            touch(d, "firmware.img", 1 << 20)
+            self.assertEqual(ds.scan_folder(d), [])
+
     def test_scan_folder_with_setup(self):
         with tempfile.TemporaryDirectory() as d:
             touch(d, "MyGame/setup.exe")
