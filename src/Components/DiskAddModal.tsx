@@ -126,6 +126,10 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
                 else openDiskAdd(serverAPI, onDone, resume);
             });
             send({ type: "installerStarted" });
+            // Step aside: the installer needs the controller. Its exit
+            // reopens this dialog on the exe step (alive = false).
+            alive.current = false;
+            closeModal?.();
         })().catch(e => fail(String(e?.message || e)));
     }, [state.step]);
 
