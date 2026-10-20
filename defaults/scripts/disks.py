@@ -12,6 +12,8 @@ Flow: add (worker: extract or copy) → install (installer runs as the game's
 Steam shortcut) → finalize (exe candidates from the prefix diff) → setexe →
 install again (shortcut repointed to the game exe)."""
 
+import contextlib
+import fcntl
 import json
 import os
 import pwd
@@ -68,11 +70,22 @@ def save_state(state):
     tmp.replace(STATE_FILE)
 
 
-def update_game(slug, **fields):
-    state = load_state()
-    if slug in state["games"]:
-        state["games"][slug].update(fields)
+@contextlib.contextmanager
+def locked_state():
+    """Load, let the caller change, save — with an exclusive lock, so two add
+    flows and the background worker never drop each other's entries."""
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    with open(DATA_DIR / "state.lock", "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        state = load_state()
+        yield state
         save_state(state)
+
+
+def update_game(slug, **fields):
+    with locked_state() as state:
+        if slug in state["games"]:
+            state["games"][slug].update(fields)
 
 
 def write_progress(slug, pct, desc, error_text=None, pid=None):
@@ -116,6 +129,27 @@ def give_to_user(path):
                 os.lchown(name, *ids)
             except OSError:
                 pass
+
+
+def owned_parents(root):
+    """Store folders SkullKey may have created above a game: Disques, and
+    SkullKey on another drive."""
+    parents = [Path(root).parent]
+    if Path(root).parent.parent.name == "SkullKey":
+        parents.append(Path(root).parent.parent)
+    return parents
+
+
+def give_parents_to_user(root):
+    ids = _user_ids()
+    if not ids or os.geteuid() != 0:
+        return
+    for d in owned_parents(root):
+        try:
+            if d.exists() and d.stat().st_uid == 0:
+                os.chown(d, *ids)
+        except OSError:
+            pass
 
 
 def game_root(slug):
@@ -165,9 +199,8 @@ def action_mount(device):
 def action_scan(folder):
     if not os.path.isdir(folder):
         return error("This folder does not exist.")
-    state = load_state()
-    state["last_scan_dir"] = folder
-    save_state(state)
+    with locked_state() as state:
+        state["last_scan_dir"] = folder
     emit("DiskScan", {"entries": disks_scan.scan_folder(folder)})
 
 
@@ -179,23 +212,22 @@ def action_add(payload):
     if kind not in ("image", "optical", "installer", "folder", "ready") or not os.path.exists(path):
         return error("This source cannot be found.")
     title = (req.get("title") or disks_scan.clean_title(path)).strip()
-    state = load_state()
-    taken = set(state["games"])
-    while True:
-        slug = disks_scan.make_slug(title, taken)
-        root = game_root(slug)
-        if not root.exists():
-            break
-        _drives().forget(STORE, slug)
-        taken.add(slug)                     # a folder already on disk is never reused
-    if _inside(path, root) or _inside(root, path) or any(_inside(p, root) for p in req.get("parts") or []):
-        _drives().forget(STORE, slug)
-        return error("The game cannot be installed into the folder it comes from.")
-    state["games"][slug] = {"title": title, "slug": slug, "source_kind": kind, "source": path,
+    with locked_state() as state:
+        taken = set(state["games"])
+        while True:
+            slug = disks_scan.make_slug(title, taken)
+            root = game_root(slug)
+            if not root.exists():
+                break
+            _drives().forget(STORE, slug)
+            taken.add(slug)                 # a folder already on disk is never reused
+        if _inside(path, root) or _inside(root, path) or any(_inside(p, root) for p in req.get("parts") or []):
+            _drives().forget(STORE, slug)
+            return error("The game cannot be installed into the folder it comes from.")
+        state["games"][slug] = {"title": title, "slug": slug, "source_kind": kind, "source": path,
                             "parts": req.get("parts") or [path], "root": str(root),
                             "installer": "", "exe": "", "steamClientID": "", "stage": "preparing",
                             "snapshot": [], "created": time.time()}
-    save_state(state)
     write_progress(slug, 0, "Preparing…")
     subprocess.Popen([PYEXE, os.path.abspath(__file__), "worker", slug], start_new_session=True,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=os.environ.copy())
@@ -204,6 +236,10 @@ def action_add(payload):
 
 def _copy_tree(src, dest, slug):
     files = [Path(d) / f for d, _, fs in os.walk(src) for f in fs]
+    needed = sum(f.stat().st_size for f in files if f.is_file())
+    free = disks_extract.free_space(dest)
+    if needed > free:
+        raise disks_extract.NotEnoughSpace(needed, free)
     total = max(len(files), 1)
     for i, f in enumerate(files, start=1):
         target = Path(dest) / f.relative_to(src)
@@ -249,6 +285,7 @@ def worker(slug):
             shutil.rmtree(root, ignore_errors=True)
             return
         give_to_user(root)
+        give_parents_to_user(root)
         update_game(slug, installer=installer, stage="needs-installer" if installer else "ready")
         write_progress(slug, 100, "Ready")
     except disks_extract.NotEnoughSpace as e:
@@ -262,9 +299,8 @@ def _fail(slug, root, message):
     if Path(root).name == slug:
         shutil.rmtree(root, ignore_errors=True)
     _drives().forget(STORE, slug)
-    state = load_state()
-    state["games"].pop(slug, None)
-    save_state(state)
+    with locked_state() as state:
+        state["games"].pop(slug, None)
     write_progress(slug, 0, "Failed", message)
 
 
@@ -278,10 +314,19 @@ def _launch(g, exe):
 
 
 def action_install(slug, steam_id=""):
-    state = load_state()
-    g = state["games"].get(slug)
+    with locked_state() as state:
+        g = state["games"].get(slug)
+        result = _install(g, slug, steam_id) if g else None
     if not g:
         return error("Unknown game.")
+    kind, payload = result
+    if kind == "error":
+        return error(payload)
+    _launch(g, payload)
+
+
+def _install(g, slug, steam_id):
+    """Inside the state lock: record the shortcut, snapshot the prefix."""
     if steam_id:
         g["steamClientID"] = str(steam_id)
         if not os.environ.get("SK_DISKS_COMPAT_ROOT"):
@@ -289,14 +334,14 @@ def action_install(slug, steam_id=""):
             prefixes.assign(STORE, slug, steam_id)
     if g["stage"] == "needs-installer":
         if not g["steamClientID"]:
-            return error("The Steam shortcut is missing.")
+            return "error", "The Steam shortcut is missing."
+        if '"' in g["installer"]:
+            return "error", "Steam cannot start a file whose path contains a double quote."
         g["snapshot"] = sorted(disks_exe.snapshot_exes(compat_dir(g["steamClientID"]) / "pfx" / "drive_c"))
-        save_state(state)
-        return _launch(g, g["installer"])
-    save_state(state)
+        return "launch", g["installer"]
     if not g.get("exe"):
-        return error("Choose the game's executable first.")
-    _launch(g, g["exe"])
+        return "error", "Choose the game's executable first."
+    return "launch", g["exe"]
 
 
 def _sizes(paths):
@@ -343,6 +388,8 @@ def _real_case(base, lowered):
 def action_setexe(slug, exe):
     if not os.path.isfile(exe):
         return error("This file does not exist.")
+    if '"' in exe:
+        return error("Steam cannot start a file whose path contains a double quote. Rename it, then try again.")
     g = load_state()["games"].get(slug) or {}
     if g.get("root"):                     # the installer ran from here: done
         shutil.rmtree(Path(g["root"]) / "_extract", ignore_errors=True)
@@ -352,11 +399,27 @@ def action_setexe(slug, exe):
 
 # ── progress / cancel ────────────────────────────────────────────────────────
 
+def _alive(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except PermissionError:
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def action_getprogress(slug):
     try:
         data = json.loads((PROGRESS_DIR / f"{slug}.json").read_text())
     except Exception:
         data = {"Percentage": 0, "Description": "Waiting…", "Error": None}
+    g = load_state()["games"].get(slug) or {}
+    if g.get("stage") == "preparing" and not data.get("Error"):
+        pid = data.get("pid")
+        stale = time.time() - g.get("created", time.time()) > 30
+        if (pid and not _alive(pid)) or (not pid and stale):
+            data["Error"] = "Preparation stopped unexpectedly. Cancel and try again."
     data.pop("pid", None)
     emit("ProgressUpdate", data)
 
@@ -368,9 +431,8 @@ def action_cancelinstall(slug):
             os.killpg(pid, signal.SIGTERM)
     except Exception:
         pass
-    state = load_state()
-    g = state["games"].pop(slug, None)
-    save_state(state)
+    with locked_state() as state:
+        g = state["games"].pop(slug, None)
     if g and g.get("root") and Path(g["root"]).name == slug:
         shutil.rmtree(g["root"], ignore_errors=True)
     _drives().forget(STORE, slug)
@@ -539,7 +601,9 @@ def action_getgamesize(slug):
 
 # ── saves & uninstall ────────────────────────────────────────────────────────
 
-SAVE_DIRS = ("Documents", "Saved Games", "AppData")
+SAVE_DIRS = ("Documents", "Saved Games", "AppData/Roaming", "AppData/Local", "AppData/LocalLow")
+NOT_SAVES = {"microsoft", "temp", "openvr", "wine", "packages", "crashdumps", "steam", "my music",
+             "my pictures", "my videos", "downloads", "desktop"}
 
 
 def _save_dirs(g):
@@ -550,7 +614,7 @@ def _save_dirs(g):
     for user in sorted(users.glob("*")) if users.is_dir() else []:
         for top in SAVE_DIRS:
             for d in sorted((user / top).glob("*")) if (user / top).is_dir() else []:
-                if not d.is_dir():
+                if not d.is_dir() or d.name.lower() in NOT_SAVES:
                     continue
                 size = sum(f.stat().st_size for f in d.rglob("*") if f.is_file())
                 if size:
@@ -579,7 +643,7 @@ def action_uninstall(slug, keep=""):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(d), str(target))
         if dest.exists():
-            give_to_user(dest)
+            give_to_user(dest.parent)
     if g.get("steamClientID"):
         compat = compat_dir(g["steamClientID"])
         if compat.name in (str(g["steamClientID"]), f"disques-{slug}"):
@@ -587,8 +651,8 @@ def action_uninstall(slug, keep=""):
     if root.is_dir() and root.name == slug:
         shutil.rmtree(root, ignore_errors=True)
     _drives().forget(STORE, slug)
-    state["games"].pop(slug, None)
-    save_state(state)
+    with locked_state() as fresh:
+        fresh["games"].pop(slug, None)
     emit("Success", {"Message": "Uninstalled"})
 
 

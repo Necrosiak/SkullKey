@@ -186,6 +186,60 @@ class FlowTests(unittest.TestCase):
         finally:
             sleeper.kill()
 
+    def test_parallel_adds_keep_every_game(self):
+        src = Path(self.tmp.name) / "P"
+        src.mkdir()
+        (src / "a.exe").write_bytes(b"MZ")
+        procs = [subprocess.Popen([sys.executable, str(SCRIPTS / "disks.py"), "add",
+                                   json.dumps({"kind": "ready", "path": str(src), "title": f"Game {i}"})],
+                                  env=self.env, stdout=subprocess.DEVNULL) for i in range(8)]
+        for p in procs:
+            p.wait(timeout=60)
+        time.sleep(3)
+        state = json.loads((self.runtime / "disks" / "state.json").read_text())
+        self.assertEqual(len(state["games"]), 8)
+
+    def test_folder_copy_checks_free_space(self):
+        src = Path(self.tmp.name) / "Big"
+        src.mkdir()
+        (src / "g.exe").write_bytes(b"MZ" * 5000)
+        env = dict(self.env, SK_DISKS_FAKE_FREE="100")
+        out = subprocess.run([sys.executable, str(SCRIPTS / "disks.py"), "add",
+                              json.dumps({"kind": "ready", "path": str(src), "title": "Big"})],
+                             capture_output=True, text=True, env=env, timeout=60)
+        slug = json.loads(out.stdout.strip().splitlines()[-1])["Content"]["ShortName"]
+        for _ in range(100):
+            prog = self.run_disks("getprogress", slug)["Content"]
+            if prog.get("Error"):
+                break
+            time.sleep(0.1)
+        self.assertIn("free space", prog["Error"])
+        self.assertFalse((self.home / "Games" / "Disques" / slug).exists())
+
+    def test_quote_in_exe_path_is_refused(self):
+        src = Path(self.tmp.name) / "Q"
+        src.mkdir()
+        (src / 'odd"name.exe').write_bytes(b"MZ")
+        slug = self.add("ready", src, "Q")
+        self.wait_stage(slug)
+        bad = str(Path(json.loads((self.runtime / "disks" / "state.json").read_text())["games"][slug]["root"])
+                  / "game" / 'odd"name.exe')
+        res = self.run_disks("setexe", slug, bad)
+        self.assertEqual(res["Type"], "Error")
+
+    def test_dead_worker_reports_an_error(self):
+        state_path = self.runtime / "disks" / "state.json"
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(json.dumps({"games": {"ghost": {"title": "Ghost", "slug": "ghost",
+                                          "stage": "preparing", "root": "/nonexistent/ghost",
+                                          "created": time.time() - 120}}, "last_scan_dir": ""}))
+        prog = self.runtime / "disks" / "progress"
+        prog.mkdir(parents=True, exist_ok=True)
+        (prog / "ghost.json").write_text(json.dumps({"Percentage": 5, "Description": "x", "Error": None,
+                                                     "pid": 999999}))
+        res = self.run_disks("getprogress", "ghost")
+        self.assertTrue(res["Content"]["Error"])
+
     def test_cancel_cleans_up(self):
         src = Path(self.tmp.name) / "Ready"
         src.mkdir()

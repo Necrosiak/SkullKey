@@ -83,6 +83,20 @@ class DetailsTests(unittest.TestCase):
         self.assertEqual(dirs[0]["bytes"], 300)
         self.assertNotIn(self.tmp.name, json.dumps(res))
 
+    def test_savecheck_lists_game_folders_not_whole_appdata(self):
+        self.make_save("AppData/Roaming/DevilGame/cfg.ini", 50)
+        self.make_save("AppData/Local/Microsoft/junk.bin", 900)
+        self.make_save("AppData/Local/openvr/x.bin", 900)
+        res = self.call(self.disks.action_savecheck, "foo")
+        self.assertEqual([d["path_label"] for d in res["Content"]["dirs"]], ["AppData/Roaming/DevilGame"])
+
+    def test_owned_parents_cover_store_folders(self):
+        root = Path("/mnt/sd/SkullKey/Disques/foo")
+        self.assertEqual(self.disks.owned_parents(root),
+                         [Path("/mnt/sd/SkullKey/Disques"), Path("/mnt/sd/SkullKey")])
+        self.assertEqual(self.disks.owned_parents(Path("/home/u/Games/Disques/foo")),
+                         [Path("/home/u/Games/Disques")])
+
     def test_uninstall_keep_moves_saves(self):
         self.make_save("Documents/Foo/save1.dat")
         self.call(self.disks.action_uninstall, "foo", "keep")
