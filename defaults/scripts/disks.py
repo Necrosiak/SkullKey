@@ -349,6 +349,191 @@ def action_cancelinstall(slug):
     emit("Success", {"Message": "Cancelled"})
 
 
+# ── artwork & details ────────────────────────────────────────────────────────
+
+STEAM_LANG = {"en": "english", "fr": "french", "de": "german", "es": "spanish", "it": "italian",
+              "pt": "brazilian", "nl": "dutch", "pl": "polish", "ru": "russian"}
+CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/{name}"
+ART_SLOTS = (("Grid", "library_600x900_2x.jpg", (600, 900)), ("GridH", "header.jpg", (920, 430)),
+             ("Hero", "library_hero.jpg", (1920, 620)), ("Logo", "logo.png", None))
+
+
+def _http(url, timeout=20):
+    import urllib.request
+    req = urllib.request.Request(url, headers={"User-Agent": "SkullKey-disks/1.0"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read()
+
+
+def _norm(text):
+    return "".join(c for c in text.lower() if c.isalnum())
+
+
+def steam_appid(title):
+    """Exact-title Steam match (only the title leaves the machine)."""
+    import re
+    import urllib.parse
+    clean = re.sub(r"[™®©]", "", title).strip()
+    data = json.loads(_http("https://store.steampowered.com/api/storesearch/?l=english&cc=US&term="
+                            + urllib.parse.quote(clean)))
+    for item in data.get("items", []):
+        if _norm(item.get("name", "")) == _norm(clean):
+            return item["id"]
+    return None
+
+
+def fetch_b64(url):
+    import base64
+    data = _http(url)
+    return base64.b64encode(data).decode(), ("png" if url.endswith(".png") else "jpg")
+
+
+def text_tile(slug, title, w, h):
+    """Title tile like the Classics' fallback (Pillow when available)."""
+    try:
+        import ports
+        port = {"shortname": f"disks-{slug}", "title": title, "color": "#5a6a7a", "logo": ""}
+        path = ports.compose(port, w, h)
+        if path:
+            return ports.b64_file(path), ports._img_type(path)
+    except Exception as e:  # noqa: BLE001
+        print(f"tile failed: {type(e).__name__}", file=sys.stderr)
+    return None
+
+
+def _cached_appid(slug, title):
+    cache = DATA_DIR / "art.json"
+    try:
+        data = json.loads(cache.read_text())
+    except Exception:
+        data = {}
+    if slug not in data:
+        try:
+            data[slug] = steam_appid(title)
+        except Exception as e:  # noqa: BLE001 — offline: no artwork, no cache
+            print(f"steam lookup failed: {type(e).__name__}", file=sys.stderr)
+            return None
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(data))
+    return data[slug]
+
+
+def action_getjsonimages(slug):
+    g = load_state()["games"].get(slug)
+    if not g:
+        return error("Unknown game.")
+    content = {"Grid": None, "GridH": None, "Hero": None, "Logo": None}
+    appid = _cached_appid(slug, g["title"])
+    for key, name, size in ART_SLOTS:
+        got = None
+        if appid:
+            try:
+                got = fetch_b64(CDN.format(id=appid, name=name))
+            except Exception as e:  # noqa: BLE001
+                print(f"art {key} failed: {type(e).__name__}", file=sys.stderr)
+        if not got and size:
+            got = text_tile(slug, g["title"], *size)
+        if got:
+            content[key], content[key + "Type"] = got
+    emit("Images", content)
+
+
+def _steam_description(appid):
+    try:
+        from ports_i18n import machine_lang_code
+        lang = STEAM_LANG.get(machine_lang_code(), "english")
+        data = json.loads(_http(f"https://store.steampowered.com/api/appdetails?appids={appid}&l={lang}"))
+        return (data.get(str(appid), {}).get("data") or {}).get("short_description", "")
+    except Exception:
+        return ""
+
+
+def _label(path):
+    home = str(HOME)
+    return "~" + path[len(home):] if path.startswith(home) else path
+
+
+def action_getgamedetails(slug):
+    g = load_state()["games"].get(slug)
+    if not g:
+        return error("Unknown game.")
+    appid = _cached_appid(slug, g["title"])
+    desc = _steam_description(appid) if appid else ""
+    lines = [desc] if desc else []
+    lines.append(f"Source: {g['source_kind']}")
+    if g.get("exe"):
+        lines.append(f"Executable: {os.path.basename(g['exe'])}")
+    lines.append(f"Location: {_label(g['root'])}")
+    emit("GameDetails", {
+        "Name": g["title"], "Description": "<br><br>".join(lines),
+        "ApplicationPath": "", "ManualPath": "", "RootFolder": "", "DatabaseID": slug,
+        "ConfigurationPath": "", "Images": [], "ShortName": slug,
+        "SteamClientID": g.get("steamClientID", ""), "HasDosConfig": False,
+        "HasBatFiles": False, "Editors": []})
+
+
+def action_getgamesize(slug):
+    g = load_state()["games"].get(slug) or {}
+    size = sum(f.stat().st_size for f in Path(g.get("root", "/nonexistent")).rglob("*") if f.is_file()) \
+        if g.get("root") and Path(g["root"]).is_dir() else 0
+    emit("GameSize", {"Size": f"Size: {size / (1 << 20):.0f} MB" if size else ""})
+
+
+# ── saves & uninstall ────────────────────────────────────────────────────────
+
+SAVE_DIRS = ("Documents", "Saved Games", "AppData")
+
+
+def _save_dirs(g):
+    if not g.get("steamClientID"):
+        return []
+    users = compat_dir(g["steamClientID"]) / "pfx" / "drive_c" / "users"
+    found = []
+    for user in sorted(users.glob("*")) if users.is_dir() else []:
+        for top in SAVE_DIRS:
+            for d in sorted((user / top).glob("*")) if (user / top).is_dir() else []:
+                if not d.is_dir():
+                    continue
+                size = sum(f.stat().st_size for f in d.rglob("*") if f.is_file())
+                if size:
+                    found.append((d, f"{top}/{d.name}", size))
+    return found
+
+
+def action_savecheck(slug):
+    g = load_state()["games"].get(slug)
+    if not g:
+        return error("Unknown game.")
+    emit("SaveCheck", {"dirs": [{"path_label": label, "bytes": size}
+                                for _, label, size in _save_dirs(g)]})
+
+
+def action_uninstall(slug, keep=""):
+    state = load_state()
+    g = state["games"].get(slug)
+    if not g:
+        return error("Unknown game.")
+    root = Path(g["root"])
+    if keep == "keep":
+        dest = root.parent / "_sauvegardes" / slug
+        for d, label, _ in _save_dirs(g):
+            target = dest / label
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(d), str(target))
+        if dest.exists():
+            give_to_user(dest)
+    if g.get("steamClientID"):
+        compat = compat_dir(g["steamClientID"])
+        if compat.name in (str(g["steamClientID"]), f"disques-{slug}"):
+            shutil.rmtree(compat, ignore_errors=True)
+    if root.is_dir() and root.name == slug:
+        shutil.rmtree(root, ignore_errors=True)
+    _drives().forget(STORE, slug)
+    state["games"].pop(slug, None)
+    save_state(state)
+    emit("Success", {"Message": "Uninstalled"})
+
+
 # ── grid ─────────────────────────────────────────────────────────────────────
 
 def action_getgames(filter_str="", installed="false"):
@@ -375,6 +560,11 @@ ACTIONS = {
     "setexe": lambda a: action_setexe(a[0], a[1]),
     "getprogress": lambda a: action_getprogress(a[0]),
     "cancelinstall": lambda a: action_cancelinstall(a[0]),
+    "getjsonimages": lambda a: action_getjsonimages(a[0]),
+    "getgamedetails": lambda a: action_getgamedetails(a[0]),
+    "getgamesize": lambda a: action_getgamesize(a[0]),
+    "savecheck": lambda a: action_savecheck(a[0]),
+    "uninstall": lambda a: action_uninstall(a[0], a[1] if len(a) > 1 else ""),
 }
 
 
