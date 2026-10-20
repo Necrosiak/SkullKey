@@ -213,11 +213,11 @@ def clean_title(raw):
     name = DISC_TAG.sub("", name)
     name = re.sub(r"[_.]+", " ", name)
     words = []
-    for w in re.split(r"\s+|(?<=\D)-(?=\S)|(?<=\d)-", name):
-        w = w.strip(" -")
-        if not w or w.lower() in NOISE_TOKENS or re.fullmatch(r"v?\d+([. ]\d+)*", w, re.I):
-            continue
-        words.append(w)
+    for token in name.split():
+        kept = [w for w in token.split("-") if w and w.lower() not in NOISE_TOKENS
+                and not re.fullmatch(r"v?\d+([.]\d+)*", w, re.I)]
+        if kept:
+            words.append("-".join(kept))
     title = " ".join(words).strip() or stem
     if title.isupper() or title.islower():
         title = " ".join(w.capitalize() for w in title.split())
