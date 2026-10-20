@@ -75,10 +75,19 @@ def update_game(slug, **fields):
         save_state(state)
 
 
-def write_progress(slug, pct, desc, error_text=None):
+def write_progress(slug, pct, desc, error_text=None, pid=None):
     PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
     (PROGRESS_DIR / f"{slug}.json").write_text(json.dumps(
-        {"Percentage": pct, "Description": desc, "Error": error_text, "pid": os.getpid()}))
+        {"Percentage": pct, "Description": desc, "Error": error_text, "pid": pid}))
+
+
+def _worker_pid(slug, pid):
+    """Only a live `disks.py worker <slug>` may be signalled (pids get reused)."""
+    try:
+        argv = Path(f"/proc/{int(pid)}/cmdline").read_bytes().split(b"\0")
+    except (OSError, ValueError, TypeError):
+        return False
+    return b"worker" in argv and slug.encode() in argv and any(a.endswith(b"disks.py") for a in argv)
 
 
 # ── paths, ownership, prefixes ───────────────────────────────────────────────
@@ -171,8 +180,17 @@ def action_add(payload):
         return error("This source cannot be found.")
     title = (req.get("title") or disks_scan.clean_title(path)).strip()
     state = load_state()
-    slug = disks_scan.make_slug(title, set(state["games"]))
-    root = game_root(slug)
+    taken = set(state["games"])
+    while True:
+        slug = disks_scan.make_slug(title, taken)
+        root = game_root(slug)
+        if not root.exists():
+            break
+        _drives().forget(STORE, slug)
+        taken.add(slug)                     # a folder already on disk is never reused
+    if _inside(path, root) or _inside(root, path) or any(_inside(p, root) for p in req.get("parts") or []):
+        _drives().forget(STORE, slug)
+        return error("The game cannot be installed into the folder it comes from.")
     state["games"][slug] = {"title": title, "slug": slug, "source_kind": kind, "source": path,
                             "parts": req.get("parts") or [path], "root": str(root),
                             "installer": "", "exe": "", "steamClientID": "", "stage": "preparing",
@@ -192,12 +210,15 @@ def _copy_tree(src, dest, slug):
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(f, target)
         if i % 20 == 0 or i == total:
-            write_progress(slug, round(90 * i / total), "Copying game files…")
+            write_progress(slug, round(90 * i / total), "Copying game files…", pid=os.getpid())
 
 
 def worker(slug):
-    g = load_state()["games"][slug]
+    g = load_state()["games"].get(slug)
+    if not g:
+        return
     root = Path(g["root"])
+    write_progress(slug, 0, "Preparing…", pid=os.getpid())
     try:
         root.mkdir(parents=True, exist_ok=True)
         kind, source = g["source_kind"], Path(g["source"])
@@ -207,7 +228,8 @@ def worker(slug):
         elif kind == "image":
             dirs = disks_extract.extract_images(
                 g["parts"], str(root / "_extract"),
-                progress=lambda p: write_progress(slug, round(p * 0.9), "Extracting disc image…"))
+                progress=lambda p: write_progress(slug, round(p * 0.9), "Extracting disc image…",
+                                                  pid=os.getpid()))
             found = disks_scan.find_installers(dirs[0])
             if found:
                 installer = found[0]
@@ -223,6 +245,9 @@ def worker(slug):
                 installer = found[0]
             else:
                 _copy_tree(source, root / "game", slug)
+        if slug not in load_state()["games"]:      # cancelled while preparing
+            shutil.rmtree(root, ignore_errors=True)
+            return
         give_to_user(root)
         update_game(slug, installer=installer, stage="needs-installer" if installer else "ready")
         write_progress(slug, 100, "Ready")
@@ -234,7 +259,9 @@ def worker(slug):
 
 
 def _fail(slug, root, message):
-    shutil.rmtree(root, ignore_errors=True)
+    if Path(root).name == slug:
+        shutil.rmtree(root, ignore_errors=True)
+    _drives().forget(STORE, slug)
     state = load_state()
     state["games"].pop(slug, None)
     save_state(state)
@@ -337,15 +364,16 @@ def action_getprogress(slug):
 def action_cancelinstall(slug):
     try:
         pid = json.loads((PROGRESS_DIR / f"{slug}.json").read_text()).get("pid")
-        if pid and pid != os.getpid():
+        if pid and pid != os.getpid() and _worker_pid(slug, pid):
             os.killpg(pid, signal.SIGTERM)
     except Exception:
         pass
     state = load_state()
     g = state["games"].pop(slug, None)
     save_state(state)
-    if g and g.get("root"):
+    if g and g.get("root") and Path(g["root"]).name == slug:
         shutil.rmtree(g["root"], ignore_errors=True)
+    _drives().forget(STORE, slug)
     try:
         (PROGRESS_DIR / f"{slug}.json").unlink()
     except OSError:

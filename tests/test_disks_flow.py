@@ -143,6 +143,49 @@ class FlowTests(unittest.TestCase):
         self.assertTrue(Path(g["root"], "game", "Game.exe").exists())
         self.assertFalse(Path(g["root"], "_extract").exists())
 
+    def test_source_already_at_destination_is_never_deleted(self):
+        src = self.home / "Games" / "Disques" / "foo"
+        src.mkdir(parents=True)
+        (src / "Foo.exe").write_bytes(b"MZ")
+        slug = self.add("ready", src, "Foo")
+        self.assertEqual(slug, "foo-2")
+        self.wait_stage(slug)
+        self.run_disks("cancelinstall", slug)
+        self.assertTrue((src / "Foo.exe").exists())
+
+    def test_source_containing_destination_is_refused(self):
+        src = self.home / "Games"
+        src.mkdir(parents=True, exist_ok=True)
+        (src / "Some.exe").write_bytes(b"MZ")
+        res = self.run_disks("add", json.dumps({"kind": "ready", "path": str(src), "title": "Games"}))
+        self.assertEqual(res["Type"], "Error")
+
+    def test_existing_folder_on_disk_gets_new_slug(self):
+        (self.home / "Games" / "Disques" / "bar").mkdir(parents=True)
+        src = Path(self.tmp.name) / "BarSrc"
+        src.mkdir()
+        (src / "Bar.exe").write_bytes(b"MZ")
+        self.assertEqual(self.add("ready", src, "Bar"), "bar-2")
+
+    def test_cancel_never_kills_an_unrelated_process(self):
+        sleeper = subprocess.Popen(["sleep", "30"], start_new_session=True)
+        try:
+            src = Path(self.tmp.name) / "R2"
+            src.mkdir()
+            (src / "a.exe").write_bytes(b"MZ")
+            slug = self.add("ready", src, "R2")
+            self.wait_stage(slug)
+            prog = self.runtime / "disks" / "progress" / f"{slug}.json"
+            data = json.loads(prog.read_text())
+            self.assertIsNone(data.get("pid"))          # finished worker leaves no pid
+            data["pid"] = sleeper.pid                    # a reused pid must not be killed
+            prog.write_text(json.dumps(data))
+            self.run_disks("cancelinstall", slug)
+            time.sleep(0.3)
+            self.assertIsNone(sleeper.poll())
+        finally:
+            sleeper.kill()
+
     def test_cancel_cleans_up(self):
         src = Path(self.tmp.name) / "Ready"
         src.mkdir()

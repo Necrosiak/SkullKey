@@ -55,8 +55,8 @@ async function applyArtwork(serverAPI: ServerAPI, slug: string, id: number) {
 }
 
 export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; onDone: () => void;
-                                 changeExe?: { slug: string; steamClientID: string } }> =
-    ({ serverAPI, closeModal, onDone, changeExe }) => {
+                                 changeExe?: { slug: string; steamClientID: string }; resumed?: boolean }> =
+    ({ serverAPI, closeModal, onDone, changeExe, resumed }) => {
     const [state, setState] = useState<FlowState>(changeExe ? { step: "exe-loading" } : initialState());
     const [entries, setEntries] = useState<Entry[] | null>(null);
     const [optical, setOptical] = useState<Optical[] | null>(null);
@@ -124,7 +124,7 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
             const resume = { slug: slug.current, steamClientID: String(appId.current) };
             runApp(appId.current, () => {
                 if (alive.current) send({ type: "installerClosed" });
-                else openDiskAdd(serverAPI, onDone, resume);
+                else openDiskAdd(serverAPI, onDone, resume, true);
             });
             send({ type: "installerStarted" });
             notify({ title: "SkullKey", body: t("disks_mouse_hint"), duration: 12000 });
@@ -157,7 +157,7 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
     }, [state.step]);
 
     const cancel = async () => {
-        if (!changeExe && slug.current) {
+        if ((!changeExe || resumed) && slug.current) {
             await call(serverAPI, "CancelInstall", { shortname: slug.current });
             if (appId.current) SteamClient.Apps.RemoveShortcut(appId.current);
         }
@@ -254,6 +254,9 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
                         const path = await pick(serverAPI, false, "/home", EXE_RE);
                         if (path) send({ type: "exe", path });
                     }}>{t("disks_browse_exe")}</DialogButton>
+                    {changeExe && !resumed
+                        ? <DialogButton onClick={() => closeModal?.()}>{t("disks_back")}</DialogButton>
+                        : <DialogButton onClick={cancel}>{t("btn_cancel")}</DialogButton>}
                 </Focusable>
             );
             break;
@@ -270,11 +273,14 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
                 </Focusable>
             );
     }
-    const close = () => { if (["source", "title", "error"].includes(state.step)) closeModal?.(); };
+    const close = () => {
+        if (["source", "title", "error", "exe-choose", "exe-manual"].includes(state.step)) closeModal?.();
+    };
     return <ModalRoot onCancel={close} closeModal={() => closeModal?.()}>{body}</ModalRoot>;
 };
 
-export function openDiskAdd(serverAPI: ServerAPI, onDone: () => void, changeExe?: { slug: string; steamClientID: string }) {
+export function openDiskAdd(serverAPI: ServerAPI, onDone: () => void,
+                            changeExe?: { slug: string; steamClientID: string }, resumed = false) {
     const modal = showModal(<DiskAddModal serverAPI={serverAPI} onDone={onDone} changeExe={changeExe}
-        closeModal={() => modal.Close()} />);
+        resumed={resumed} closeModal={() => modal.Close()} />);
 }
