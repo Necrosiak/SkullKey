@@ -156,6 +156,12 @@
      "Title": "SaveCheck",
      "Type": "SaveCheck",
      "Command": "./scripts/disks.py savecheck"
+    },
+    {
+     "Id": "GetTitle",
+     "Title": "GetTitle",
+     "Type": "GetTitle",
+     "Command": "./scripts/disks.py title"
     }
    ]
   }

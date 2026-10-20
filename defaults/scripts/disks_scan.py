@@ -156,7 +156,7 @@ def scan_folder(root, max_depth=3):
         dirnames[:] = sorted(d for d in dirnames if not (here / d).is_symlink())
         if depth >= 1 and ({f.lower() for f in filenames} & {"autorun.inf", "setup.exe"}):
             entries.append({"kind": "folder", "path": str(here), "parts": [str(here)],
-                            "label": here.name})
+                            "label": clean_title(here.name)})
             dirnames[:] = []
             continue
         if depth + 1 > max_depth:
@@ -175,7 +175,7 @@ def scan_folder(root, max_depth=3):
                                  key=lambda b: int(GOG_PART.match(b.name).group(2)))
             used.update(parts)
             entries.append({"kind": "installer", "path": str(f), "parts": [str(p) for p in parts],
-                            "label": f.stem})
+                            "label": clean_title(str(f))})
     # descriptor + data images (.cue/.bin, .mds/.mdf)
     for f in files:
         if f in used or f.suffix.lower() not in DESCRIPTOR_EXTS:
@@ -183,7 +183,7 @@ def scan_folder(root, max_depth=3):
         group = [f] + [o for o in files if o is not f and o.parent == f.parent
                        and o.stem.lower() == f.stem.lower() and o.suffix.lower() in IMAGE_EXTS]
         used.update(group)
-        entries.append({"kind": "image", "path": str(f), "parts": [str(p) for p in group], "label": f.stem})
+        entries.append({"kind": "image", "path": str(f), "parts": [str(p) for p in group], "label": clean_title(str(f))})
     # multi-disc images (a lone small .bin/.img is firmware, not a disc)
     groups = {}
     for f in files:
@@ -198,11 +198,11 @@ def scan_folder(root, max_depth=3):
         paths = [p for _, p in members]
         used.update(paths)
         entries.append({"kind": "image", "path": str(paths[0]), "parts": [str(p) for p in paths],
-                        "label": paths[0].stem})
+                        "label": clean_title(str(paths[0]))})
     # other installers (by name, or Inno/NSIS/InstallShield marker)
     for f in files:
         if f not in used and f.suffix.lower() == ".exe" and _is_installer_exe(f):
-            entries.append({"kind": "installer", "path": str(f), "parts": [str(f)], "label": f.stem})
+            entries.append({"kind": "installer", "path": str(f), "parts": [str(f)], "label": clean_title(str(f))})
     entries.sort(key=lambda e: e["path"].lower())
     return entries
 

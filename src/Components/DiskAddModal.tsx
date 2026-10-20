@@ -30,6 +30,11 @@ async function pick(serverAPI: ServerAPI, folder: boolean, start: string, re?: R
     }
 }
 
+async function guessTitle(serverAPI: ServerAPI, path: string) {
+    const r = await call(serverAPI, "GetTitle", { path });
+    return r?.Content?.Message || path.split("/").pop() || "";
+}
+
 async function applyLaunch(serverAPI: ServerAPI, slug: string, id: number) {
     const res = await call(serverAPI, "Install", { shortname: slug, steamClientID: String(id) });
     if (res?.Type !== "LaunchOptions") throw new Error(res?.Content?.Message || "install");
@@ -60,6 +65,8 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
     const slug = useRef(changeExe?.slug || "");
     const appId = useRef(changeExe ? parseInt(changeExe.steamClientID) : 0);
     const lastScan = useRef("");
+    const alive = useRef(true);
+    useEffect(() => () => { alive.current = false; }, []);
 
     const send = (e: FlowEvent) => setState(s => nextStep(s, e));
     const fail = (message: string) => send({ type: "error", message });
@@ -113,7 +120,11 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
             for (let i = 0; i < 20 && !appStore.GetAppOverviewByAppID(appId.current); i++) {
                 await new Promise(r => setTimeout(r, 250));
             }
-            runApp(appId.current, () => send({ type: "installerClosed" }));
+            const resume = { slug: slug.current, steamClientID: String(appId.current) };
+            runApp(appId.current, () => {
+                if (alive.current) send({ type: "installerClosed" });
+                else openDiskAdd(serverAPI, onDone, resume);
+            });
             send({ type: "installerStarted" });
         })().catch(e => fail(String(e?.message || e)));
     }, [state.step]);
@@ -133,7 +144,7 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
             const r = await call(serverAPI, "SetExe", { shortname: slug.current, exe: state.exe || "" });
             if (r?.Type !== "Success") return fail(r?.Content?.Message || "exe");
             await applyLaunch(serverAPI, slug.current, appId.current);
-            if (!changeExe) await applyArtwork(serverAPI, slug.current, appId.current);
+            await applyArtwork(serverAPI, slug.current, appId.current);
             onDone();
             closeModal?.();
         })().catch(e => fail(String(e?.message || e)));
@@ -152,10 +163,10 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
         const start = lastScan.current || "/home";
         if (kind === "image" || kind === "installer") {
             const path = await pick(serverAPI, false, start, kind === "image" ? IMAGE_RE : EXE_RE);
-            if (path) send({ type: "source", kind, path, label: "" });
+            if (path) send({ type: "source", kind, path, label: await guessTitle(serverAPI, path) });
         } else if (kind === "ready") {
             const path = await pick(serverAPI, true, start);
-            if (path) send({ type: "source", kind, path, label: path.split("/").pop() || "" });
+            if (path) send({ type: "source", kind, path, label: await guessTitle(serverAPI, path) });
         } else if (kind === "scan") {
             const dir = await pick(serverAPI, true, start);
             if (!dir) return;
@@ -216,7 +227,8 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
             body = (
                 <Focusable style={box}>
                     {head(t("disks_title_prompt"))}
-                    <TextField value={title} onChange={e => setTitle(e.target.value)} />
+                    <TextField value={title} onChange={e => setTitle(e.target.value)}
+                        onKeyDown={(e: any) => { if (e.key === "Enter" && title.trim()) send({ type: "title", title }); }} />
                     <DialogButton disabled={!title.trim()} onClick={() => send({ type: "title", title })}>{t("disks_next")}</DialogButton>
                 </Focusable>
             );
@@ -252,7 +264,8 @@ export const DiskAddModal: VFC<{ serverAPI: ServerAPI; closeModal?: () => void; 
                 </Focusable>
             );
     }
-    return <ModalRoot onCancel={cancel} closeModal={cancel}>{body}</ModalRoot>;
+    const close = () => { if (["source", "title", "error"].includes(state.step)) closeModal?.(); };
+    return <ModalRoot onCancel={close} closeModal={() => closeModal?.()}>{body}</ModalRoot>;
 };
 
 export function openDiskAdd(serverAPI: ServerAPI, onDone: () => void, changeExe?: { slug: string; steamClientID: string }) {

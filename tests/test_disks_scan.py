@@ -26,6 +26,7 @@ class ScanTests(unittest.TestCase):
             self.assertEqual(entries[0]["kind"], "installer")
             self.assertEqual(len(entries[0]["parts"]), 3)
             self.assertTrue(entries[0]["path"].endswith("setup_game_1.0.exe"))
+            self.assertEqual(entries[0]["label"], "Game")
 
     def test_scan_groups_multidisc(self):
         with tempfile.TemporaryDirectory() as d:
