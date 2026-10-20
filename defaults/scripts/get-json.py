@@ -48,7 +48,7 @@ while queue:
 # arbitrary): stores first, then miHoYo, Minecraft and the Classics last.
 TAB_ORDER = ["GetEpicActions", "GetGOGActions", "GetAmazonActions", "GetBattleNetActions",
              "GetUbisoftActions", "GetEAActions",
-             "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions"]
+             "GetDisksActions", "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions"]
 for fragment in json_fragments.values():
     tabs = fragment.get("Content", {}).get("Tabs") if isinstance(fragment, dict) else None
     if isinstance(tabs, list):

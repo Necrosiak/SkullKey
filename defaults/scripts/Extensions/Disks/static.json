@@ -1,0 +1,108 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetDisksActions",
+     "Title": "Get Disks actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py disks-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Discs & Installers",
+     "Type": "GameGrid",
+     "ActionId": "GetDisksActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "disks-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "disks-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "disks-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "DisksActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "Get disks list",
+     "Type": "GameGrid",
+     "Command": "./scripts/disks.py getgames disks"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "Get size",
+     "Type": "GameSize",
+     "Command": "./scripts/disks.py getgamesize"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "Get details",
+     "Type": "GameDetails",
+     "Command": "./scripts/disks.py getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "Get images",
+     "Type": "GameImages",
+     "Command": "./scripts/disks.py getjsonimages"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install",
+     "Type": "Install",
+     "Command": "./scripts/disks.py install"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall",
+     "Type": "Uninstall",
+     "Command": "./scripts/disks.py uninstall"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "Progress",
+     "Type": "GetProgress",
+     "Command": "./scripts/disks.py getprogress"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "Cancel",
+     "Type": "CancelInstall",
+     "Command": "./scripts/disks.py cancelinstall"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py disks-game-script-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py disks-script-actions"
+    }
+   ]
+  }
+ }
+}
