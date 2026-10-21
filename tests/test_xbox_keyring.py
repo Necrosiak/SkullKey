@@ -33,6 +33,8 @@ class KeyringTest(unittest.TestCase):
         wrapper = self.files()[0].read_text()
         self.assertIn("QT_QPA_PLATFORM=xcb", wrapper)
         self.assertIn("STEAM_GAME", wrapper)
+        # A game being launched has no window yet: tag with its AppId.
+        self.assertIn("AppId=", wrapper)
         self.assertIn(f"exec {K.KSECRETD}", wrapper)
         self.assertIn(f"Exec={self.files()[0]}", self.files()[1].read_text())
 

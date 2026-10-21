@@ -30,7 +30,9 @@ if pgrep -u "$UID" -f gamescope-session >/dev/null; then
   self=$$
   (
     while kill -0 "$self" 2>/dev/null; do
-      app=$(DISPLAY=:0 xprop -root GAMESCOPE_FOCUSED_APP 2>/dev/null | grep -o "[0-9]*$")
+      # The game being launched (no window yet), else the focused app.
+      app=$(pgrep -u "$UID" -n -a -f "reaper SteamLaunch" | grep -o "AppId=[0-9]*" | cut -d= -f2)
+      [ -n "$app" ] || app=$(DISPLAY=:0 xprop -root GAMESCOPE_FOCUSED_APP 2>/dev/null | grep -o "[0-9]*$")
       for w in $(xdotool search --pid "$self" 2>/dev/null); do
         [ -n "$app" ] && [ "$app" != 769 ] && xprop -id "$w" -f STEAM_GAME 32c -set STEAM_GAME "$app" 2>/dev/null
       done
