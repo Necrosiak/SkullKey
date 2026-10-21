@@ -140,6 +140,20 @@ class LoginTest(unittest.TestCase):
         for secret in ("PAGE-1", "SERVERDATA", "login.live.com", "?x=1"):
             self.assertNotIn(secret, text)
 
+    def test_serverdata_sent_on_every_post_srf_load(self):
+        async def go():
+            b = L.XboxSteamBrowser(cdp_factory=FakeCdp, logger=self.logs.append)
+            b.cdp = FakeCdp()
+            b.cdp.location = L.POST_SRF
+            b.frame = {"session": 1}
+            sent = []
+            b._send = sent.append
+            await b._loaded()
+            await b._loaded()
+            return sent
+        sent = asyncio.run(go())
+        self.assertEqual([m["payload"] for m in sent], ["{\"SERVERDATA\":1}"] * 2)
+
     def test_trusted(self):
         self.assertTrue(L.trusted("https://login.live.com/a"))
         for bad in ("http://login.live.com/", "https://login.live.com.evil.test/", "https://u:p@login.live.com/",

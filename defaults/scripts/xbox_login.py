@@ -260,7 +260,9 @@ class XboxSteamBrowser:
         try:
             r = await self.cdp.cmd("Runtime.evaluate", {"expression": "location.origin + location.pathname",
                                                          "returnByValue": True}, self.session)
-            if (r.get("result") or {}).get("value") != POST_SRF or not self.frame or self.serverdata_sent:
+            # post.srf loads more than once (password step, then final
+            # step): every load carries its own ServerData for the engine.
+            if (r.get("result") or {}).get("value") != POST_SRF or not self.frame:
                 return
             r = await self.cdp.cmd("Runtime.evaluate", {"expression": "JSON.stringify(globalThis.ServerData ?? null)",
                                                          "returnByValue": True}, self.session)
