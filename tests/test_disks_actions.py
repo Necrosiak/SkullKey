@@ -43,7 +43,7 @@ class DisksSkeletonTests(unittest.TestCase):
         text = (SCRIPTS / "get-json.py").read_text(encoding="utf-8")
         start = text.index("TAB_ORDER = [")
         order = eval(text[start + len("TAB_ORDER = "):text.index("]", start) + 1])
-        self.assertEqual(order[-4:], ["GetMinecraftActions", "GetPortsActions", "GetXboxActions", "GetDisksActions"])
+        self.assertEqual(order[-4:], ["GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions", "GetDisksActions"])
 
     def test_tab_title_localized(self):
         sys.path.insert(0, str(SCRIPTS))

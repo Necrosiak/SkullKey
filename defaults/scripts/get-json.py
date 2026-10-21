@@ -46,9 +46,9 @@ while queue:
 
 # Tab order must not depend on the directory listing order (os.scandir is
 # arbitrary): stores first, then miHoYo, Minecraft and the Classics last.
-TAB_ORDER = ["GetEpicActions", "GetGOGActions", "GetAmazonActions", "GetBattleNetActions",
+TAB_ORDER = ["GetEpicActions", "GetGOGActions", "GetXboxActions", "GetAmazonActions", "GetBattleNetActions",
              "GetUbisoftActions", "GetEAActions",
-             "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions", "GetXboxActions", "GetDisksActions"]
+             "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions", "GetDisksActions"]
 for fragment in json_fragments.values():
     tabs = fragment.get("Content", {}).get("Tabs") if isinstance(fragment, dict) else None
     if isinstance(tabs, list):

@@ -170,11 +170,12 @@ class ActionsTest(unittest.TestCase):
         ids = {a["Id"] for a in d["xbox-login-actions"]["Content"]["Actions"]}
         self.assertTrue({"GetSetting", "SaveSetting"} <= ids)
 
-    def test_tab_order_xbox_before_disks(self):
+    def test_tab_order_xbox_right_after_gog(self):
+        import ast
         src = (ROOT / "defaults" / "scripts" / "get-json.py").read_text()
-        order = src[src.index("TAB_ORDER"):src.index("]", src.index("TAB_ORDER"))]
-        self.assertLess(order.index("GetXboxActions"), order.index("GetDisksActions"))
-        self.assertGreater(order.index("GetXboxActions"), order.index("GetPortsActions"))
+        order = ast.literal_eval(src[src.index("[", src.index("TAB_ORDER")):src.index("]", src.index("TAB_ORDER")) + 1])
+        self.assertEqual(order.index("GetXboxActions"), order.index("GetGOGActions") + 1)
+        self.assertEqual(order[-1], "GetDisksActions")
 
     def test_static_json_has_download_action(self):
         d = json.loads((ROOT / "defaults/scripts/Extensions/Xbox/static.json").read_text())

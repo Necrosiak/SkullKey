@@ -4,7 +4,7 @@
 import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
 import { SiBattledotnet, SiEpicgames, SiGogdotcom, SiMihoyo, SiUbisoft } from "react-icons/si";
-import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull } from "react-icons/fa";
+import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull, FaXbox } from "react-icons/fa";
 import { notifyClickable } from "../clickableNotify";
 
 const Btn = DialogButton as any;
@@ -23,6 +23,7 @@ export function storeTheme(name?: string): StoreTheme {
     const n = (name || "").toLowerCase();
     if (n.includes("epic")) return { color: "#26bbff", icon: SiEpicgames };
     if (n.includes("gog")) return { color: "#a24bfa", icon: SiGogdotcom };
+    if (n.includes("xbox")) return { color: "#107c10", icon: FaXbox };
     if (n.includes("amazon")) return { color: "#ff9900", icon: FaAmazon };
     if (n.includes("mihoyo") || n.includes("hoyo")) return { color: "#4d8dff", icon: SiMihoyo };
     if (n.includes("battle")) return { color: "#148eff", icon: SiBattledotnet };
