@@ -5,7 +5,7 @@ import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
 import { SiBattledotnet, SiEa, SiEpicgames, SiGogdotcom, SiMihoyo, SiUbisoft } from "react-icons/si";
 import { TbBrandMinecraft } from "react-icons/tb";
-import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull, FaXbox } from "react-icons/fa";
+import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull, FaXbox, FaCompactDisc } from "react-icons/fa";
 import { notifyClickable } from "../clickableNotify";
 
 const Btn = DialogButton as any;
@@ -30,6 +30,7 @@ export function storeTheme(name?: string): StoreTheme {
     if (n.includes("battle")) return { color: "#148eff", icon: SiBattledotnet };
     if (n.includes("ubisoft")) return { color: "#c04bdb", icon: SiUbisoft };
     if (n.startsWith("ea") || n.includes("maxima")) return { color: "#ff4747", icon: SiEa };
+    if (n.includes("disk") || n.includes("disc")) return { color: "#9aa4b2", icon: FaCompactDisc };
     if (n.includes("minecraft")) return { color: "#62b47a", icon: TbBrandMinecraft };
     // "Classics Reborn" tab (title) / PortsActions (SetName): revived console
     // classics — skull icon to match the SkullKey theme.
