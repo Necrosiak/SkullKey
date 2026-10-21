@@ -138,3 +138,48 @@ def search(query, market, lang, owned=frozenset(), fetch=http_json):
     except Exception:
         return []
     return _filter(entries, market, lambda g: g["price"] == "free" or g["id"] in owned)
+
+
+DETAILS_URL = "https://displaycatalog.mp.microsoft.com/v7.0/products"
+DETAILS_TTL = 7 * 24 * 3600
+
+
+def _https(uri):
+    return ("https:" + uri) if uri and uri.startswith("//") else uri
+
+
+def details(ids, market, lang, fetch=http_json):
+    """{id: {"title","publisher","description","game": bool,"art": {...}}} for
+    library entries (titles and artwork), 7-day cache. Missing ids stay out."""
+    cache = _load("details.json")
+    out, todo = {}, []
+    for pid in ids:
+        hit = cache.get(f"{market}:{pid}")
+        if hit and time.time() - hit["t"] < DETAILS_TTL:
+            out[pid] = hit["d"]
+        else:
+            todo.append(pid)
+    for i in range(0, len(todo), 20):
+        q = {"bigIds": ",".join(todo[i:i + 20]), "market": market, "languages": f"{lang},neutral",
+             "MS-CV": "DGU1mcuYo0WMMp+F.1"}
+        try:
+            products = (fetch(DETAILS_URL + "?" + urllib.parse.urlencode(q)) or {}).get("Products") or []
+        except Exception:
+            continue
+        for p in products:
+            lp = (p.get("LocalizedProperties") or [{}])[0]
+            imgs = {}
+            for img in lp.get("Images") or []:
+                imgs.setdefault(img.get("ImagePurpose"), _https(img.get("Uri")))
+            d = {"title": lp.get("ProductTitle") or p.get("ProductId"), "publisher": lp.get("PublisherName") or "",
+                 "description": lp.get("ShortDescription") or "", "game": p.get("ProductKind") == "Game",
+                 "art": {"cover": imgs.get("Poster") or imgs.get("BoxArt"),
+                         "hero": imgs.get("SuperHeroArt") or imgs.get("TitledHeroArt") or imgs.get("Hero"),
+                         "wide": imgs.get("TitledHeroArt") or imgs.get("BoxArt") or imgs.get("SuperHeroArt"),
+                         "logo": imgs.get("Logo")}}
+            pid = (p.get("ProductId") or "").upper()
+            out[pid] = d
+            cache[f"{market}:{pid}"] = {"t": time.time(), "d": d}
+    if todo:
+        _save("details.json", cache)
+    return out

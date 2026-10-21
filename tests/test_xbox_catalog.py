@@ -95,6 +95,25 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(g["art"]["hero"], "https://img/9pk8phlcqdf6/hero")
         self.assertEqual(g["art"]["cover"], "https://img/9pk8phlcqdf6/poster")
 
+    def test_details_titles_and_images(self):
+        payload = {"Products": [{"ProductId": "9MSWWJWRF4WC", "ProductKind": "Game", "LocalizedProperties": [{
+            "ProductTitle": "Fable Fortune", "PublisherName": "Mediatonic", "ShortDescription": "Cards",
+            "Images": [{"ImagePurpose": "Poster", "Uri": "//img/poster"}, {"ImagePurpose": "SuperHeroArt", "Uri": "//img/hero"},
+                       {"ImagePurpose": "Logo", "Uri": "//img/logo"}, {"ImagePurpose": "BoxArt", "Uri": "//img/box"}]}]},
+            {"ProductId": "9DLC", "ProductKind": "Durable", "LocalizedProperties": [{"ProductTitle": "DLC", "Images": []}]}]}
+        d = self.c.details(["9MSWWJWRF4WC", "9DLC"], "FR", "fr-fr", fetch=lambda url: payload)
+        self.assertEqual(d["9MSWWJWRF4WC"]["title"], "Fable Fortune")
+        self.assertEqual(d["9MSWWJWRF4WC"]["art"]["cover"], "https://img/poster")
+        self.assertEqual(d["9MSWWJWRF4WC"]["art"]["logo"], "https://img/logo")
+        self.assertFalse(d["9DLC"]["game"])
+
+    def test_details_cached(self):
+        calls = []
+        payload = {"Products": [{"ProductId": "9X", "ProductKind": "Game", "LocalizedProperties": [{"ProductTitle": "X", "Images": []}]}]}
+        self.c.details(["9X"], "FR", "fr-fr", fetch=lambda url: calls.append(url) or payload)
+        self.c.details(["9X"], "FR", "fr-fr", fetch=lambda url: calls.append(url) or payload)
+        self.assertEqual(len(calls), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
