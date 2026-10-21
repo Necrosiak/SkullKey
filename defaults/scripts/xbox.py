@@ -316,6 +316,11 @@ def action_getgamesize(pid):
 # ── download ─────────────────────────────────────────────────────────────────
 
 def action_download(pid):
+    if pid in load_state()["games"]:
+        # Already on disk (e.g. picked up from Xodus Nexus): only the Steam
+        # shortcut is missing, which the Install step that follows creates.
+        write_progress(pid, 100, "Installed")
+        return emit("Progress", {"Message": "Installing"})
     info, access = _entry(pid)
     if not info:
         return error("Unknown game.")

@@ -98,6 +98,16 @@ class ActionsTest(unittest.TestCase):
             self.call(self.x.action_uninstall, "9FREE")
         self.assertFalse(root.exists())
 
+    def test_download_of_present_game_skips_download(self):
+        self.install_fake("9OWN")
+        with mock.patch.object(self.x.subprocess, "Popen") as popen:
+            res = self.call(self.x.action_download, "9OWN")
+        popen.assert_not_called()
+        self.assertEqual(res["Type"], "Progress")
+        prog = self.call(self.x.action_getprogress, "9OWN")["Content"]
+        self.assertEqual(prog["Percentage"], 100)
+        self.assertFalse(prog["Error"])
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 
