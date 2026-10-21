@@ -72,6 +72,14 @@ class CliTest(unittest.TestCase):
             self.assertIsNotNone(proc.poll())
             self.assertLess(time.time() - start, 4)
 
+    def test_env_points_at_the_user_session_bus(self):
+        with mock.patch.dict(os.environ, {"DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/0/bus",
+                                          "XDG_RUNTIME_DIR": "/run/user/0"}):
+            env = C._env()
+        uid = os.getuid()
+        self.assertEqual(env["DBUS_SESSION_BUS_ADDRESS"], f"unix:path=/run/user/{uid}/bus")
+        self.assertEqual(env["XDG_RUNTIME_DIR"], f"/run/user/{uid}")
+
     def test_inspect_game_reads_microsoftgame_config(self):
         d = Path(self.tmp.name) / "G"
         d.mkdir()

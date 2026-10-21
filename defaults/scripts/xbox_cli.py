@@ -33,7 +33,11 @@ def _binary():
 
 
 def _env():
-    env = dict(os.environ, XODUS_LOG="off", RUST_LOG="off")
+    uid = os.getuid()
+    # Decky inherits root's session variables; the stored account lives in
+    # the player's Secret Service, on their session bus.
+    env = dict(os.environ, XODUS_LOG="off", RUST_LOG="off", XDG_RUNTIME_DIR=f"/run/user/{uid}",
+               DBUS_SESSION_BUS_ADDRESS=f"unix:path=/run/user/{uid}/bus")
     # Decky's PyInstaller libraries break system binaries.
     orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
     if orig is not None:
