@@ -525,6 +525,7 @@ const TAB_LABELS: Record<string, Record<Locale, string>> = {
   "Cloud Gaming": { en: "Cloud Gaming", fr: "Jeu cloud", de: "Cloud-Gaming", es: "Juego en la nube", it: "Cloud gaming", pt: "Jogo na nuvem", nl: "Cloudgaming", pl: "Granie w chmurze", ru: "Облачный гейминг" },
   "Apps & Tools": { en: "Apps & Tools", fr: "Applis & outils", de: "Apps & Tools", es: "Apps y herramientas", it: "App e strumenti", pt: "Apps e ferramentas", nl: "Apps & tools", pl: "Aplikacje i narzędzia", ru: "Приложения и утилиты" },
   "Discs & Installers": { en: "Discs & Installers", fr: "Disques & installeurs", de: "Discs & Installer", es: "Discos e instaladores", it: "Dischi e installer", pt: "Discos e instaladores", nl: "Schijven & installers", pl: "Płyty i instalatory", ru: "Диски и установщики" },
+  "Xbox (experimental)": { en: "Xbox (experimental)", fr: "Xbox (expérimental)", de: "Xbox (experimentell)", es: "Xbox (experimental)", it: "Xbox (sperimentale)", pt: "Xbox (experimental)", nl: "Xbox (experimenteel)", pl: "Xbox (eksperymentalne)", ru: "Xbox (экспериментально)" },
   "Classics Reborn": { en: "Classics Reborn", fr: "Classiques ressuscités", de: "Klassiker neu belebt", es: "Clásicos resucitados", it: "Classici resuscitati", pt: "Clássicos ressuscitados", nl: "Herrezen klassiekers", pl: "Wskrzeszone klasyki", ru: "Воскрешённая классика" },
 };
 

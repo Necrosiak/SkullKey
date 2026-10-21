@@ -33,11 +33,12 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
         Navigation.Navigate(route);
         return true;
     }
-    if (!res.url) {
+    // Xbox opens its own Steam browser page (the worker drives it): no URL.
+    if (!res.url && !res.inline) {
         browserLoginError = "browser login failed";
         return false;
     }
-    Navigation.NavigateToExternalWeb(res.url);
+    if (res.url) Navigation.NavigateToExternalWeb(res.url);
     if (browserPoll) clearInterval(browserPoll);
     const started = Date.now();
     browserPoll = setInterval(async () => {
@@ -159,7 +160,8 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
     const login = async () => {
         try {
             const need = await serverAPI.callPluginMethod<{}, boolean>("browser_login_needed", {});
-            if (need.success && need.result) {
+            // Xbox: Microsoft sign-in always runs in the Steam browser.
+            if (actionSetName.startsWith("Xbox") || (need.success && need.result)) {
                 if (!(await startBrowserLogin(serverAPI, actionSetName, originRoute))) {
                     setContent({ Type: "Error", Content: {
                         Message: t("browser_login_failed"), Data: browserLoginError,

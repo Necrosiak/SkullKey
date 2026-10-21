@@ -146,3 +146,16 @@ for (const store of ['EA', 'GOG', 'Epic', 'Amazon']) {
     assert.ok(!calls.some(x => x[0] === 'web' || x[0] === 'action'));
   });
 }
+
+test("Xbox inline sign-in polls without opening a URL", async () => {
+  const actual = await run({ success: true, result: { ok: true, inline: true, platform: "Xbox" } });
+  assert.equal(actual.result, true);
+  assert.deepEqual(actual.calls.filter(x => x[0] !== "rpc"), [["timer"]]);
+  await actual.poll();
+  assert.ok(actual.calls.some(x => x[0] === "route" && x[1] === "/fixture"));
+});
+
+test("Xbox login always takes the Steam browser path", () => {
+  const src = fs.readFileSync(path.join(__dirname, "../src/Components/LoginContent.tsx"), "utf8");
+  assert.ok(src.includes("actionSetName.startsWith(\"Xbox\") || (need.success && need.result)"));
+});
