@@ -76,6 +76,9 @@ class ActionsTest(unittest.TestCase):
             self.grid_names()
         ensure.assert_called_once_with(update=True, components=("backend",))
 
+    def test_grid_always_shows_account_bar(self):
+        self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
+
     def test_grid_without_sub_shows_owned_and_free_only(self):
         self.assertEqual(sorted(self.grid_names()), ["Free Game", "Owned Game"])
 

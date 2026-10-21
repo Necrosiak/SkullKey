@@ -202,7 +202,6 @@ def action_getgames(filter_str="", installed="false"):
     # The engine is small: install/refresh it when the tab opens. The runtime
     # (hundreds of MB) waits for the first game install.
     xbox_tools.ensure(update=True, components=("backend",))
-    signed = signed_in()
     games = []
     for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
         if installed.lower() == "true" and pid not in load_state()["games"]:
@@ -210,7 +209,9 @@ def action_getgames(filter_str="", installed="false"):
         cover = (info.get("art") or {}).get("cover")
         games.append({"ID": i, "Name": info["title"], "Images": [cover] if cover else [], "ShortName": pid,
                       "SteamClientID": load_state()["games"].get(pid, {}).get("steamClientID", "")})
-    emit("GameGrid", {"Games": games, "NeedsLogin": "false" if signed else "true"})
+    # "true" keeps the account bar (gamertag, sign in/out) above the grid,
+    # like EA; the bar itself shows whether the account is connected.
+    emit("GameGrid", {"Games": games, "NeedsLogin": "true"})
 
 
 def _entry(pid):
