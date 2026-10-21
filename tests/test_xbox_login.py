@@ -3,6 +3,7 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -153,6 +154,16 @@ class LoginTest(unittest.TestCase):
             return sent
         sent = asyncio.run(go())
         self.assertEqual([m["payload"] for m in sent], ["{\"SERVERDATA\":1}"] * 2)
+
+    def test_keyring_file_made_private_after_sign_in(self):
+        import os
+        home = Path(self.tmp.name)
+        f = home / ".xodus-keyring.ron"
+        f.write_text("x")
+        f.chmod(0o644)
+        with mock.patch.dict(os.environ, {"HOME": str(home)}):
+            L.protect_keyring_file()
+        self.assertEqual(f.stat().st_mode & 0o777, 0o600)
 
     def test_trusted(self):
         self.assertTrue(L.trusted("https://login.live.com/a"))

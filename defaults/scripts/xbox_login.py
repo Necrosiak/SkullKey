@@ -52,6 +52,16 @@ def context_message(context):
         "context": context}})
 
 
+def protect_keyring_file():
+    """The file-keychain engine keeps the sign-in in ~/.xodus-keyring.ron:
+    readable by the player only."""
+    path = os.path.join(os.environ.get("HOME") or os.path.expanduser("~"), ".xodus-keyring.ron")
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+
+
 def user_env():
     uid = os.getuid()
     env = {k: v for k, v in os.environ.items() if not k.startswith("LD_LIBRARY_PATH")}
@@ -165,6 +175,7 @@ class XboxSteamBrowser:
                 return  # cancelled: close() leaves the state idle
             if self.state["status"] == "waiting":
                 if code == 0:
+                    protect_keyring_file()
                     self.state = {"status": "done", "platform": "Xbox"}
                     self.log("[xbox-login] signed in")
                 else:
