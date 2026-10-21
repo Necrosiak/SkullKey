@@ -196,12 +196,46 @@ def catalogue(query="", refresh=False):
     return out
 
 
+# ── games installed by Xodus Nexus ───────────────────────────────────────────
+
+NEXUS_GAMES = HOME / "Games" / "Xodus Nexus"
+NEXUS_STATE = HOME / ".config" / "xodus-nexus" / "launcher-state.json"
+
+
+def import_nexus_games():
+    """Games already installed by Xodus Nexus show up as installed here, so
+    nothing has to be downloaded again."""
+    candidates = [d for d in NEXUS_GAMES.iterdir() if d.is_dir()] if NEXUS_GAMES.is_dir() else []
+    try:
+        candidates += [Path(g["path"]) for g in json.loads(NEXUS_STATE.read_text()).get("games", [])
+                       if isinstance(g, dict) and g.get("path")]
+    except (OSError, ValueError):
+        pass
+    found = {}
+    for d in candidates:
+        if not d.is_dir() or d.name.startswith("."):
+            continue
+        info = xbox_cli.inspect_game(d)
+        pid = (info.get("storeId") or "").upper()
+        if pid and info.get("executable"):
+            found.setdefault(pid, (d, info))
+    known = load_state()["games"]
+    if all(pid in known for pid in found):
+        return
+    with locked_state() as st:
+        for pid, (d, info) in found.items():
+            st["games"].setdefault(pid, {"title": info["title"], "root": str(d), "art": {},
+                                         "executable": info["executable"], "steamClientID": "",
+                                         "imported": True})
+
+
 # ── grid & details ───────────────────────────────────────────────────────────
 
 def action_getgames(filter_str="", installed="false"):
     # The engine is small: install/refresh it when the tab opens. The runtime
     # (hundreds of MB) waits for the first game install.
     xbox_tools.ensure(update=True, components=("backend",))
+    import_nexus_games()
     games = []
     for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
         if installed.lower() == "true" and pid not in load_state()["games"]:
@@ -456,7 +490,7 @@ def action_uninstall(pid, keep=""):
         shutil.rmtree(dest, ignore_errors=True)
         shutil.move(str(users), str(dest))
     root = Path(g["root"])
-    if root.is_dir() and root.name == pid:
+    if root.is_dir() and (root.name == pid or g.get("imported")):
         shutil.rmtree(root, ignore_errors=True)
     shutil.rmtree(xbox_prefix.prefix_dir(pid), ignore_errors=True)
     (LAUNCH_DIR / f"{pid}.sh").unlink(missing_ok=True)

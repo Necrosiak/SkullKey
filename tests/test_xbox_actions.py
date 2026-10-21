@@ -76,6 +76,28 @@ class ActionsTest(unittest.TestCase):
             self.grid_names()
         ensure.assert_called_once_with(update=True, components=("backend",))
 
+    def test_imports_games_installed_by_nexus(self):
+        home = Path(os.environ["HOME"])
+        game = home / "Games" / "Xodus Nexus" / "Aniimo"
+        game.mkdir(parents=True)
+        (game / "MicrosoftGame.config").write_text(
+            "<Game><StoreId>9FREE</StoreId><ExecutableList><Executable Name=\"Aniimo.exe\"/></ExecutableList>"
+            "<ShellVisuals DefaultDisplayName=\"Aniimo Legend\"/></Game>")
+        (home / "Games" / "Xodus Nexus" / "Empty").mkdir()
+        self.x.import_nexus_games()
+        g = self.x.load_state()["games"]["9FREE"]
+        self.assertEqual((g["root"], g["executable"], g["imported"]), (str(game), "Aniimo.exe", True))
+        self.assertEqual(len(self.x.load_state()["games"]), 1)
+
+    def test_imported_game_uninstall_removes_its_folder(self):
+        root = Path(os.environ["HOME"]) / "Games" / "Xodus Nexus" / "Aniimo"
+        root.mkdir(parents=True)
+        with self.x.locked_state() as st:
+            st["games"]["9FREE"] = {"title": "A", "root": str(root), "imported": True}
+        with mock.patch.object(self.x, "_drives"):
+            self.call(self.x.action_uninstall, "9FREE")
+        self.assertFalse(root.exists())
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 
