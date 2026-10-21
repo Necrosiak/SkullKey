@@ -59,8 +59,7 @@ class PrefixTest(unittest.TestCase):
             runner = self.p.write_runner("9AAA")
         text = runner.read_text()
         import shlex
-        self.assertIn("export WINEPREFIX=%s
-" % shlex.quote(str(self.pfx)), text)
+        self.assertIn("export WINEPREFIX=%s\n" % shlex.quote(str(self.pfx)), text)
         self.assertNotIn("_MEI", text)
         self.assertIn("wineserver -w", text)
         self.assertEqual(runner.stat().st_mode & 0o777, 0o700)
