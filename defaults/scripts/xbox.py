@@ -487,6 +487,17 @@ def action_logout():
     emit("Success", {"Message": "Logged out"})
 
 
+def action_getsetting(name, *_):
+    value = (load_state().get("settings") or {}).get(name, "")
+    emit("Setting", {"name": name, "value": value})
+
+
+def action_savesetting(name, value="", *_):
+    with locked_state() as st:
+        st.setdefault("settings", {})[name] = value
+    emit("Success", {"Message": "Saved"})
+
+
 def action_refresh():
     account_view(refresh=True)
     emit("Success", {"Message": "Refreshed"})
@@ -509,6 +520,8 @@ ACTIONS = {
     "login": lambda a: emit("Success", {"Message": "Use the Steam browser sign-in."}),
     "logout": lambda a: action_logout(),
     "refresh": lambda a: action_refresh(),
+    "getsetting": lambda a: action_getsetting(*(a or [""])),
+    "savesetting": lambda a: action_savesetting(*(a or [""])),
 }
 
 

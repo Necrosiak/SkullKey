@@ -159,6 +159,17 @@ class ActionsTest(unittest.TestCase):
         res = self.call(self.x.action_loginstatus)
         self.assertEqual(res["Content"], {"Username": "T", "LoggedIn": True})
 
+    def test_settings_roundtrip(self):
+        self.assertEqual(self.call(self.x.action_getsetting, "LoginSteamClientId")["Content"],
+                         {"name": "LoginSteamClientId", "value": ""})
+        self.call(self.x.action_savesetting, "LoginSteamClientId", "42")
+        self.assertEqual(self.call(self.x.action_getsetting, "LoginSteamClientId")["Content"]["value"], "42")
+
+    def test_static_json_login_has_settings(self):
+        d = json.loads((ROOT / "defaults/scripts/Extensions/Xbox/static.json").read_text())
+        ids = {a["Id"] for a in d["xbox-login-actions"]["Content"]["Actions"]}
+        self.assertTrue({"GetSetting", "SaveSetting"} <= ids)
+
     def test_tab_order_xbox_before_disks(self):
         src = (ROOT / "defaults" / "scripts" / "get-json.py").read_text()
         order = src[src.index("TAB_ORDER"):src.index("]", src.index("TAB_ORDER"))]

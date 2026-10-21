@@ -139,6 +139,18 @@
      "Title": "Logout",
      "Type": "Logout",
      "Command": "./scripts/xbox.py logout"
+    },
+    {
+     "Id": "GetSetting",
+     "Title": "Get settings",
+     "Type": "GetSettings",
+     "Command": "./scripts/xbox.py getsetting"
+    },
+    {
+     "Id": "SaveSetting",
+     "Title": "Set settings",
+     "Type": "SaveSettings",
+     "Command": "./scripts/xbox.py savesetting"
     }
    ]
   }
