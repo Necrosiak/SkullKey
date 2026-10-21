@@ -30,6 +30,7 @@ import xbox_access
 import xbox_catalog
 import xbox_cli
 import xbox_prefix
+import xbox_service
 import xbox_tools
 
 HOME = Path(os.path.expanduser("~"))
@@ -467,9 +468,16 @@ def action_run(pid):
             return 4
         m, _ = market()
         env = xbox_cli._env()
-        cmd = [str(xbox_tools.cli_path()), "run", g["root"], str(runner), "--exe", exe,
-               "--materialize-chain", "--market", m]
-        return subprocess.call(cmd, env=env, cwd=g["root"])
+        # In-game Xbox sign-in, Store licence checks and cloud saves go
+        # through the account service, reached over its loopback bridge.
+        session = xbox_service.start(env)
+        try:
+            env.update(session.env)
+            cmd = [str(xbox_tools.cli_path()), "run", g["root"], str(runner), "--exe", exe,
+                   "--materialize-chain", "--market", m]
+            return subprocess.call(cmd, env=env, cwd=g["root"])
+        finally:
+            session.stop()
 
 
 # ── uninstall ────────────────────────────────────────────────────────────────

@@ -130,6 +130,16 @@ class ActionsTest(unittest.TestCase):
             self.assertEqual(self.x.action_run("9GP"), 3)
             call.assert_not_called()
 
+    def test_run_starts_account_service_for_the_game(self):
+        self.install_fake("9OWN")
+        session = mock.Mock(env={"XODUS_SOCKET": "/s", "XODUS_BRIDGE_PORT": "1", "XODUS_BRIDGE_KEY": "k",
+                                 "XODUS_SAVE_SYNC": "auto"})
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session),              mock.patch.object(self.x.xbox_prefix, "ensure_prefix"),              mock.patch.object(self.x.xbox_prefix, "write_runner", return_value=Path("/r")),              mock.patch.object(self.x.xbox_tools, "cli_path", return_value=Path("/cli")),              mock.patch.object(self.x.subprocess, "call", return_value=0) as call:
+            self.assertEqual(self.x.action_run("9OWN"), 0)
+        env = call.call_args.kwargs["env"]
+        self.assertEqual((env["XODUS_BRIDGE_KEY"], env["XODUS_SAVE_SYNC"]), ("k", "auto"))
+        session.stop.assert_called_once()
+
     def test_download_refused_without_subscription(self):
         res = self.call(self.x.action_download, "9GP")
         self.assertEqual(res["Type"], "Error")
