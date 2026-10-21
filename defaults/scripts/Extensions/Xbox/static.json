@@ -1,0 +1,158 @@
+{
+ "skullkey-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "Actions": [
+    {
+     "Id": "GetXboxActions",
+     "Title": "Get Xbox actions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py xbox-actions"
+    }
+   ]
+  }
+ },
+ "skullkey-tabs": {
+  "Type": "StoreTabs",
+  "Content": {
+   "Tabs": [
+    {
+     "Title": "Xbox (experimental)",
+     "Type": "GameGrid",
+     "ActionId": "GetXboxActions",
+     "Category": "games"
+    }
+   ]
+  }
+ },
+ "xbox-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "XboxActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "GetContent",
+     "Type": "GameGrid",
+     "Command": "./scripts/xbox.py getgames xbox"
+    },
+    {
+     "Id": "GetDetails",
+     "Title": "GetDetails",
+     "Type": "GameDetails",
+     "Command": "./scripts/xbox.py getgamedetails"
+    },
+    {
+     "Id": "GetJsonImages",
+     "Title": "GetJsonImages",
+     "Type": "GameImages",
+     "Command": "./scripts/xbox.py getjsonimages"
+    },
+    {
+     "Id": "GetLaunchOptions",
+     "Title": "GetLaunchOptions",
+     "Type": "GetLaunchOptions",
+     "Command": "./scripts/xbox.py getlaunchoptions"
+    },
+    {
+     "Id": "Install",
+     "Title": "Install",
+     "Type": "Install",
+     "Command": "./scripts/xbox.py install"
+    },
+    {
+     "Id": "Download",
+     "Title": "Download",
+     "Type": "Download",
+     "Command": "./scripts/xbox.py download"
+    },
+    {
+     "Id": "CancelInstall",
+     "Title": "CancelInstall",
+     "Type": "CancelInstall",
+     "Command": "./scripts/xbox.py cancelinstall"
+    },
+    {
+     "Id": "Uninstall",
+     "Title": "Uninstall",
+     "Type": "Uninstall",
+     "Command": "./scripts/xbox.py uninstall"
+    },
+    {
+     "Id": "GetGameSize",
+     "Title": "GetGameSize",
+     "Type": "GameSize",
+     "Command": "./scripts/xbox.py getgamesize"
+    },
+    {
+     "Id": "GetProgress",
+     "Title": "GetProgress",
+     "Type": "GetProgress",
+     "Command": "./scripts/xbox.py getprogress"
+    },
+    {
+     "Id": "GetLoginActions",
+     "Title": "GetLoginActions",
+     "Type": "Init",
+     "Command": "./scripts/get-json.py xbox-login-actions"
+    },
+    {
+     "Id": "GetScriptActions",
+     "Title": "GetScriptActions",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py xbox-script-actions"
+    },
+    {
+     "Id": "GetGameScriptActions",
+     "Title": "GetGameScriptActions",
+     "Type": "ScriptActions",
+     "Command": "./scripts/get-json.py xbox-game-script-actions"
+    },
+    {
+     "Id": "Refresh",
+     "Title": "Refresh",
+     "Type": "Refresh",
+     "Command": "./scripts/xbox.py refresh"
+    }
+   ]
+  }
+ },
+ "xbox-login-actions": {
+  "Type": "ActionSet",
+  "Content": {
+   "SetName": "XboxLoginActions",
+   "Actions": [
+    {
+     "Id": "GetContent",
+     "Title": "GetContent",
+     "Type": "Status",
+     "Command": "./scripts/xbox.py loginstatus"
+    },
+    {
+     "Id": "Login",
+     "Title": "Login",
+     "Type": "Login",
+     "Command": "./scripts/xbox.py login Xbox"
+    },
+    {
+     "Id": "Logout",
+     "Title": "Logout",
+     "Type": "Logout",
+     "Command": "./scripts/xbox.py logout"
+    }
+   ]
+  }
+ },
+ "xbox-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ },
+ "xbox-game-script-actions": {
+  "Type": "ScriptSet",
+  "Content": {
+   "Actions": []
+  }
+ }
+}
