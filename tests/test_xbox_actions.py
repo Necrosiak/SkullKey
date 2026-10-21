@@ -49,6 +49,7 @@ class ActionsTest(unittest.TestCase):
             mock.patch.object(self.x.xbox_catalog, "search", return_value=[FREE]),
             mock.patch.object(self.x.xbox_catalog, "installable", return_value="c-x"),
             mock.patch.object(self.x, "market", return_value=("FR", "fr-fr")),
+            mock.patch.object(self.x.xbox_tools, "ensure", return_value={"installed": [], "updated": [], "errors": []}),
         ]
         for p in patches:
             p.start()
@@ -69,6 +70,11 @@ class ActionsTest(unittest.TestCase):
         with self.x.locked_state() as st:
             st["games"][pid] = {"title": pid, "root": str(root), "executable": "g.exe", "steamClientID": ""}
         return root
+
+    def test_grid_installs_engine_first(self):
+        with mock.patch.object(self.x.xbox_tools, "ensure") as ensure:
+            self.grid_names()
+        ensure.assert_called_once_with(update=True, components=("backend",))
 
     def test_grid_without_sub_shows_owned_and_free_only(self):
         self.assertEqual(sorted(self.grid_names()), ["Free Game", "Owned Game"])

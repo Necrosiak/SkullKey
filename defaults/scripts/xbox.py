@@ -199,6 +199,9 @@ def catalogue(query="", refresh=False):
 # ── grid & details ───────────────────────────────────────────────────────────
 
 def action_getgames(filter_str="", installed="false"):
+    # The engine is small: install/refresh it when the tab opens. The runtime
+    # (hundreds of MB) waits for the first game install.
+    xbox_tools.ensure(update=True, components=("backend",))
     signed = signed_in()
     games = []
     for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
