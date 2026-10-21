@@ -115,6 +115,16 @@ class ToolsTest(unittest.TestCase):
             self.t.ensure(update=True, components=("backend",), present=lambda k: False)
             inst.assert_called_once()
 
+    def test_file_keychain_engine_preferred(self):
+        self.t.install_component("backend", fetch=lambda u: RELEASES, download=self.serve(self.backend_files()))
+        own = self.t.XBOX_DIR / "engine-file-keychain"
+        own.mkdir(parents=True)
+        for name in ("xodus-cli", "xodus-service"):
+            (own / name).write_text("#!/bin/sh")
+        self.assertEqual(self.t.cli_path(), own / "xodus-cli")
+        self.assertEqual(self.t.service_path(), own / "xodus-service")
+        self.assertTrue(self.t.present("backend"))
+
     def test_dead_lock_pid_not_busy(self):
         locks = self.t.XBOX_DIR / "locks"
         locks.mkdir(parents=True)

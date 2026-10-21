@@ -161,6 +161,8 @@ class XboxSteamBrowser:
         try:
             await asyncio.wait_for(self._frames(), self.timeout)
             code = await self.proc.wait()
+            if self.closed:
+                return  # cancelled: close() leaves the state idle
             if self.state["status"] == "waiting":
                 if code == 0:
                     self.state = {"status": "done", "platform": "Xbox"}
@@ -169,10 +171,11 @@ class XboxSteamBrowser:
                     self._fail("xbox-login-failed")
         except asyncio.TimeoutError:
             self._fail("xbox-login-timeout")
+        except Exception:
+            if not self.closed:
+                self._fail("xbox-login-protocol")
         except asyncio.CancelledError:
             raise
-        except Exception:
-            self._fail("xbox-login-protocol")
         finally:
             await self.close()
 

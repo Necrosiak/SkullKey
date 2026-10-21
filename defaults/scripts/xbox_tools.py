@@ -171,12 +171,24 @@ def _path(kind, *parts):
     return p if p.exists() else None
 
 
+# SkullKey build of the engine, made with the upstream `key-chain-file`
+# feature: the Microsoft sign-in is kept in a private file
+# (~/.xodus-keyring.ron, like other launchers) instead of KDE Wallet, so no
+# wallet prompt ever blocks Game Mode. Preferred over the official build.
+OWN_ENGINE = "engine-file-keychain"
+
+
+def _own(name):
+    p = XBOX_DIR / OWN_ENGINE / name
+    return p if p.exists() else None
+
+
 def cli_path():
-    return _path("backend", "xodus-cli")
+    return _own("xodus-cli") or _path("backend", "xodus-cli")
 
 
 def service_path():
-    return _path("backend", "xodus-service")
+    return _own("xodus-service") or _path("backend", "xodus-service")
 
 
 def wine_path():
