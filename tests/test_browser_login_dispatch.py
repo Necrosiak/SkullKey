@@ -28,6 +28,8 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
             call_script=AsyncMock(return_value=json.dumps({'Content': {'Url': 'https://fixture.invalid/'}})))
         ns = dict(BrowserLogin=state, Helper=helper, BROWSER_LOGIN={'Epic': {}, 'GOG': {}, 'Amazon': {}},
                   _ea_browser=types.SimpleNamespace(EASteamBrowser=lambda: worker),
+                  _xbox_login=types.SimpleNamespace(XboxSteamBrowser=lambda **kw: worker),
+                  _xbox_keyring=types.SimpleNamespace(install=Mock(return_value="present")),
                   decky_plugin=types.SimpleNamespace(logger=Mock()), json=json, asyncio=asyncio, time=time)
         isolated = ast.Module(body=[ast.ClassDef(name='Plugin', bases=[], keywords=[], body=methods, decorator_list=[])], type_ignores=[])
         exec(compile(ast.fix_missing_locations(isolated), '<rpc-contract>', 'exec'), ns)
@@ -42,6 +44,13 @@ class DispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(state.ea, worker)
         worker.start.assert_awaited_once()
         self.assertEqual(worker.start.call_args.args[0][-2:], ['EA', 'login-browser'])
+        helper.call_script.assert_not_awaited()
+
+    async def test_xbox_reaches_its_worker(self):
+        plugin, state, worker, helper = self.fixture({"ok": True, "platform": "Xbox", "inline": True})
+        self.assertTrue((await self.start(plugin, "Xbox"))["ok"])
+        self.assertIs(state.ea, worker)
+        worker.start.assert_awaited_once_with()
         helper.call_script.assert_not_awaited()
 
     async def test_regular_instance_still_works(self):

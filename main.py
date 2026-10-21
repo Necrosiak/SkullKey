@@ -30,6 +30,17 @@ _easpec = _ilu.spec_from_file_location(
 _ea_browser = _ilu.module_from_spec(_easpec)
 _easpec.loader.exec_module(_ea_browser)
 
+# Xbox sign-in (Steam browser) imports its sibling modules from scripts/.
+_scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+if _scripts_dir not in sys.path:
+    sys.path.append(_scripts_dir)
+_xbspec = _ilu.spec_from_file_location("skullkey_xbox_login", os.path.join(_scripts_dir, "xbox_login.py"))
+_xbox_login = _ilu.module_from_spec(_xbspec)
+_xbspec.loader.exec_module(_xbox_login)
+_xkspec = _ilu.spec_from_file_location("skullkey_xbox_keyring", os.path.join(_scripts_dir, "xbox_keyring.py"))
+_xbox_keyring = _ilu.module_from_spec(_xkspec)
+_xkspec.loader.exec_module(_xbox_keyring)
+
 
 # Background tasks started by _main, kept here for two reasons: asyncio only
 # holds a weak reference to a running task, so one with no reference left can be
@@ -1066,7 +1077,7 @@ class Plugin:
         try:
             action = Helper.get_action(actionSet, "Login") or {}
             parts = (action.get("Command") or "").split()
-            platform = next((x for x in parts if x in BROWSER_LOGIN or x == "EA"), None)
+            platform = next((x for x in parts if x in BROWSER_LOGIN or x in ("EA", "Xbox")), None)
             if not platform:
                 return {"ok": False, "error": f"unsupported store ({actionSet})"}
             if BrowserLogin.ea is not None:
@@ -1074,6 +1085,20 @@ class Plugin:
                 BrowserLogin.ea = None
             if BrowserLogin.task and not BrowserLogin.task.done():
                 BrowserLogin.task.cancel()
+            if platform == "Xbox":
+                # Microsoft sign-in runs in a Steam browser page this worker
+                # drives itself; the KDE Wallet prompt must be visible first.
+                try:
+                    _xbox_keyring.install(decky_plugin.DECKY_USER_HOME)
+                except Exception:
+                    pass
+                worker = _xbox_login.XboxSteamBrowser(
+                    logger=lambda msg: decky_plugin.logger.info(msg))
+                BrowserLogin.ea = worker
+                BrowserLogin.state = {"status": "idle"}
+                result = await worker.start()
+                decky_plugin.logger.info("[browser-login] Xbox : " + ("ready" if result.get("ok") else "failed"))
+                return result
             if platform == "EA":
                 # Maxima needs its own live OAuth process and loopback callback,
                 # not the login-url/login-code protocol of Epic/GOG/Amazon.
