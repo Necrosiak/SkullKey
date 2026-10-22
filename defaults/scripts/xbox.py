@@ -174,6 +174,7 @@ def catalogue(query="", refresh=False):
         info.setdefault(g["id"], {"title": g["title"], "publisher": g["publisher"], "art": g["art"]})
         info[g["id"]]["contentId"] = g.get("contentId")
     deadline = time.monotonic() + xbox_catalog.RESOLVE_BUDGET
+    unchecked = []
     out = []
     for pid in list(info):
         if query and pid not in store and query.lower() not in info[pid]["title"].lower():
@@ -183,6 +184,7 @@ def catalogue(query="", refresh=False):
         if ent and not st:
             content = xbox_catalog.installable(pid, m, deadline)
             if content is None and pid not in installed:
+                unchecked.append(pid)
                 continue
             st = {"price": "paid", "installable": bool(content)}
             info[pid]["contentId"] = content or None
@@ -195,7 +197,38 @@ def catalogue(query="", refresh=False):
             out.append((pid, {"title": g.get("title", pid), "art": g.get("art") or {}},
                         xbox_access.classify(ents.get(pid), None, True, sub)))
     out.sort(key=lambda x: (x[0] not in installed, x[1]["title"].lower()))
+    if unchecked:
+        _start_prefetch(unchecked)
     return out
+
+
+def _start_prefetch(pids):
+    """Check the remaining games in the background (once, then cached 24 h):
+    they appear in the grid the next time it loads."""
+    lock = XBOX_DIR / "locks" / "prefetch"
+    try:
+        if _alive(lock.read_text().strip()):
+            return
+    except OSError:
+        pass
+    XBOX_DIR.mkdir(parents=True, exist_ok=True)
+    todo = XBOX_DIR / "cache" / "prefetch.json"
+    todo.parent.mkdir(parents=True, exist_ok=True)
+    todo.write_text(json.dumps(pids))
+    subprocess.Popen([PYEXE, os.path.abspath(__file__), "prefetch"], start_new_session=True,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=os.environ.copy())
+
+
+def prefetch(pids=None):
+    if pids is None:
+        try:
+            pids = json.loads((XBOX_DIR / "cache" / "prefetch.json").read_text())
+        except (OSError, ValueError):
+            return
+    m, _ = market()
+    with xbox_tools.hold("prefetch"):
+        for pid in pids:
+            xbox_catalog.installable(pid, m)
 
 
 # ── games installed by Xodus Nexus ───────────────────────────────────────────
@@ -692,6 +725,7 @@ ACTIONS = {
     "getgamesize": lambda a: action_getgamesize(a[0]),
     "download": lambda a: action_download(a[0]),
     "worker": lambda a: worker(a[0]),
+    "prefetch": lambda a: prefetch(),
     "getprogress": lambda a: action_getprogress(a[0]),
     "cancelinstall": lambda a: action_cancelinstall(a[0]),
     "install": lambda a: action_install(a[0], a[1] if len(a) > 1 else ""),

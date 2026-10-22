@@ -155,6 +155,20 @@ class ActionsTest(unittest.TestCase):
             desc = self.call(self.x.action_getgamedetails, "9OWN")["Content"]["Description"]
         self.assertIn("ℹ️ Démarrage plus long", desc)
 
+    def test_grid_starts_background_check_of_unchecked_games(self):
+        with mock.patch.object(self.x.xbox_catalog, "installable", return_value=None), \
+             mock.patch.object(self.x, "_start_prefetch") as start:
+            self.grid_names()
+        start.assert_called_once()
+        self.assertTrue({"9OWN", "9GP"} <= set(start.call_args.args[0]))
+
+    def test_prefetch_checks_every_game_without_budget(self):
+        seen = []
+        with mock.patch.object(self.x.xbox_catalog, "installable",
+                               side_effect=lambda pid, m, deadline=None: seen.append((pid, deadline)) or "c"):
+            self.x.prefetch(["9A", "9B"])
+        self.assertEqual(seen, [("9A", None), ("9B", None)])
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 
