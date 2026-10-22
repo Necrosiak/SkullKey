@@ -35,3 +35,10 @@ test("every store page shows the anti-cheat warning", () => {
   const i18n = fs.readFileSync(path.join(__dirname, "../src/i18n.ts"), "utf8");
   assert.equal((i18n.match(/compat_warn:/g) || []).length, 9);
 });
+
+test("Xbox grid has Owned / Game Pass / Free / Installed filters", () => {
+  const grid = fs.readFileSync(path.join(__dirname, "../src/Components/GridContent.tsx"), "utf8");
+  assert.ok(grid.includes("\"owned\", \"gamepass\", \"free\", \"installed\""));
+  const i18n = fs.readFileSync(path.join(__dirname, "../src/i18n.ts"), "utf8");
+  assert.equal((i18n.match(/xbox_filter_gamepass:/g) || []).length, 9);
+});

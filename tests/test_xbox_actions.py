@@ -357,6 +357,15 @@ class ActionsTest(unittest.TestCase):
         self.assertIn("Emplacement : ", desc)
         self.assertNotIn("Owned", desc)
 
+    def test_access_filter(self):
+        self.sub = {"status": "active"}
+        out = self.call(self.x.action_getgames, "", "false", "false", "owned")
+        self.assertEqual([g["Name"] for g in out["Content"]["Games"]], ["Owned Game"])
+        out = self.call(self.x.action_getgames, "", "false", "false", "free")
+        self.assertEqual([g["Name"] for g in out["Content"]["Games"]], ["Free Game"])
+        out = self.call(self.x.action_getgames, "", "false", "false", "gamepass")
+        self.assertEqual([g["Name"] for g in out["Content"]["Games"]], ["Pass Game"])
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

@@ -416,9 +416,9 @@ def anticheat(pid):
 
 # ── grid & details ───────────────────────────────────────────────────────────
 
-def _grid_cache(filter_str, installed):
+def _grid_cache(filter_str, installed, access=""):
     import hashlib
-    key = hashlib.sha1(f"{filter_str}\0{installed}".encode()).hexdigest()[:16]
+    key = hashlib.sha1(f"{filter_str}\0{installed}\0{access}".encode()).hexdigest()[:16]
     return XBOX_DIR / "cache" / f"grid-{key}.json"
 
 
@@ -427,11 +427,13 @@ def drop_grid_cache():
         f.unlink(missing_ok=True)
 
 
-def build_grid(filter_str="", installed="false"):
+def build_grid(filter_str="", installed="false", access_filter=""):
     games = []
     state_games = load_state()["games"]
     for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
-        if installed.lower() == "true" and pid not in state_games:
+        if (installed.lower() == "true" or access_filter == "installed") and pid not in state_games:
+            continue
+        if access_filter in ("owned", "gamepass", "free") and access["access"] != access_filter:
             continue
         cover = (info.get("art") or {}).get("cover")
         games.append({"ID": i, "Name": info["title"], "Images": [cover] if cover else [], "ShortName": pid,
@@ -439,7 +441,7 @@ def build_grid(filter_str="", installed="false"):
     # "true" keeps the account bar (gamertag, sign in/out) above the grid,
     # like EA; the bar itself shows whether the account is connected.
     grid = {"Games": games, "NeedsLogin": "true"}
-    cache = _grid_cache(filter_str, installed)
+    cache = _grid_cache(filter_str, installed, access_filter)
     cache.parent.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_suffix(".tmp")
     tmp.write_text(json.dumps(grid))
@@ -447,17 +449,17 @@ def build_grid(filter_str="", installed="false"):
     return grid
 
 
-def action_getgames(filter_str="", installed="false"):
+def action_getgames(filter_str="", installed="false", limited="false", access_filter=""):
     """Show the last grid at once and rebuild it in the background; build it
     here only the first time (or after an account change)."""
     xbox_tools.ensure(update=True, components=("backend",))
     import_nexus_games()
-    cache = _grid_cache(filter_str, installed)
+    cache = _grid_cache(filter_str, installed, access_filter)
     try:
         grid = json.loads(cache.read_text())
     except (OSError, ValueError):
-        return emit("GameGrid", build_grid(filter_str, installed))
-    subprocess.Popen([PYEXE, os.path.abspath(__file__), "refreshgrid", filter_str, installed],
+        return emit("GameGrid", build_grid(filter_str, installed, access_filter))
+    subprocess.Popen([PYEXE, os.path.abspath(__file__), "refreshgrid", filter_str, installed, access_filter],
                      start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                      env=os.environ.copy())
     emit("GameGrid", grid)
@@ -1029,7 +1031,8 @@ def action_refresh():
 
 
 ACTIONS = {
-    "getgames": lambda a: action_getgames(a[1] if len(a) > 1 else "", a[2] if len(a) > 2 else "false"),
+    "getgames": lambda a: action_getgames(a[1] if len(a) > 1 else "", a[2] if len(a) > 2 else "false",
+                                          a[3] if len(a) > 3 else "false", a[4] if len(a) > 4 else ""),
     "getgamedetails": lambda a: action_getgamedetails(a[0]),
     "getjsonimages": lambda a: action_getjsonimages(a[0]),
     "getgamesize": lambda a: action_getgamesize(a[0]),
@@ -1048,7 +1051,7 @@ ACTIONS = {
     "refresh": lambda a: action_refresh(),
     "move": lambda a: action_move(a[0], a[1] if len(a) > 1 else ""),
     "moveworker": lambda a: move_worker(a[0], a[1] if len(a) > 1 else ""),
-    "refreshgrid": lambda a: build_grid(a[0] if a else "", a[1] if len(a) > 1 else "false"),
+    "refreshgrid": lambda a: build_grid(a[0] if a else "", a[1] if len(a) > 1 else "false", a[2] if len(a) > 2 else ""),
     "autoupdate": lambda a: action_autoupdate(),
     "getsetting": lambda a: action_getsetting(*(a or [""])),
     "savesetting": lambda a: action_savesetting(*(a or [""])),

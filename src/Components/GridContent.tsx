@@ -20,6 +20,7 @@ interface GridContentArgs {
     filter?: string;
     installed?: boolean;
     limited?: boolean;
+    access?: string;
 }
 
 interface GridContentCache {
@@ -47,6 +48,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
     // Ubisoft, Battle.net, Minecraft… n'en ont pas, et l'appeler ouvrait une
     // fenêtre « Action not found » (SkullKey #4).
     const [hasTabConfig, setHasTabConfig] = useState(false);
+    const [accessFilter, setAccessFilter] = useState<string>("");
     // A sign-in that finished on its own page (Xbox) changes the library.
     useEffect(() => {
         const onDone = () => refreshContent({ ...argsCache, limited: isLimited });
@@ -195,6 +197,22 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 <div style={{ paddingTop: '15px' }}>
                     <LoginContent serverAPI={serverAPI} initActionSet={initActionSet} initAction="GetLoginActions" />
                 </div>
+            )}
+            {initActionSet === "XboxActions" && (
+                <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 10, flexWrap: "wrap" }}>
+                    {(["", "owned", "gamepass", "free", "installed"] as const).map(key => (
+                        <DialogButton key={key || "all"}
+                            style={{ minWidth: 0, width: "auto", padding: "0 14px", whiteSpace: "nowrap",
+                                     opacity: accessFilter === key ? 1 : 0.6,
+                                     border: accessFilter === key ? `2px solid ${storeTheme(initActionSet).color}` : undefined }}
+                            onClick={() => {
+                                setAccessFilter(key);
+                                refreshContent({ ...argsCache, limited: isLimited, access: key });
+                            }}>
+                            {t(key ? `xbox_filter_${key}` : "xbox_filter_all")}
+                        </DialogButton>
+                    ))}
+                </Focusable>
             )}
             {argsCache.installed && (
                 <div style={{ margin: '8px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px' }}>
