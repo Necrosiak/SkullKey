@@ -74,6 +74,18 @@ class MoveGameTest(unittest.TestCase):
                 self.m.move("GOGActions", "1374469660", str(self.drive), self.root)
         self.assertTrue(self.game.exists())
 
+    def test_epic_path_from_legendary_record(self):
+        rec = self.root / "rt" / "accounts" / "1" / "legendary" / "installed.json"
+        rec.parent.mkdir(parents=True)
+        game = self.root / "home" / "Games" / "epic" / "FallGuys"
+        game.mkdir(parents=True)
+        rec.write_text(json.dumps({"abc": {"install_path": str(game)}}))
+        self.assertEqual(self.m.current_path("EpicActions", "abc"), str(game))
+        with mock.patch.object(self.m, "target_base", side_effect=self.base):
+            new = self.m.move("EpicActions", "abc", str(self.drive), self.root)
+        self.assertEqual(json.loads(rec.read_text())["abc"]["install_path"], new)
+        self.assertFalse(game.exists())
+
     def test_unsupported_platform_refused(self):
         with self.assertRaises(self.m.MoveError):
             self.m.move("MiHoYoActions", "x", "", self.root)

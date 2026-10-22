@@ -52,9 +52,25 @@ def _db_row(set_name, shortname):
     return None, None
 
 
+def _legendary_path(shortname):
+    """Epic: legendary keeps the install folder in its own installed.json."""
+    files = list(TOOL_RECORDS) + sorted(RUNTIME.glob("accounts/*/legendary/installed.json"))
+    for f in files:
+        try:
+            rec = json.loads(Path(f).read_text()).get(shortname) or {}
+        except (OSError, ValueError, AttributeError):
+            continue
+        if rec.get("install_path"):
+            return rec["install_path"]
+    return None
+
+
 def current_path(set_name, shortname):
     if set_name in DB_STORES:
-        return _db_row(set_name, shortname)[1]
+        path = _db_row(set_name, shortname)[1]
+        if not path and set_name == "EpicActions":
+            path = _legendary_path(shortname)
+        return path
     if set_name == "PortsActions":
         return _ports_dir(shortname)
     if set_name == "DisksActions":
@@ -131,10 +147,11 @@ def move(set_name, shortname, drive, default_base):
         raise MoveError(f"The game could not be copied ({type(e).__name__}).") from e
     if set_name in DB_STORES:
         db, _ = _db_row(set_name, shortname)
-        con = sqlite3.connect(db)
-        con.execute("UPDATE Game SET InstallPath=? WHERE ShortName=?", (new, shortname))
-        con.commit()
-        rewrite_tool_records(old, new)
+        if db:  # Epic games may only be known to legendary
+            con = sqlite3.connect(db)
+            con.execute("UPDATE Game SET InstallPath=? WHERE ShortName=?", (new, shortname))
+            con.commit()
+        rewrite_tool_records(old, new, files=list(TOOL_RECORDS) + sorted(RUNTIME.glob("accounts/*/*/installed.json")))
     elif set_name == "PortsActions":
         data = _drives()._load_paths()
         data.setdefault("ports", {})[shortname] = new
