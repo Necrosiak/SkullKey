@@ -1058,6 +1058,24 @@ class Plugin:
             decky_plugin.logger.warning(f"[compat] {e!r}")
             return None
 
+    async def move_game(self, actionSet, shortname, drive=""):
+        """Move an installed game to another drive (GOG, Amazon, Epic,
+        Classics, Discs). Returns {"ok", "path"} or {"ok": False, "error"}."""
+        try:
+            import drives
+            import move_game as mg
+            allowed = [d["path"] for d in drives.list_drives(decky_plugin.DECKY_USER_HOME) if not d["system"]]
+            if drive and drive not in allowed:
+                return {"ok": False, "error": "This drive is not available."}
+            default = os.path.join(decky_plugin.DECKY_USER_HOME, "Games",
+                                   {"PortsActions": "ports", "DisksActions": "Disques"}.get(actionSet)
+                                   or mg.DB_STORES.get(actionSet, ("", "games"))[1])
+            path = await asyncio.get_event_loop().run_in_executor(None, mg.move, actionSet, shortname, drive, default)
+            return {"ok": True, "path": path}
+        except Exception as e:
+            decky_plugin.logger.warning(f"[move] {actionSet} {shortname}: {e!r}")
+            return {"ok": False, "error": str(e)}
+
     async def platforms_get(self):
         """Every store/media tab with whether it is switched on."""
         try:

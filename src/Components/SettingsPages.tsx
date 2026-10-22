@@ -9,9 +9,13 @@ import { GameDetailsItem } from "./GameDetailsItem";
 import { pickInstallDrive } from "./DrivePicker";
 import { notify, storeTheme } from "./Styled";
 import { t, tabLabel } from "../i18n";
+import { configureShortcut } from "../Utils/utils";
+
+// Stores whose games SkullKey can move between drives (Xbox moves itself).
+const MOVABLE = ["GOGActions", "AmazonActions", "EpicActions", "PortsActions", "DisksActions"];
 
 interface Platform { ActionId: string; Title: string; Category: string; enabled: boolean }
-interface Installed { platform: Platform; setName: string; games: { name: string; shortname: string }[] }
+interface Installed { platform: Platform; setName: string; games: { name: string; shortname: string; steamClientID: string }[] }
 
 async function storeSetName(serverAPI: ServerAPI): Promise<string | null> {
     const init = await executeAction<ExecuteArgs, ActionSet>(serverAPI, "MainMenu", "SkullKeyInit", { inputData: "" });
@@ -47,7 +51,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                     serverAPI, setName, "GetContent", { filter: "", installed: "true", limited: "false" });
                 const games = ((content?.Content as GameDataList)?.Games ?? [])
                     .filter((g: any) => g.SteamClientID)
-                    .map((g: any) => ({ name: g.Name, shortname: g.ShortName }));
+                    .map((g: any) => ({ name: g.Name, shortname: g.ShortName, steamClientID: String(g.SteamClientID) }));
                 if (games.length) out.push({ platform, setName, games });
             } catch (e) { /* one store failing never hides the others */ }
         }
@@ -55,11 +59,27 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     };
     useEffect(() => { load(); }, []);
 
-    const move = async (setName: string, shortname: string) => {
+    const move = async (setName: string, game: { shortname: string; steamClientID: string }) => {
         const drive = await pickInstallDrive(serverAPI);
         if (drive === null) return;
-        await executeAction<ExecuteArgs, any>(serverAPI, setName, "Move", { shortname, drive } as any);
         notify({ title: "SkullKey", body: t("inst_moving") });
+        if (setName === "XboxActions") {
+            await executeAction<ExecuteArgs, any>(serverAPI, setName, "Move", { shortname: game.shortname, drive } as any);
+            return;
+        }
+        const r = await serverAPI.callPluginMethod<any, any>("move_game", { actionSet: setName, shortname: game.shortname, drive });
+        if (!r.success || !r.result?.ok) {
+            notify({ title: "SkullKey", body: t("inst_move_failed", { error: (r.success && r.result?.error) || "?" }) });
+            return;
+        }
+        // The game's files changed place: rebuild its Steam shortcut from the
+        // store's own launch options.
+        const id = parseInt(game.steamClientID);
+        const res = await executeAction<any, any>(serverAPI, setName, "Install",
+            { shortname: game.shortname, steamClientID: game.steamClientID });
+        if (id && res?.Type === "LaunchOptions") configureShortcut(id, res.Content);
+        notify({ title: "SkullKey", body: t("inst_moved") });
+        load();
     };
 
     if (groups === null) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_loading")}</div>;
@@ -68,7 +88,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
         <div style={{ padding: "0 8px" }}>
             {groups.map(({ platform, setName, games }) => {
                 const theme = storeTheme(platform.Title);
-                const canMove = setName === "XboxActions";
+                const canMove = setName === "XboxActions" || MOVABLE.includes(setName);
                 return (
                     <Group key={platform.ActionId} title={tabLabel(platform.Title)} color={theme.color}>
                         {games.map(game => (
@@ -77,7 +97,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
                                 {canMove && (
                                     <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 12px" }}
-                                        onClick={() => move(setName, game.shortname)}>{t("inst_move")}</DialogButton>
+                                        onClick={() => move(setName, game)}>{t("inst_move")}</DialogButton>
                                 )}
                                 <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 12px" }}
                                     onClick={() => {

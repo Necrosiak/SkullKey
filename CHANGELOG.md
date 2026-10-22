@@ -16,7 +16,9 @@
   [bastiHST90](https://github.com/bastiHST90) in
   [#11](https://github.com/Necrosiak/SkullKey/issues/11).
 - **Settings → Installed games** — every installed game, grouped by platform,
-  with its page one press away; Xbox games can be moved to another drive.
+  with its page one press away. GOG, Amazon, Epic, Xbox, Classics and Discs &
+  Installers games can be moved to another drive (the Steam shortcut follows).
+- **Xbox filters** — All, Owned, Game Pass, Free and Installed above the grid.
 - **Settings → Platforms** — switch off the stores and media sections you do
   not use; their tab disappears from the store and the menu.
 - **Anti-cheat warning** — any store's game page warns when the game's
