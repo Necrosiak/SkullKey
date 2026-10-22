@@ -48,6 +48,11 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     const [groups, setGroups] = useState<Installed[] | null>(null);
     // Size on disk per game, filled in one by one after the list shows.
     const [sizes, setSizes] = useState<Record<string, number>>({});
+    // After a delete the focused row disappears and Steam would send the focus
+    // back to the left menu: remount the list with the focus on the Delete
+    // button of the next game (or the previous one).
+    const [focusKey, setFocusKey] = useState<string | null>(null);
+    const [listVersion, setListVersion] = useState(0);
 
     const load = async () => {
         const res = await serverAPI.callPluginMethod<{}, Platform[]>("platforms_get", {});
@@ -85,6 +90,9 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
             <ConfirmModal strTitle={t("inst_delete_title", { game: game.name })} strDescription={t("inst_delete_desc")}
                 strOKButtonText={t("inst_delete")} bDestructiveWarning
                 onOK={async () => {
+                    const flat = (groups || []).flatMap(g => g.games.map(x => g.setName + ":" + x.shortname));
+                    const i = flat.indexOf(setName + ":" + game.shortname);
+                    setFocusKey(flat[i + 1] ?? flat[i - 1] ?? null);
                     notify({ title: "SkullKey", body: t("inst_deleting", { game: game.name }) });
                     try {
                         // Discs & Installers: keep the saves, like the safe choice on the game page.
@@ -96,7 +104,8 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                     } catch (e) {
                         notify({ title: "SkullKey", body: t("inst_delete_failed", { game: game.name }) });
                     }
-                    load();
+                    await load();
+                    setListVersion(v => v + 1);
                 }} />
         );
     };
@@ -129,7 +138,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     if (groups === null) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_loading")}</div>;
     if (!groups.length) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_none")}</div>;
     return (
-        <div style={{ padding: "0 8px" }}>
+        <div key={listVersion} style={{ padding: "0 8px" }}>
             {groups.map(({ platform, setName, games }) => {
                 const theme = storeTheme(platform.Title);
                 const canMove = setName === "XboxActions" || MOVABLE.includes(setName);
@@ -155,6 +164,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                             initActionSet={setName} closeModal={() => { modal.Close(); load(); }} />);
                                     }}>{t("inst_manage")}</DialogButton>
                                 <DialogButton style={{ ...PILL, color: "#ff8a80", border: "1px solid rgba(255,82,82,0.35)" }}
+                                    autoFocus={focusKey === setName + ":" + game.shortname}
                                     onClick={() => remove(setName, game)}>{t("inst_delete")}</DialogButton>
                             </Focusable>
                         ))}
