@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.20.1 — 2026-10-22
+
+### Fixed
+
+- **Xbox: controller focus is visible on the filters** — the All / Owned /
+  Game Pass / Free / Installed buttons (and Move / Manage in Installed games)
+  now show a clear white ring under the controller selection.
+- **Xbox: games no longer flagged unsupported by mistake** — when the Xbox
+  engine failed or timed out while checking a game, the game was wrongly
+  remembered as not installable for a week. It is now checked again instead.
+
+### New
+
+- **Xbox: "Not supported" filter** — games your account owns or gets with
+  Game Pass but that SkullKey cannot install yet (older Xbox package format,
+  or games that need a third-party launcher) are listed under their own
+  filter instead of being hidden. Their page explains why, and the Install
+  button is greyed out.
+
+### Changed
+
+- **GOG: gogdl 1.3.1** — removes folders left empty after an update. Existing
+  installs are upgraded automatically.
+
 ## 1.20.0 — 2026-10-22
 
 ### New
