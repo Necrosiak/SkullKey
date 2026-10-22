@@ -137,6 +137,9 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                     <Group key={platform.ActionId} title={tabLabel(platform.Title)} color={theme.color} icon={theme.icon}>
                         {games.map(game => (
                             <Focusable key={game.shortname} flow-children="horizontal"
+                                // Up/down keeps the same column (Delete -> Delete) instead of
+                                // landing on the first button of the next row.
+                                navEntryPreferPosition={2}
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
                                 <span style={{ fontSize: 12, opacity: 0.6, minWidth: 64, textAlign: "right" }}>

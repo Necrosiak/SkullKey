@@ -1121,8 +1121,11 @@ class Plugin:
             path = None
             try:
                 if actionSet == "XboxActions":
-                    import xbox
-                    path = (xbox.load_state()["games"].get(shortname) or {}).get("root")
+                    # Read the state file directly: importing xbox.py inside
+                    # the loader's Python fails silently.
+                    state = os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "xbox", "state.json")
+                    with open(state) as f:
+                        path = ((json.load(f).get("games") or {}).get(shortname) or {}).get("root")
                 else:
                     path = mg.current_path(actionSet, shortname)
             except Exception:
