@@ -1,4 +1,4 @@
-import { DialogButton, Focusable, ServerAPI } from "decky-frontend-lib";
+import { DialogButton, Focusable, Navigation, ServerAPI } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
 import { FaSkull, FaTimes, FaDownload } from "react-icons/fa";
 import { storeTheme } from "./Styled";
@@ -219,3 +219,48 @@ export const SkullKeyDownloadsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI
 );
 
 export const DOWNLOADS_ROUTE = "/skullkey-downloads";
+
+// Top bar indicator, like Steam's own download icon: shown while SkullKey
+// downloads, with one bar for the whole job (download + install). Clicking it
+// opens the SkullKey Downloads page. It sits left of the top bar icons
+// (Steam adds its own download icon there too, so the spot is measured).
+export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [d, setD] = useState<Dl | null>(null);
+    const [count, setCount] = useState(0);
+    const [right, setRight] = useState(380);
+    useEffect(() => {
+        let alive = true;
+        const poll = async () => {
+            const r = await serverAPI.callPluginMethod<{}, Dl[]>("downloads_list", {});
+            const q = await getQueue();
+            if (!alive) return;
+            const list = r.success && Array.isArray(r.result) ? r.result : [];
+            setD(list[0] || null);
+            setCount(list.length + q.pending.length);
+            // leftmost icon of the top bar (search, battery, Steam's download…)
+            const icons = [...document.querySelectorAll("svg")].map(e => e.getBoundingClientRect())
+                .filter(b => b.top >= 0 && b.top < 45 && b.width >= 14 && b.left > window.innerWidth / 2);
+            if (icons.length) setRight(window.innerWidth - Math.min(...icons.map(b => b.left)) + 18);
+        };
+        poll();
+        const timer = setInterval(poll, 3000);
+        return () => { alive = false; clearInterval(timer); };
+    }, []);
+    if (!d) return null;
+    // Whole job: with steps ("Étape 3/4"), count the finished steps too.
+    const step = d.desc.replace(/<[^>]+>/g, " ").match(/(?:[ée]tape|step)\s*(\d+)\s*\/\s*(\d+)/i);
+    const raw = Math.min(100, Math.max(0, d.pct));
+    const pct = step ? ((Number(step[1]) - 1) + raw / 100) / Number(step[2]) * 100 : raw;
+    const accent = storeTheme("classics").color;
+    return (
+        <div onClick={() => Navigation.Navigate(DOWNLOADS_ROUTE)}
+            style={{ position: "fixed", top: 7, right, zIndex: 7000, display: "flex", alignItems: "center", gap: 8,
+                     padding: "4px 10px", borderRadius: 14, background: "rgba(255,255,255,0.08)", cursor: "pointer" }}>
+            <FaSkull size={16} color={accent} />
+            <div style={{ width: 70, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }}>
+                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "#2f7fd0", transition: "width .5s" }} />
+            </div>
+            <span style={{ fontSize: 11, opacity: 0.85 }}>{Math.floor(pct)} %{count > 1 ? ` · ${count}` : ""}</span>
+        </div>
+    );
+};

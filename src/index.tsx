@@ -15,7 +15,7 @@ import { MainMenuModal } from "./MainMenuModal";
 import { clearClickableNotifications } from "./clickableNotify";
 import { portUpdateNotice } from "./portUpdateNotice";
 import { t } from "./i18n";
-import { DOWNLOADS_ROUTE, SkullKeyDownloadsPage } from "./Components/DownloadsSection";
+import { DOWNLOADS_ROUTE, SkullKeyDownloadsPage, TopBarDownloads } from "./Components/DownloadsSection";
 import { startQueueRunner } from "./Utils/downloadQueue";
 
 // Store name shown in free-game notifications.
@@ -98,6 +98,7 @@ export default definePlugin((serverApi: ServerAPI) => {
 
   // SkullKey's own Downloads page.
   serverApi.routerHook.addRoute(DOWNLOADS_ROUTE, () => <SkullKeyDownloadsPage serverAPI={serverApi} />);
+  serverApi.routerHook.addGlobalComponent("SkullKeyTopBarDownloads", () => <TopBarDownloads serverAPI={serverApi} />);
   const portsTimer = setInterval(checkPortUpdates, 30000);
 
   // Free games (Epic, GOG, Steam, Prime Gaming…): the backend fetches at most
@@ -182,7 +183,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     icon: <FaSkull />,
     onDismount() {
       disposed = true;
-      clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); stopQueue(); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
+      clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); serverApi.routerHook.removeGlobalComponent("SkullKeyTopBarDownloads"); stopQueue(); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
       clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");
