@@ -103,7 +103,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
     const dataPct = installing ? 100 : d.pct;
     const installPct = installing ? d.pct : 0;
     return (
-        <Focusable style={{ position: "relative", height: 250, overflow: "hidden", background: "#10161d" }}>
+        <div style={{ position: "relative", height: 250, overflow: "hidden", background: "#10161d" }}>
             {art.hero && <img src={art.hero} style={{ position: "absolute", left: 0, top: 0, height: "100%", width: "62%", objectFit: "cover" }} />}
             <div style={{ position: "absolute", inset: 0,
                 background: "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.25) 35%, rgba(16,22,29,0.85) 55%, #10161d 62%)" }} />
@@ -151,7 +151,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                     </Focusable>
                 </div>
             </div>
-        </Focusable>
+        </div>
     );
 };
 
