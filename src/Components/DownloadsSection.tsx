@@ -45,8 +45,10 @@ function parseDesc(desc: string) {
     const plain = desc.replace(/<[^>]+>/g, " ");
     const sp = plain.match(/([\d.,]+)\s*(Mo|MB|MiB|Go|GB|GiB)\/s/i);
     const speed = sp ? num(sp[1]) * (/^g/i.test(sp[2]) ? 1024 : 1) : null;  // MB/s
-    const am = plain.match(/([\d.,]+)\s*(?:Mo|MB|MiB|Go|GB|GiB)?\s*\/\s*([\d.,]+)\s*(Mo|MB|MiB|Go|GB|GiB)/i);
-    const amount = am ? `${am[1]} / ${am[2]} ${am[3]}` : null;
+    const am = plain.match(/([\d.,]+)\s*(Mo|MB|MiB|Go|GB|GiB)?\s*\/\s*([\d.,]+)\s*(Mo|MB|MiB|Go|GB|GiB)/i);
+    // Both sides with their unit, like Steam ("28,8 Go / 120,1 Go").
+    const unit = (u?: string) => (u || "").replace(/^(MiB|MB)$/i, "Mo").replace(/^(GiB|GB)$/i, "Go");
+    const amount = am ? `${am[1]} ${unit(am[2] || am[4])} / ${am[3]} ${unit(am[4])}` : null;
     const eta = plain.match(/~\s*([\d]+\s*(?:min|h|s)[^·]*)/i);
     return { speed, amount, eta: eta ? eta[1].trim() : null };
 }
@@ -131,7 +133,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                     <Stat label={t("dl_peak")} value={h.length ? `${peak.toFixed(1)} Mo/s` : "—"} color="#2f7fd0" />
                     <Stat label={t("dl_destination")} value={dest} color="#5bd35b" />
                 </div>
-                <Bar label={t("dl_data")} right={amount || `${Math.floor(dataPct)} %`} pct={dataPct} color="#2f7fd0" />
+                <Bar label={t("dl_data")} right={amount ? `${amount}  ·  ${Math.floor(dataPct)} %` : `${Math.floor(dataPct)} %`} pct={dataPct} color="#2f7fd0" />
                 <Bar label={t("dl_install")} right={`${Math.floor(installPct)} %`} pct={installPct} color="#5bd35b" />
                 <div style={{ fontSize: 12, opacity: 0.7, minHeight: 15 }}>{eta ? t("dl_eta", { eta }) : ""}</div>
             </div>
