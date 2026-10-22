@@ -148,10 +148,19 @@ def _https(uri):
     return ("https:" + uri) if uri and uri.startswith("//") else uri
 
 
+def _description(lp):
+    """Short description, else the full one (many games only fill that),
+    with line breaks kept for the details page."""
+    text = (lp.get("ShortDescription") or lp.get("ProductDescription") or "").strip()
+    if len(text) > 1500:
+        text = text[:1500].rsplit(" ", 1)[0] + "…"
+    return "<br>".join(line.strip() for line in text.replace("\r\n", "\n").split("\n"))
+
+
 def details(ids, market, lang, fetch=http_json):
     """{id: {"title","publisher","description","game": bool,"art": {...}}} for
     library entries (titles and artwork), 7-day cache. Missing ids stay out."""
-    cache = _load("details.json")
+    cache = _load("details-v2.json")
     out, todo = {}, []
     for pid in ids:
         hit = cache.get(f"{market}:{pid}")
@@ -172,7 +181,7 @@ def details(ids, market, lang, fetch=http_json):
             for img in lp.get("Images") or []:
                 imgs.setdefault(img.get("ImagePurpose"), _https(img.get("Uri")))
             d = {"title": lp.get("ProductTitle") or p.get("ProductId"), "publisher": lp.get("PublisherName") or "",
-                 "description": lp.get("ShortDescription") or "", "game": p.get("ProductKind") == "Game",
+                 "description": _description(lp), "game": p.get("ProductKind") == "Game",
                  "art": {"cover": imgs.get("Poster") or imgs.get("BoxArt"),
                          "hero": imgs.get("SuperHeroArt") or imgs.get("TitledHeroArt") or imgs.get("Hero"),
                          "wide": imgs.get("TitledHeroArt") or imgs.get("BoxArt") or imgs.get("SuperHeroArt"),
@@ -181,5 +190,5 @@ def details(ids, market, lang, fetch=http_json):
             out[pid] = d
             cache[f"{market}:{pid}"] = {"t": time.time(), "d": d}
     if todo:
-        _save("details.json", cache)
+        _save("details-v2.json", cache)
     return out

@@ -107,6 +107,12 @@ class CatalogTest(unittest.TestCase):
         self.assertEqual(d["9MSWWJWRF4WC"]["art"]["logo"], "https://img/logo")
         self.assertFalse(d["9DLC"]["game"])
 
+    def test_details_fall_back_to_full_description(self):
+        payload = {"Products": [{"ProductId": "9A", "ProductKind": "Game", "LocalizedProperties": [{
+            "ProductTitle": "A", "ShortDescription": "", "ProductDescription": "Long text\r\nline two", "Images": []}]}]}
+        d = self.c.details(["9A"], "FR", "fr-fr", fetch=lambda url: payload)
+        self.assertEqual(d["9A"]["description"], "Long text<br>line two")
+
     def test_details_cached(self):
         calls = []
         payload = {"Products": [{"ProductId": "9X", "ProductKind": "Game", "LocalizedProperties": [{"ProductTitle": "X", "Images": []}]}]}
