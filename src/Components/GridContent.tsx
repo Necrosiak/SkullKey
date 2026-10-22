@@ -50,6 +50,13 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
     const [hasTabConfig, setHasTabConfig] = useState(false);
     const [accessFilter, setAccessFilter] = useState<string>("");
     const [pillFocus, setPillFocus] = useState<string | null>(null);
+    // The store is re-reading its library in the background (new purchases,
+    // claimed free games): reload the grid once it had time to finish.
+    useEffect(() => {
+        if (content.Refreshing !== "true") return;
+        const timer = setTimeout(() => refreshContent({ ...argsCache, limited: isLimited }), 20000);
+        return () => clearTimeout(timer);
+    }, [content]);
     // A sign-in that finished on its own page (Xbox) changes the library.
     useEffect(() => {
         const onDone = () => refreshContent({ ...argsCache, limited: isLimited });

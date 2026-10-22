@@ -66,6 +66,23 @@ fi
 ACTION=$1
 shift  # Remove the first argument from the argument list
 FUNCTION="${PLATFORM}_${ACTION}"
+
+# Libraries stay up to date by themselves: when a store's games list is shown
+# and was last read more than 30 minutes ago, it is read again in the
+# background (new purchases, claimed free games…). The grid shows at once and
+# is told to reload when the refresh is done.
+if [[ "$ACTION" == "getgames" && -n "$PLATFORM" && "$(type -t ${PLATFORM}_refresh)" == "function" ]]; then
+    STAMP="${DECKY_PLUGIN_RUNTIME_DIR}/library-refresh-${PLATFORM}.stamp"
+    if [[ ! -f "$STAMP" ]] || [[ -n "$(find "$STAMP" -mmin +30 2>/dev/null)" ]]; then
+        touch "$STAMP"
+        ( "${PLATFORM}_refresh" >/dev/null 2>&1; rm -f "${STAMP}.running" ) </dev/null >/dev/null 2>&1 &
+        touch "${STAMP}.running"
+        OUT=$($FUNCTION "${@}")
+        echo "$OUT" | jq -c '.Content.Refreshing = "true"' 2>/dev/null || echo "$OUT"
+        exit 0
+    fi
+fi
+
 if [[ " ${ACTIONS[@]} " =~ " $ACTION " ]]; then
     if [[ "$(type -t $FUNCTION)" == "function" ]]; then
             $FUNCTION "${@}"
