@@ -244,6 +244,40 @@ class ActionsTest(unittest.TestCase):
         contents.assert_called_once_with("9OWN")
         self.assertEqual(call.call_args.kwargs["env"]["XODUS_CONTENT_ROOTS"], "Z:\\c\\9CAMP")
 
+    def test_autoupdate_updates_only_games_with_a_newer_version(self):
+        self.install_fake("9OWN")
+        self.install_fake("9GP")
+        session = mock.Mock(env={"XODUS_SOCKET": "/s"})
+        answers = {"9OWN": {"available": True, "latest": "2.0.0.0"}, "9GP": {"available": False, "latest": "1.0.0.0"}}
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_updates, "installed_version", return_value="1.0.0.0"), \
+             mock.patch.object(self.x.xbox_updates, "query", side_effect=lambda s, pid, v: answers[pid]), \
+             mock.patch.object(self.x, "update_game", return_value=True) as upd:
+            res = self.call(self.x.action_autoupdate)
+        upd.assert_called_once_with("9OWN")
+        self.assertIn("1 updated", res["Content"]["Message"])
+        session.stop.assert_called_once()
+
+    def test_autoupdate_skips_running_games(self):
+        self.install_fake("9OWN")
+        session = mock.Mock(env={"XODUS_SOCKET": "/s"})
+        with self.x.xbox_tools.hold("run-9OWN"), \
+             mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_updates, "query") as q:
+            self.call(self.x.action_autoupdate)
+        q.assert_not_called()
+
+    def test_failed_update_keeps_the_installed_game(self):
+        root = self.install_fake("9OWN")
+        (root / "game.bin").write_text("x")
+        proc = mock.Mock(stdout=[])
+        proc.wait.return_value = 1
+        with mock.patch.object(self.x.xbox_cli, "start_streaming", return_value=proc), \
+             mock.patch.object(self.x, "install_contents", return_value=[]):
+            self.assertFalse(self.x.update_game("9OWN"))
+        self.assertTrue((root / "game.bin").exists())
+        self.assertIn("9OWN", self.x.load_state()["games"])
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

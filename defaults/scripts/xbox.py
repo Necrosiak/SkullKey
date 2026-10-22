@@ -34,6 +34,7 @@ import xbox_content
 import xbox_prefix
 import xbox_service
 import xbox_tools
+import xbox_updates
 
 HOME = Path(os.path.expanduser("~"))
 XBOX_DIR = xbox_tools.XBOX_DIR
@@ -645,6 +646,57 @@ def install_contents(pid, progress=None):
     return done
 
 
+def update_game(pid):
+    """Download the newer version over the installed one. A failed update
+    never removes the installed game: the engine resumes or keeps files."""
+    g = load_state()["games"].get(pid)
+    if not g:
+        return False
+    m, _ = market()
+    with xbox_tools.hold(f"install-{pid}"):
+        write_progress(pid, 0, step_text("metadata", elapsed=0), pid=os.getpid())
+        proc = xbox_cli.start_streaming(pid, g["root"], m)
+        last = None
+        for line in proc.stdout:
+            p = xbox_cli.parse_progress(line)
+            if p:
+                last = p
+                phase = {"initializing": "metadata", "complete": "finalizing"}.get(p["phase"], p["phase"])
+                write_progress(pid, min(int(p["percent"] or 0), 99), step_text(phase, p), pid=os.getpid())
+        ok = proc.wait() == 0 and last is not None and last["phase"] == "complete"
+    if ok:
+        install_contents(pid)
+        give_to_user(Path(g["root"]))
+        write_progress(pid, 100, "Installed")
+    else:
+        (PROGRESS_DIR / f"{pid}.json").unlink(missing_ok=True)
+    return ok
+
+
+def action_autoupdate():
+    """Daily: update installed Xbox games that have a newer version. Games
+    being played or installed are left alone until the next run."""
+    games = load_state()["games"]
+    if not games or not signed_in():
+        return emit("Success", {"Message": "Xbox: nothing to update"})
+    session = xbox_service.start(xbox_cli._env())
+    updated, checked = 0, 0
+    try:
+        for pid, g in games.items():
+            if _running(pid) or xbox_tools.busy_with(f"install-{pid}"):
+                continue
+            version = xbox_updates.installed_version(g.get("root", ""))
+            if not version:
+                continue
+            checked += 1
+            answer = xbox_updates.query(session.env["XODUS_SOCKET"], pid, version)
+            if answer.get("available") and update_game(pid):
+                updated += 1
+    finally:
+        session.stop()
+    emit("Success", {"Message": f"Xbox: {checked} checked, {updated} updated"})
+
+
 def _cleanup_partial(pid, root):
     if root.is_dir() and root.name == pid:
         shutil.rmtree(root, ignore_errors=True)
@@ -862,6 +914,7 @@ ACTIONS = {
     "login": lambda a: emit("Success", {"Message": "Use the Steam browser sign-in."}),
     "logout": lambda a: action_logout(),
     "refresh": lambda a: action_refresh(),
+    "autoupdate": lambda a: action_autoupdate(),
     "getsetting": lambda a: action_getsetting(*(a or [""])),
     "savesetting": lambda a: action_savesetting(*(a or [""])),
 }

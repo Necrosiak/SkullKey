@@ -233,6 +233,13 @@ def busy():
     return False
 
 
+def busy_with(name):
+    try:
+        return _alive((XBOX_DIR / "locks" / name).read_text().strip())
+    except OSError:
+        return False
+
+
 @contextlib.contextmanager
 def hold(name, pid=None):
     locks = XBOX_DIR / "locks"

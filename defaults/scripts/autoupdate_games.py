@@ -14,6 +14,9 @@ handled with the lightest reliable mechanism it offers:
 - GOG    : gogdl's update is incremental/no-op when current → same approach.
 - Ports  : ports.py autoupdate — re-downloads a port when its GitHub release
            tag (or rolling asset date) changed; user ROMs/saves untouched.
+- Xbox   : xbox.py autoupdate — asks the Xodus account service whether a
+           newer version exists and downloads it over the installed game
+           (never while it is played or installed).
 - Minecraft : minecraft.py autoupdate — refreshes the Prism AppImage on new
            GitHub tag, bumps the Vanilla instance to Mojang's latest release,
            flatpak-updates the Bedrock launcher and re-syncs Modrinth
@@ -146,9 +149,14 @@ def gog():
             time.sleep(STAGGER)
 
 
+def xbox():
+    r = subprocess.run(["python3", "./scripts/xbox.py", "autoupdate"], capture_output=True, text=True, timeout=6 * 3600)
+    log(f"Xbox autoupdate → {(r.stdout or '').strip()[-300:]}")
+
+
 def main():
     log("=== autoupdate_games run ===")
-    for step in (mihoyo, amazon, epic, gog, ports, minecraft):
+    for step in (mihoyo, amazon, epic, gog, ports, minecraft, xbox):
         try:
             step()
         except Exception as e:
