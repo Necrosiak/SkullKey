@@ -983,6 +983,27 @@ PORTS = [
          asset='full-win64.*\\.7z$', exe="",
          logo="", color='#5a1e1e',
          needs=('files', 'Doom 3: BFG Edition', 'Steam/GOG game files')),
+    # PS4: the game's own x86-64 code runs natively; its launcher asks for the
+    # folder of the player's own dump (the one holding eboot.bin).
+    dict(shortname='bloodborne', title='Bloodborne (bbport)',
+         repo='ayozetr/bloodborne_linux', kind='appimage',
+         asset=r'x86_64\.AppImage$', exe="",
+         logo=RAW.format(repo='ayozetr/bloodborne_linux', path='launcher/bloodborne.png'),
+         color='#5a4a3a',
+         needs=('pick', 'Bloodborne', 'PS4 CUSA03173 v1.09 — your own dump')),
+    # Xbox 360 recomps by LittleBitUA: their launchers extract the player's
+    # own .iso on first run (and fetch the title update for Downpour).
+    dict(shortname='downpourrecomp', title='Silent Hill: Downpour (DownpourRecomp)',
+         repo='LittleBitUA/DownpourRecomp', kind='winarchive',
+         asset=r'DownpourRecomp-v[\d.]+\.zip$', exe='PlayDownpour.exe',
+         logo="", color='#3a4a52',
+         needs=('pick', 'Silent Hill: Downpour', 'Xbox 360 — your own .iso')),
+    dict(shortname='dprecomp', title='Deadly Premonition (DPRecomp)',
+         repo='LittleBitUA/DPRecomp', kind='winarchive',
+         asset=r'win64\.zip$', exe='PlayDeadlyPremonition.exe',
+         logo=RAW.format(repo='LittleBitUA/DPRecomp', path='docs/logo.png'),
+         color='#6a2a2a',
+         needs=('pick', 'Deadly Premonition', 'Xbox 360 PAL or USA — your own .iso')),
 ]
 
 APPS = {p["shortname"]: p for p in PORTS}
