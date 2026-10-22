@@ -337,13 +337,50 @@ def action_download(pid):
     emit("Progress", {"Message": "Installing"})
 
 
+STEPS = {
+    "en": ("Step", {"engine": "Preparing the Xbox engine", "metadata": "Reading the game package",
+                    "downloading": "Downloading", "finalizing": "Finalizing"}, "GB", "MB/s", "."),
+    "fr": ("Étape", {"engine": "Préparation du moteur Xbox", "metadata": "Lecture du paquet du jeu",
+                     "downloading": "Téléchargement", "finalizing": "Finalisation"}, "Go", "Mo/s", ","),
+    "de": ("Schritt", {"engine": "Xbox-Engine wird vorbereitet", "metadata": "Spielpaket wird gelesen",
+                       "downloading": "Download", "finalizing": "Abschluss"}, "GB", "MB/s", ","),
+    "es": ("Paso", {"engine": "Preparando el motor de Xbox", "metadata": "Leyendo el paquete del juego",
+                    "downloading": "Descargando", "finalizing": "Finalizando"}, "GB", "MB/s", ","),
+    "it": ("Passo", {"engine": "Preparazione del motore Xbox", "metadata": "Lettura del pacchetto di gioco",
+                     "downloading": "Download", "finalizing": "Completamento"}, "GB", "MB/s", ","),
+    "pt": ("Passo", {"engine": "Preparando o motor Xbox", "metadata": "Lendo o pacote do jogo",
+                     "downloading": "Baixando", "finalizing": "Finalizando"}, "GB", "MB/s", ","),
+    "nl": ("Stap", {"engine": "Xbox-engine voorbereiden", "metadata": "Spelpakket lezen",
+                    "downloading": "Downloaden", "finalizing": "Afronden"}, "GB", "MB/s", ","),
+    "pl": ("Krok", {"engine": "Przygotowanie silnika Xbox", "metadata": "Odczyt pakietu gry",
+                    "downloading": "Pobieranie", "finalizing": "Finalizowanie"}, "GB", "MB/s", ","),
+    "ru": ("Шаг", {"engine": "Подготовка движка Xbox", "metadata": "Чтение пакета игры",
+                   "downloading": "Загрузка", "finalizing": "Завершение"}, "ГБ", "МБ/с", ","),
+}
+STEP_ORDER = ("engine", "metadata", "downloading", "finalizing")
+
+
+def step_text(phase, p=None):
+    word, names, gb, mbs, dec = STEPS.get(_lang(), STEPS["en"])
+    phase = phase if phase in names else "downloading"
+    text = f"{word} {STEP_ORDER.index(phase) + 1}/4 · {names[phase]}"
+    if phase == "downloading" and p and p.get("total"):
+        fmt = lambda v: f"{v / 2**30:.1f}".replace(".", dec)
+        text += f" · {fmt(p['done'])} / {fmt(p['total'])} {gb}"
+        rate = p.get("rate") or 0
+        if rate > 0:
+            left = (p["total"] - p["done"]) / rate / 60
+            text += f" · {rate / 2**20:.0f} {mbs} · ~{max(1, round(left))} min"
+    return text
+
+
 def worker(pid):
     st = load_state()
     job = (st.get("pending") or {}).get(pid)
     if not job:
         return
     root = Path(job["root"])
-    write_progress(pid, 0, "Preparing the Xbox engine…", pid=os.getpid())
+    write_progress(pid, 0, step_text("engine"), pid=os.getpid())
     proc = None
 
     def stop(*_):
@@ -367,11 +404,8 @@ def worker(pid):
                     continue
                 last = p
                 pct = int(p["percent"] or 0)
-                desc = {"metadata": "Reading package…", "finalizing": "Finalizing…",
-                        "complete": "Installed"}.get(p["phase"], "Downloading…")
-                if p["phase"] == "downloading" and p["total"]:
-                    desc = f"Downloading… {p['done'] / (1 << 30):.1f} / {p['total'] / (1 << 30):.1f} GB"
-                write_progress(pid, min(pct, 99), desc, pid=os.getpid())
+                phase = {"initializing": "metadata", "complete": "finalizing"}.get(p["phase"], p["phase"])
+                write_progress(pid, min(pct, 99), step_text(phase, p), pid=os.getpid())
             code = proc.wait()
             if code != 0 or not last or last["phase"] != "complete":
                 raise RuntimeError("The download did not complete (licence, network or disk space).")
