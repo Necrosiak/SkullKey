@@ -1143,6 +1143,26 @@ class Plugin:
             decky_plugin.logger.warning(f"[size] {actionSet} {shortname}: {e!r}")
             return 0
 
+    @staticmethod
+    def _queue_file():
+        return os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "download_queue.json")
+
+    async def queue_get(self):
+        """The cross-store download queue: {"current": item|None, "pending": [items]}."""
+        try:
+            with open(Plugin._queue_file()) as f:
+                data = json.load(f)
+            return {"current": data.get("current"), "pending": list(data.get("pending") or [])}
+        except (OSError, ValueError):
+            return {"current": None, "pending": []}
+
+    async def queue_set(self, state):
+        tmp = Plugin._queue_file() + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump({"current": state.get("current"), "pending": state.get("pending") or []}, f)
+        os.replace(tmp, Plugin._queue_file())
+        return True
+
     async def downloads_list(self):
         """Downloads in progress across every store (see scripts/downloads.py)."""
         def blocking():

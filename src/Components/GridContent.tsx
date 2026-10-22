@@ -10,7 +10,6 @@ import { LoginContent } from './LoginContent';
 import { executeAction } from '../Utils/executeAction';
 import { ConfEditor } from '../ConfEditor';
 import { FaStore } from "react-icons/fa6";
-import { DownloadsModal } from './DownloadsModal';
 import { IconBtn, storeTheme } from './Styled';
 import { t } from '../i18n';
 
@@ -125,11 +124,6 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
             onSecondaryButton={() => {
                 setInstalledLoading(true);
                 updateCache('installed', !argsCache.installed, () => setInstalledLoading(false));
-            }}
-            // Select (View on Xbox pads, Share/Create on PlayStation, − on
-            // Switch) opens the downloads of every store.
-            onButtonDown={(evt: any) => {
-                if (evt?.detail?.button === 13) showModal(<DownloadsModal serverAPI={serverAPI} />);
             }}
             onOptionsButton={() => {
                 setIsLimitedLoading(true);

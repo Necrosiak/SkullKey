@@ -1,4 +1,5 @@
 import { Focusable, ServerAPI, ModalRoot, sleep, gamepadDialogClasses, showModal, Navigation } from "decky-frontend-lib";
+import { QUEUEABLE, cancelCurrent, enqueue } from "../Utils/downloadQueue";
 import { useState, useEffect, VFC, useRef } from "react";
 import GameDisplay from "./GameDisplay";
 import { openDiskAdd } from "./DiskAddModal";
@@ -223,6 +224,8 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                         }
                         else {
                             setInstalling(false);
+                            // The queue makes the shortcut: show "Play" once it exists.
+                            setTimeout(() => reloadData(), 5000);
                         }
 
                         break;
@@ -305,6 +308,19 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
             const drivePicker = /^(Epic|GOG|Xbox|Amazon|EA|MiHoYo|Ports)Actions$/.test(initActionSet);
             const drive = update || !drivePicker ? "" : await pickInstallDrive(serverAPI);
             if (drive === null) return;
+            // One download at a time across every store: the queue starts it
+            // now, or after the ones already waiting.
+            if (QUEUEABLE.test(initActionSet)) {
+                const name = (gameData.Content as GameDetails).Name;
+                const place = await enqueue({ set: initActionSet, shortname, name, drive, update });
+                if (place === 0) {
+                    setShouldUpdateShortcut(false);  // the queue creates the shortcut at the end
+                    setInstalling(true);
+                } else {
+                    notify({ title: "SkullKey", body: t("queue_added", { game: name, place }) });
+                }
+                return;
+            }
             await serverAPI.callPluginMethod("set_install_root", { path: drive });
 
             const result = await executeAction<ExecuteGetGameDetailsArgs, ContentType>(
@@ -357,6 +373,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     const cancelInstall = async () => {
         try {
             setInstalling(false);
+            await cancelCurrent(initActionSet, shortname);
             await executeAction(
                 serverAPI,
                 initActionSet,
