@@ -122,7 +122,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
             </div>
             <div style={{ position: "absolute", left: 12, bottom: 12, padding: "4px 10px", background: "rgba(0,0,0,0.65)", fontSize: 12,
                 display: "flex", alignItems: "center", gap: 6, letterSpacing: ".3px", textTransform: "uppercase" }}>
-                <span style={{ color: th.color, display: "inline-flex" }}>{Icon && <Icon size={13} />}</span>{d.title}
+                {d.title}<span style={{ color: th.color, display: "inline-flex" }}>{Icon && <Icon size={13} />}</span>
             </div>
             <div style={{ position: "absolute", right: 24, top: 0, bottom: 0, width: "40%", display: "flex", flexDirection: "column",
                 justifyContent: "center", gap: 16 }}>
@@ -147,11 +147,11 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serv
         <Focusable flow-children="horizontal" style={{ display: "flex", alignItems: "center", gap: 16, padding: "6px 0" }}>
             <div style={{ position: "relative", width: 140, height: 52, flexShrink: 0, background: "#1b232c", overflow: "hidden" }}>
                 {art.capsule && <img src={art.capsule} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
-                <span style={{ position: "absolute", left: 4, bottom: 4, width: 20, height: 20, borderRadius: 10, background: "rgba(0,0,0,0.7)",
-                    display: "flex", alignItems: "center", justifyContent: "center", color: th.color }}>{Icon && <Icon size={12} />}</span>
             </div>
             <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 18 }}>{q.name}</div>
+                <div style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 10 }}>
+                    {q.name}<span style={{ color: th.color, display: "inline-flex" }}>{Icon && <Icon size={16} />}</span>
+                </div>
                 <div style={{ fontSize: 11, opacity: 0.6, letterSpacing: ".4px", textTransform: "uppercase" }}>{t("queue_position", { n: i + 1 })}</div>
             </div>
             <DialogButton style={{ minWidth: 0, width: "auto", height: 34, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
