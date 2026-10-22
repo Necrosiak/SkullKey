@@ -184,7 +184,12 @@ function getlaunchoptions(){
 }
 
 function uninstall(){
+    # legendary removes the game files but not the few files SkullKey adds to
+    # the folder (install_deps.bat, install.done, launcher.log): note the folder
+    # first, then clear it if nothing else is left.
+    GAME_DIR=$(python3 "${DECKY_PLUGIN_DIR}/scripts/epic_leftovers.py" path "${1}" 2>/dev/null)
     $LEGENDARY uninstall $1  -y $OFFLINE_MODE>> "${DECKY_PLUGIN_LOG_DIR}/${1}.log"
+    [ -n "${GAME_DIR}" ] && python3 "${DECKY_PLUGIN_DIR}/scripts/epic_leftovers.py" clean "${GAME_DIR}" >> "${DECKY_PLUGIN_LOG_DIR}/${1}.log" 2>&1
 
     # this should be fixed before used, it might kill the entire machine
     # WORKING_DIR=$($EPICCONF --get-working-dir "${1}")
