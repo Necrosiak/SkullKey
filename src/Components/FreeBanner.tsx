@@ -17,6 +17,9 @@ interface Offer { id: string; store: string; title: string; now: boolean; start:
 export const FreeBanner: VFC<{ serverAPI: ServerAPI; actionSet: string }> = ({ serverAPI, actionSet }) => {
     const store = STORE_OF[actionSet];
     const [offers, setOffers] = useState<Offer[]>([]);
+    // Steam darkens the text of a focused DialogButton for its own white
+    // highlight; with our dark card that hid the title. Track focus ourselves.
+    const [focus, setFocus] = useState<string | null>(null);
     useEffect(() => {
         if (!store) return;
         serverAPI.callPluginMethod<{}, { offers: Offer[] }>("free_games_list", {})
@@ -33,9 +36,13 @@ export const FreeBanner: VFC<{ serverAPI: ServerAPI; actionSet: string }> = ({ s
             </div>
             <Focusable flow-children="horizontal" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {now.map(o => (
-                    <DialogButton key={o.id}
+                    <DialogButton key={o.id} noFocusRing
+                        onGamepadFocus={() => setFocus(o.id)} onGamepadBlur={() => setFocus(f => f === o.id ? null : f)}
                         style={{ minWidth: 0, width: "auto", padding: 0, display: "flex", alignItems: "center", gap: 10,
-                                 background: "rgba(255,255,255,0.06)", borderRadius: 6, overflow: "hidden", height: 56 }}
+                                 background: focus === o.id ? color : "rgba(255,255,255,0.06)", color: "#fff",
+                                 borderRadius: 6, overflow: "hidden", height: 56,
+                                 boxShadow: focus === o.id ? `0 0 0 2px #fff, 0 0 10px 2px ${color}` : "none",
+                                 transform: focus === o.id ? "scale(1.03)" : "none", transition: "transform .1s, box-shadow .1s" }}
                         onClick={() => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(o.url); }}>
                         {o.image && <img src={o.image} style={{ height: 56, width: 100, objectFit: "cover" }} />}
                         <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", paddingRight: 14, lineHeight: 1.3 }}>
