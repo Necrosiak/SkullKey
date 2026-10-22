@@ -21,6 +21,12 @@ class EpicLeftoversTest(unittest.TestCase):
         self.assertEqual(el.clean(str(self.d)), "removed")
         self.assertFalse(self.d.exists())
 
+    def test_crash_report_folder_counts_as_leftover(self):
+        (self.d / "launcher.log").write_text("x")
+        (self.d / ".sentry-native").mkdir()
+        (self.d / ".sentry-native" / "report").write_text("x")
+        self.assertEqual(el.clean(str(self.d)), "removed")
+
     def test_other_files_kept(self):
         (self.d / "launcher.log").write_text("x")
         (self.d / "save.dat").write_text("x")

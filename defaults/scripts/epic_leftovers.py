@@ -7,6 +7,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 OURS = {"install_deps.bat", "install.done", "launcher.log"}
+# Crash-report folders some games leave behind; never saves.
+JUNK_DIRS = {".sentry-native"}
 
 
 def clean(path):
@@ -14,10 +16,13 @@ def clean(path):
         entries = os.listdir(path)
     except OSError:
         return "gone"
-    if not set(entries) <= OURS or any(os.path.isdir(os.path.join(path, e)) for e in entries):
+    if not set(entries) <= OURS | JUNK_DIRS or any(
+            os.path.isdir(os.path.join(path, e)) != (e in JUNK_DIRS) for e in entries):
         return "kept (other files)"
+    import shutil
     for e in entries:
-        os.remove(os.path.join(path, e))
+        full = os.path.join(path, e)
+        shutil.rmtree(full) if e in JUNK_DIRS else os.remove(full)
     os.rmdir(path)
     return "removed"
 
