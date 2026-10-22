@@ -320,7 +320,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                     notify({
                         title: "SkullKey", body: t("queue_added", { game: name, place }),
                         clickKey: `queue-added:${initActionSet}:${shortname}`,
-                        onClick: () => { Navigation.CloseSideMenus(); SteamClient.URL.ExecuteSteamURL("steam://open/downloads"); },
+                        onClick: () => { Navigation.CloseSideMenus(); Navigation.Navigate("/skullkey-downloads"); },
                     });
                 }
                 return;

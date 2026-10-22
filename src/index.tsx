@@ -15,7 +15,7 @@ import { MainMenuModal } from "./MainMenuModal";
 import { clearClickableNotifications } from "./clickableNotify";
 import { portUpdateNotice } from "./portUpdateNotice";
 import { t } from "./i18n";
-import { SkullKeyDownloads } from "./Components/DownloadsSection";
+import { DOWNLOADS_ROUTE, SkullKeyDownloadsPage } from "./Components/DownloadsSection";
 import { startQueueRunner } from "./Utils/downloadQueue";
 
 // Store name shown in free-game notifications.
@@ -96,17 +96,8 @@ export default definePlugin((serverApi: ServerAPI) => {
 
   const stopQueue = startQueueRunner(serverApi);
 
-  // SkullKey downloads at the top of Steam's Downloads page.
-  const downloadsPatch = serverApi.routerHook.addPatch("/library/downloads", (route: any) => {
-    const original = route.children;
-    route.children = (
-      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-        <SkullKeyDownloads serverAPI={serverApi} />
-        <div style={{ flex: 1, minHeight: 0, position: "relative" }}>{original}</div>
-      </div>
-    );
-    return route;
-  });
+  // SkullKey's own Downloads page.
+  serverApi.routerHook.addRoute(DOWNLOADS_ROUTE, () => <SkullKeyDownloadsPage serverAPI={serverApi} />);
   const portsTimer = setInterval(checkPortUpdates, 30000);
 
   // Free games (Epic, GOG, Steam, Prime Gaming…): the backend fetches at most
@@ -191,7 +182,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     icon: <FaSkull />,
     onDismount() {
       disposed = true;
-      clearInterval(portsTimer); serverApi.routerHook.removePatch("/library/downloads", downloadsPatch); stopQueue(); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
+      clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); stopQueue(); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
       clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");

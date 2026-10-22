@@ -178,7 +178,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 {/* Steam's Downloads page, where SkullKey's queue is shown on top */}
                 <IconBtn color={storeTheme(initActionSet).color} onClick={() => {
                     Navigation.CloseSideMenus();
-                    SteamClient.URL.ExecuteSteamURL("steam://open/downloads");
+                    Navigation.Navigate("/skullkey-downloads");
                 }}>
                     <FaDownload style={{ verticalAlign: 'middle' }} />
                 </IconBtn>
