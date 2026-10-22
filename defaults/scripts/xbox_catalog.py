@@ -178,6 +178,32 @@ def _description(lp):
     return "<br>".join(line.strip() for line in text.replace("\r\n", "\n").split("\n"))
 
 
+def download_size(product_id, content_id, market, fetch=http_json):
+    """Download size in bytes of the PC package the engine installs (largest
+    when the content id is unknown), 0 when the Store does not say. 7-day cache."""
+    key = f"{market}:{product_id}:{content_id or ''}"
+    hit = _load("sizes.json").get(key)
+    if hit and time.time() - hit["t"] < DETAILS_TTL:
+        return hit["size"]
+    q = {"bigIds": product_id, "market": market, "languages": "neutral", "MS-CV": "DGU1mcuYo0WMMp+F.1"}
+    try:
+        products = (fetch(DETAILS_URL + "?" + urllib.parse.urlencode(q)) or {}).get("Products") or []
+    except Exception:
+        return 0
+    sizes = []
+    for p in products:
+        for a in p.get("DisplaySkuAvailabilities") or []:
+            for pkg in ((a.get("Sku") or {}).get("Properties") or {}).get("Packages") or []:
+                if pkg.get("PackageFormat") != "MSIXVC":
+                    continue
+                if content_id and (pkg.get("ContentId") or "").lower() != content_id.lower():
+                    continue
+                sizes.append(int(pkg.get("MaxDownloadSizeInBytes") or 0))
+    size = max(sizes, default=0)
+    _merge("sizes.json", {key: {"size": size, "t": time.time()}})
+    return size
+
+
 def details(ids, market, lang, fetch=http_json):
     """{id: {"title","publisher","description","game": bool,"art": {...}}} for
     library entries (titles and artwork), 7-day cache. Missing ids stay out."""

@@ -538,8 +538,17 @@ def action_getjsonimages(pid):
 def action_getgamesize(pid):
     g = load_state()["games"].get(pid) or {}
     root = Path(g.get("root", "/nonexistent"))
-    size = sum(f.stat().st_size for f in root.rglob("*") if f.is_file()) if root.is_dir() else 0
-    emit("GameSize", {"Size": f"Size: {size / (1 << 30):.1f} GB" if size else ""})
+    words = DETAIL_LABELS.get(_lang(), DETAIL_LABELS["en"])
+    if root.is_dir():
+        size = sum(f.stat().st_size for f in root.rglob("*") if f.is_file())
+        label = words["size_installed"]
+    else:
+        # Not installed yet: the Store's download size of the package we
+        # would install, so players know before they start.
+        m, _ = market()
+        size = xbox_catalog.download_size(pid, (_entry(pid)[0] or {}).get("contentId"), m)
+        label = words["size_download"]
+    emit("GameSize", {"Size": f"{label}{size / (1 << 30):.1f} GB" if size else ""})
 
 
 # ── download ─────────────────────────────────────────────────────────────────
@@ -970,23 +979,23 @@ def action_loginstatus():
 
 
 DETAIL_LABELS = {
-    "en": {"unsupported": "⛔ Not supported yet: this game uses an older Xbox package format that SkullKey cannot install for now.", "owned": "Owned", "gamepass": "Game Pass", "free": "Free to play",
+    "en": {"size_download": "Download: ", "size_installed": "Size: ", "unsupported": "⛔ Not supported yet: this game uses an older Xbox package format that SkullKey cannot install for now.", "owned": "Owned", "gamepass": "Game Pass", "free": "Free to play",
            "subscription": "Game Pass subscription required to play.", "location": "Location: "},
-    "fr": {"unsupported": "⛔ Pas encore compatible : ce jeu utilise un ancien format de paquet Xbox que SkullKey ne sait pas encore installer.", "owned": "Possédé", "gamepass": "Game Pass", "free": "Gratuit",
+    "fr": {"size_download": "Téléchargement : ", "size_installed": "Taille : ", "unsupported": "⛔ Pas encore compatible : ce jeu utilise un ancien format de paquet Xbox que SkullKey ne sait pas encore installer.", "owned": "Possédé", "gamepass": "Game Pass", "free": "Gratuit",
            "subscription": "Abonnement Game Pass requis pour jouer.", "location": "Emplacement : "},
-    "de": {"unsupported": "⛔ Noch nicht unterstützt: Dieses Spiel nutzt ein älteres Xbox-Paketformat, das SkullKey noch nicht installieren kann.", "owned": "Gekauft", "gamepass": "Game Pass", "free": "Kostenlos",
+    "de": {"size_download": "Download: ", "size_installed": "Größe: ", "unsupported": "⛔ Noch nicht unterstützt: Dieses Spiel nutzt ein älteres Xbox-Paketformat, das SkullKey noch nicht installieren kann.", "owned": "Gekauft", "gamepass": "Game Pass", "free": "Kostenlos",
            "subscription": "Game-Pass-Abo zum Spielen erforderlich.", "location": "Speicherort: "},
-    "es": {"unsupported": "⛔ Aún no compatible: este juego usa un formato de paquete Xbox antiguo que SkullKey todavía no puede instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratis",
+    "es": {"size_download": "Descarga: ", "size_installed": "Tamaño: ", "unsupported": "⛔ Aún no compatible: este juego usa un formato de paquete Xbox antiguo que SkullKey todavía no puede instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratis",
            "subscription": "Se necesita una suscripción a Game Pass para jugar.", "location": "Ubicación: "},
-    "it": {"unsupported": "⛔ Non ancora supportato: questo gioco usa un vecchio formato di pacchetto Xbox che SkullKey non può ancora installare.", "owned": "Acquistato", "gamepass": "Game Pass", "free": "Gratuito",
+    "it": {"size_download": "Download: ", "size_installed": "Dimensione: ", "unsupported": "⛔ Non ancora supportato: questo gioco usa un vecchio formato di pacchetto Xbox che SkullKey non può ancora installare.", "owned": "Acquistato", "gamepass": "Game Pass", "free": "Gratuito",
            "subscription": "Per giocare serve un abbonamento Game Pass.", "location": "Posizione: "},
-    "pt": {"unsupported": "⛔ Ainda não suportado: este jogo usa um formato de pacote Xbox antigo que o SkullKey ainda não consegue instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratuito",
+    "pt": {"size_download": "Transferência: ", "size_installed": "Tamanho: ", "unsupported": "⛔ Ainda não suportado: este jogo usa um formato de pacote Xbox antigo que o SkullKey ainda não consegue instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratuito",
            "subscription": "É necessária uma subscrição Game Pass para jogar.", "location": "Localização: "},
-    "nl": {"unsupported": "⛔ Nog niet ondersteund: deze game gebruikt een ouder Xbox-pakketformaat dat SkullKey nog niet kan installeren.", "owned": "Gekocht", "gamepass": "Game Pass", "free": "Gratis",
+    "nl": {"size_download": "Download: ", "size_installed": "Grootte: ", "unsupported": "⛔ Nog niet ondersteund: deze game gebruikt een ouder Xbox-pakketformaat dat SkullKey nog niet kan installeren.", "owned": "Gekocht", "gamepass": "Game Pass", "free": "Gratis",
            "subscription": "Game Pass-abonnement nodig om te spelen.", "location": "Locatie: "},
-    "pl": {"unsupported": "⛔ Jeszcze nieobsługiwana: ta gra używa starszego formatu pakietu Xbox, którego SkullKey nie potrafi jeszcze zainstalować.", "owned": "Kupiona", "gamepass": "Game Pass", "free": "Darmowa",
+    "pl": {"size_download": "Pobieranie: ", "size_installed": "Rozmiar: ", "unsupported": "⛔ Jeszcze nieobsługiwana: ta gra używa starszego formatu pakietu Xbox, którego SkullKey nie potrafi jeszcze zainstalować.", "owned": "Kupiona", "gamepass": "Game Pass", "free": "Darmowa",
            "subscription": "Do gry wymagana jest subskrypcja Game Pass.", "location": "Lokalizacja: "},
-    "ru": {"unsupported": "⛔ Пока не поддерживается: игра использует старый формат пакетов Xbox, который SkullKey пока не умеет устанавливать.", "owned": "Куплено", "gamepass": "Game Pass", "free": "Бесплатно",
+    "ru": {"size_download": "Загрузка: ", "size_installed": "Размер: ", "unsupported": "⛔ Пока не поддерживается: игра использует старый формат пакетов Xbox, который SkullKey пока не умеет устанавливать.", "owned": "Куплено", "gamepass": "Game Pass", "free": "Бесплатно",
            "subscription": "Для игры нужна подписка Game Pass.", "location": "Расположение: "},
 }
 

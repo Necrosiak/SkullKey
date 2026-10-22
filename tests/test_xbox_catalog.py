@@ -72,6 +72,14 @@ class CatalogTest(unittest.TestCase):
         with mock.patch.object(self.c.time, "time", return_value=later):
             self.assertEqual(self.c.installable("9FAIL", "FR"), "c-9FAIL")
 
+    def test_download_size_of_the_pc_package(self):
+        prod = {"Products": [{"DisplaySkuAvailabilities": [{"Sku": {"Properties": {"Packages": [
+            {"PackageFormat": "XVC", "ContentId": "x", "MaxDownloadSizeInBytes": 9},
+            {"PackageFormat": "MSIXVC", "ContentId": "C-1", "MaxDownloadSizeInBytes": 1161228288}]}}}]}]}
+        self.assertEqual(self.c.download_size("9AB", "c-1", "FR", fetch=lambda url: prod), 1161228288)
+        self.assertEqual(self.c.download_size("9AB", "c-1", "FR", fetch=lambda url: {}), 1161228288)  # cached
+        self.assertEqual(self.c.download_size("9CD", None, "FR", fetch=lambda url: {}), 0)
+
     def test_store_down_returns_empty_not_raise(self):
         def boom(url):
             raise OSError("offline")
