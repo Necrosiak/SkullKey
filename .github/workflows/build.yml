@@ -28,8 +28,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Test browser login frontend
-        run: node --test tests/test_browser_login_ui.cjs
+      - name: Test frontend
+        run: node --test tests/test_browser_login_ui.cjs tests/test_xbox_ui.cjs tests/test_disks_flow_ui.cjs tests/test_disks_ui_safety.cjs
 
       - name: Build plugin
         run: pnpm run build
