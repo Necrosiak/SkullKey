@@ -8,6 +8,7 @@ Prints a JSON list: [{store, id, title, pct, desc, error}]"""
 import glob
 import json
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -134,18 +135,60 @@ def ea():
 
 
 # legendary / gogdl / nile write "<shortname>.progress" logs in the log folder.
-LOG_STORES = (("epic", "epic.db", "epic", "Epic"), ("gog", "gog.db", "gog", "Gog"), ("amazon", "amazon.db", "amazon", "Amazon"))
+# They are read here directly (the store modules need their own environment).
+LOG_DBS = (("epic", "epic.db"), ("gog", "gog.db"), ("amazon", "amazon.db"))
 
 
 def _db_titles(dbname):
     names = {}
     for db in glob.glob(str(RUNTIME / "accounts" / "*" / dbname)) + [str(RUNTIME / dbname)]:
         try:
-            for sn, title in sqlite3.connect(db).execute("SELECT ShortName, Name FROM Game"):
+            for sn, title in sqlite3.connect(db).execute("SELECT ShortName, Title FROM Game"):
                 names.setdefault(sn, title)
         except sqlite3.Error:
             pass
     return names
+
+
+DOWNLOADING = {"fr": "Téléchargement", "de": "Download", "es": "Descarga", "it": "Download", "pt": "Transferência",
+               "nl": "Downloaden", "pl": "Pobieranie", "ru": "Загрузка"}
+
+
+def _downloading():
+    return DOWNLOADING.get((os.environ.get("LANG") or "en")[:2], "Downloading")
+
+
+def _fr(x):
+    return f"{x:.1f}".replace(".", ",")
+
+
+def parse_log(path):
+    """Progress of a legendary / gogdl / nile download log, None once finished
+    or failed. Same text as the other stores: "Downloading · 43 % · 5,7 /
+    13,3 Go · 102 Mo/s · ~2 min"."""
+    try:
+        txt = Path(path).read_text(errors="ignore").replace("\r", "\n")
+    except OSError:
+        return None
+    if re.search(r"===GOGDL_EXIT:\d+===", txt) or "Finished installation" in txt or "Game has been successfully installed" in txt:
+        return None
+    prog = re.findall(r"Progress: ([\d.]+)%?.*?ETA: (\d+):(\d+):(\d+)", txt)
+    if not prog:
+        return {"Percentage": 0, "Description": _downloading()}
+    pct = float(prog[-1][0])
+    h, m, sec = (int(x) for x in prog[-1][1:])
+    eta_min = max(1, round((h * 3600 + m * 60 + sec) / 60))
+    parts = [f"{_downloading()} · {int(pct)} %"]
+    done = re.findall(r"Downloaded: ([\d.]+) MiB", txt)
+    if done:
+        got = float(done[-1]) / 1024
+        total = got / (pct / 100) if pct > 0 else 0
+        parts.append(f"{_fr(got)} / {_fr(total)} Go" if total else f"{_fr(got)} Go")
+    speed = re.findall(r"Download\s*-\s*([\d.]+) MiB/s", txt)
+    if speed:
+        parts.append(f"{float(speed[-1]):.0f} Mo/s")
+    parts.append(f"~{eta_min} min")
+    return {"Percentage": min(pct, 99), "Description": " · ".join(parts)}
 
 
 def log_stores():
@@ -153,23 +196,15 @@ def log_stores():
     files = [f for f in glob.glob(str(LOGS / "*.progress")) if _fresh(f)]
     if not files:
         return out
-    for store, dbname, module, cls in LOG_STORES:
+    for store, dbname in LOG_DBS:
         names = _db_titles(dbname)
-        mine = [f for f in files if Path(f).stem in names]
-        if not mine:
-            continue
-        try:
-            mod = __import__(module)
-            parse = getattr(mod, {"Gog": "Gog", "Epic": "Epic", "Amazon": "Amazon"}[cls]).get_last_progress_update
-        except Exception:
-            continue
-        for f in mine:
-            try:
-                d = parse(None, f) or {}
-            except Exception:
+        for f in files:
+            gid = Path(f).stem
+            if gid not in names:
                 continue
-            if _running(dict(d, pid=None), f):
-                out.append(_entry(store, Path(f).stem, names[Path(f).stem], d))
+            d = parse_log(f)
+            if d:
+                out.append(_entry(store, gid, names[gid], d))
     return out
 
 
@@ -324,8 +359,30 @@ def active():
         store, gid = key.split(":", 1)
         if _alive(find_pid(store, gid)):
             out.append({"store": store, "id": gid, "title": gid, "pct": 0, "desc": ""})
+    speeds = _json(RUNTIME / "dl_speed.json") or {}
+    now = time.time()
     for e in out:
-        e["dest"] = dest_label(_dest_path(e["store"], e["id"]))
+        path = _dest_path(e["store"], e["id"])
+        e["dest"] = dest_label(path)
+        if "/s" in e["desc"] or not path:
+            continue
+        try:
+            probe = path if os.path.exists(path) else os.path.dirname(path.rstrip("/"))
+            st = os.statvfs(probe)
+            free = st.f_bavail * st.f_frsize
+        except OSError:
+            continue
+        key = f"{e['store']}:{e['id']}"
+        prev = speeds.get(key)
+        speeds[key] = [now, free]
+        if prev and now - prev[0] > 0.5 and prev[1] > free:
+            rate = (prev[1] - free) / (now - prev[0]) / 1048576
+            e["desc"] = (e["desc"] + " · " if e["desc"] else "") + f"{rate:.0f} Mo/s"
+    try:
+        (RUNTIME / "dl_speed.json").write_text(json.dumps({k: v for k, v in speeds.items() if now - v[0] < 600}))
+    except OSError:
+        pass
+    for e in out:
         e["paused"] = f"{e['store']}:{e['id']}" in paused
     return out
 

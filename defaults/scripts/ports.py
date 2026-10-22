@@ -1132,6 +1132,7 @@ def download_file(url, dest, shortname, lo, hi, desc):
     with urllib.request.urlopen(req, timeout=60) as r:
         total = int(r.headers.get("Content-Length") or 0)
         done = 0
+        started, last_write = time.time(), 0.0
         tmp = Path(str(dest) + ".part")
         tmp.parent.mkdir(parents=True, exist_ok=True)
         with open(tmp, "wb") as f:
@@ -1141,9 +1142,15 @@ def download_file(url, dest, shortname, lo, hi, desc):
                     break
                 f.write(chunk)
                 done += len(chunk)
-                if total:
-                    write_progress(shortname, lo + (hi - lo) * done / total,
-                                   desc, pid=os.getpid())
+                now = time.time()
+                if total and (now - last_write >= 0.5 or done == total):
+                    last_write = now
+                    rate = done / max(now - started, 0.001)  # bytes/s
+                    left = (total - done) / rate if rate else 0
+                    gb = lambda b: f"{b / 1073741824:.1f}".replace(".", ",")
+                    text = (f"{desc} · {int(100 * done / total)} % · {gb(done)} / {gb(total)} Go"
+                            f" · {rate / 1048576:.0f} Mo/s · ~{max(1, round(left / 60))} min")
+                    write_progress(shortname, lo + (hi - lo) * done / total, text, pid=os.getpid())
         tmp.rename(dest)
 
 
