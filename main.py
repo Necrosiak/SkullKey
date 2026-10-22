@@ -1076,6 +1076,44 @@ class Plugin:
             decky_plugin.logger.warning(f"[move] {actionSet} {shortname}: {e!r}")
             return {"ok": False, "error": str(e)}
 
+    @staticmethod
+    def _free_games_region():
+        """(country, locale) for the Epic API, from the system language."""
+        lang = (os.environ.get("LANG") or "en_US").split(".")[0]
+        country = lang.split("_")[1] if "_" in lang else "US"
+        return country, lang.replace("_", "-")
+
+    async def free_games_events(self):
+        """New free games to announce (Epic, GOG, Steam, Prime Gaming…)."""
+        try:
+            import free_games
+            country, locale = Plugin._free_games_region()
+            return await asyncio.get_event_loop().run_in_executor(None, free_games.new_events, country, locale)
+        except Exception as e:
+            decky_plugin.logger.warning(f"[free-games] events: {e!r}")
+            return []
+
+    async def free_games_list(self, force=False):
+        """Current offers, the stores and which are switched on."""
+        try:
+            import free_games
+            country, locale = Plugin._free_games_region()
+            st = await asyncio.get_event_loop().run_in_executor(
+                None, lambda: free_games.refresh(bool(force), country, locale))
+            return {"offers": st["offers"], "enabled": st["enabled"],
+                    "stores": [{"key": k, "label": v[0]} for k, v in free_games.STORES.items()]}
+        except Exception as e:
+            decky_plugin.logger.warning(f"[free-games] list: {e!r}")
+            return {"offers": [], "enabled": [], "stores": []}
+
+    async def free_games_set(self, store, enabled):
+        try:
+            import free_games
+            return free_games.set_enabled(store, bool(enabled))
+        except Exception as e:
+            decky_plugin.logger.warning(f"[free-games] set: {e!r}")
+            return []
+
     async def platforms_get(self):
         """Every store/media tab with whether it is switched on."""
         try:

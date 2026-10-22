@@ -14,6 +14,12 @@ import { About } from "./About";
 import { MainMenuModal } from "./MainMenuModal";
 import { clearClickableNotifications } from "./clickableNotify";
 import { portUpdateNotice } from "./portUpdateNotice";
+import { t } from "./i18n";
+
+// Store name shown in free-game notifications.
+const FREE_STORES: Record<string, string> = { epic: "Epic Games", gog: "GOG", steam: "Steam", ubisoft: "Ubisoft",
+  battlenet: "Battle.net", ea: "EA", amazon: "Prime Gaming", itch: "itch.io" };
+const freeStoreLabel = (key: string) => FREE_STORES[key] || key;
 
 
 // ── Auto-update: the frontend only REPORTS ───────────────────────────────────
@@ -87,6 +93,26 @@ export default definePlugin((serverApi: ServerAPI) => {
   checkPortUpdates();
   const portsTimer = setInterval(checkPortUpdates, 30000);
 
+  // Free games (Epic, GOG, Steam, Prime Gaming…): the backend fetches at most
+  // every 6 h and only returns offers never announced before. Clicking opens
+  // the claim page in Steam's browser — the player confirms it there.
+  const checkFreeGames = async () => {
+    try {
+      const reply = await serverApi.callPluginMethod<{}, any[]>("free_games_events", {});
+      if (!reply.success || !Array.isArray(reply.result)) return;
+      for (const g of reply.result) {
+        notify({
+          title: t("free_notif_title", { store: freeStoreLabel(g.store) }),
+          body: g.end ? t("free_notif_body_until", { game: g.title, date: g.end }) : t("free_notif_body", { game: g.title }),
+          clickKey: `free-game:${g.id}`,
+          onClick: () => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(g.url); },
+        });
+      }
+    } catch (error) { console.debug("[SkullKey] free games poll", error); }
+  };
+  const freeGamesFirst = setTimeout(checkFreeGames, 60000);
+  const freeGamesTimer = setInterval(checkFreeGames, 30 * 60000);
+
   // One-shot migration of the pre-rename localStorage keys (js_* → sk_*).
   try {
     for (const key of Object.keys(localStorage)) {
@@ -149,7 +175,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     icon: <FaSkull />,
     onDismount() {
       disposed = true;
-      clearInterval(portsTimer);
+      clearInterval(portsTimer); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
       clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");

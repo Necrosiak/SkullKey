@@ -5,7 +5,7 @@ import { DialogButton } from "decky-frontend-lib";
 import { useState } from "react";
 import { SiBattledotnet, SiEa, SiEpicgames, SiGogdotcom, SiMihoyo, SiUbisoft } from "react-icons/si";
 import { TbBrandMinecraft } from "react-icons/tb";
-import { FaAmazon, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull, FaXbox, FaCompactDisc } from "react-icons/fa";
+import { FaAmazon, FaSteam, FaItchIo, FaBoxOpen, FaTv, FaMusic, FaCloud, FaThLarge, FaSkull, FaXbox, FaCompactDisc } from "react-icons/fa";
 import { notifyClickable } from "../clickableNotify";
 
 const Btn = DialogButton as any;
@@ -22,10 +22,12 @@ export interface StoreTheme {
 // theme stays consistent between the tab bar and the game page.
 export function storeTheme(name?: string): StoreTheme {
     const n = (name || "").toLowerCase();
+    if (n === "steam") return { color: "#66c0f4", icon: FaSteam };
+    if (n.includes("itch")) return { color: "#fa5c5c", icon: FaItchIo };
     if (n.includes("epic")) return { color: "#26bbff", icon: SiEpicgames };
     if (n.includes("gog")) return { color: "#a24bfa", icon: SiGogdotcom };
     if (n.includes("xbox")) return { color: "#107c10", icon: FaXbox };
-    if (n.includes("amazon")) return { color: "#ff9900", icon: FaAmazon };
+    if (n.includes("amazon") || n.includes("prime")) return { color: "#ff9900", icon: FaAmazon };
     if (n.includes("mihoyo") || n.includes("hoyo")) return { color: "#4d8dff", icon: SiMihoyo };
     if (n.includes("battle")) return { color: "#148eff", icon: SiBattledotnet };
     if (n.includes("ubisoft")) return { color: "#c04bdb", icon: SiUbisoft };

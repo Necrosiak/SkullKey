@@ -1,7 +1,7 @@
 // Settings pages: installed games of every platform, and switching platforms
 // on or off. Both reuse the store plumbing: the store's own GetContent with
 // installed=true, and the game page every tab already opens.
-import { DialogButton as SteamButton, Focusable, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
+import { DialogButton as SteamButton, Focusable, Navigation, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
 import { ActionSet, ExecuteArgs, ExecuteGetContentArgs, ContentResult, ContentType, GameDataList } from "../Types/Types";
 import { executeAction } from "../Utils/executeAction";
@@ -159,6 +159,62 @@ export const PlatformsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     ))}
                 </Group>
             ))}
+        </div>
+    );
+};
+
+interface FreeOffer { id: string; store: string; title: string; now: boolean; start: string; end: string; url: string }
+interface FreeList { offers: FreeOffer[]; enabled: string[]; stores: { key: string; label: string }[] }
+
+// Free games to claim, and which stores to be notified for. Claim opens the
+// store page in Steam's browser: the player confirms the (free) order there.
+export const FreeGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [data, setData] = useState<FreeList | null>(null);
+    const load = (force = false) => serverAPI.callPluginMethod<any, FreeList>("free_games_list", { force })
+        .then(r => r.success && setData(r.result));
+    useEffect(() => { load(); }, []);
+    const toggle = async (key: string, on: boolean) => {
+        await serverAPI.callPluginMethod("free_games_set", { store: key, enabled: on });
+        load(true);
+    };
+    if (data === null) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_loading")}</div>;
+    const label = (k: string) => data.stores.find(s => s.key === k)?.label || k;
+    const offers = (now: boolean) => data.offers.filter(o => o.now === now && data.enabled.includes(o.store));
+    const list = (items: FreeOffer[]) => items.map(o => (
+        <Focusable key={o.id} flow-children="horizontal" style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
+            <span style={{ width: 22, display: "inline-flex", justifyContent: "center", color: storeTheme(o.store).color }}>
+                {(() => { const I = storeTheme(o.store).icon; return I ? <I size={16} /> : null; })()}
+            </span>
+            <span style={{ flex: 1, fontSize: 13 }}>
+                {o.title}
+                <span style={{ opacity: 0.6, marginLeft: 8, fontSize: 11 }}>
+                    {label(o.store)}{o.now ? (o.end ? " · " + t("free_until", { date: o.end }) : "") : " · " + t("free_from", { date: o.start })}
+                </span>
+            </span>
+            {o.now && (
+                <DialogButton style={PILL} onClick={() => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(o.url); }}>
+                    {t("free_claim")}
+                </DialogButton>
+            )}
+        </Focusable>
+    ));
+    const now = offers(true), soon = offers(false);
+    return (
+        <div style={{ padding: "0 8px" }}>
+            <div style={{ fontSize: 12, opacity: 0.7, margin: "6px 0" }}>{t("free_desc")}</div>
+            <Group title={t("free_now")} color="#4caf50">
+                {now.length ? list(now) : <div style={{ fontSize: 13, opacity: 0.7 }}>{t("free_none")}</div>}
+                <Focusable style={{ display: "flex", justifyContent: "flex-end", paddingTop: 6 }}>
+                    <DialogButton style={PILL} onClick={() => load(true)}>{t("free_refresh")}</DialogButton>
+                </Focusable>
+            </Group>
+            {!!soon.length && <Group title={t("free_soon")} color="#ff9800">{list(soon)}</Group>}
+            <Group title={t("free_notify_for")} color="#00bcd4">
+                {data.stores.map(s => (
+                    <ToggleField key={s.key} label={<PlatformLabel title={s.label} />}
+                        checked={data.enabled.includes(s.key)} onChange={(v: boolean) => toggle(s.key, v)} />
+                ))}
+            </Group>
         </div>
     );
 };
