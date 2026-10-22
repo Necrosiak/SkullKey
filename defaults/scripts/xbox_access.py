@@ -23,6 +23,10 @@ def _result(access, playable=True, reason=""):
 
 
 def classify(entitlement, store, installed, sub_active):
+    if store is not None and not store.get("installable") and not installed:
+        # Owned or not, a package format the engine cannot install (old
+        # EAPPX apps, console-only) is not offered.
+        return _result("hidden", False, "not-installable")
     if _valid(entitlement):
         if entitlement.get("satisfiedByProductId") in GAME_PASS_PLANS:
             if sub_active:
