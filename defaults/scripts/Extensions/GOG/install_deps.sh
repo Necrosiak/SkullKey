@@ -5,7 +5,7 @@
 # The upstream zipapp contains the same code and stable-ABI extension, avoiding
 # compiler, Python headers and virtualenv compatibility entirely.
 VENV="${HOME}/.local/share/skullkey-gogdl"
-GOGDL_VERSION="1.3.0"
+GOGDL_VERSION="1.3.1"
 
 function uninstall() {
     echo "Removing gogdl venv"
@@ -18,11 +18,11 @@ function install() {
     case "${arch}" in
         x86_64|amd64)
             asset="gogdl_linux_x86_64"
-            checksum="cba013d42767c808237c437335ab1d56f58405d07e8f37b3324d264ea5c49655"
+            checksum="7a6f22da4943bdb4c00baf6250fcee7085c1104ba2ac401479e70ec96e722b59"
             ;;
         aarch64|arm64)
             asset="gogdl_linux_arm64"
-            checksum="c49e1519146523ec94f33e2d21eedcc9a167004d7da218621e6d5fb84a7a0f4c"
+            checksum="9c70af33f5ca74d08236b4d50ca5f54262d9b4712d4a34c479e4263792fe55fc"
             ;;
         *)
             echo "ERROR: unsupported architecture for gogdl: ${arch}"
@@ -55,13 +55,14 @@ function install() {
         return 1
     fi
     mv -f "${tmp}" "${VENV}/bin/gogdl"
+    echo "${GOGDL_VERSION}" > "${VENV}/version"
     echo "gogdl ${GOGDL_VERSION} installed OK (official ${asset})"
 }
 
 function check() {
     # Cheap, offline presence check used by the boot-time auto-provision.
-    # Exit 0 = deps present, non-zero = missing (triggers install).
-    [ -x "${VENV}/bin/gogdl" ]
+    # Exit 0 = deps present, non-zero = missing or outdated (triggers install).
+    [ -x "${VENV}/bin/gogdl" ] && [ "$(cat "${VENV}/version" 2>/dev/null)" == "${GOGDL_VERSION}" ]
 }
 
 if [ "$1" == "uninstall" ]; then
