@@ -246,7 +246,7 @@ const GridItems: VFC<GridItemsProperties> = memo(({ serverAPI, games, initAction
                     marginTop: '15px'
                 }}
                 //@ts-ignore
-                navEntryPreferPosition={2} //maintain x
+                navEntryPreferPosition={0} // always enter the grid on its first game (top left)
             >
                 {games.map((game: GameData) => (
                     <GameGridItem

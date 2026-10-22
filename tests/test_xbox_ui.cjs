@@ -10,3 +10,8 @@ test("Xbox installs ask which drive to use, like the other stores", () => {
   assert.ok(m, "drive picker store list not found");
   assert.ok(m[1].split("|").includes("Xbox"));
 });
+
+test("entering a store grid lands on its first game, not under the button you came from", () => {
+  const grid = fs.readFileSync(path.join(__dirname, "../src/Components/GridContent.tsx"), "utf8");
+  assert.ok(grid.includes("navEntryPreferPosition={0}"));
+});
