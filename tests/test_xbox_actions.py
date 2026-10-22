@@ -114,11 +114,13 @@ class ActionsTest(unittest.TestCase):
             self.assertEqual(self.x.step_text("metadata"), "Étape 2/4 · Lecture du paquet du jeu")
             text = self.x.step_text("downloading", {"done": 12 * 2**30 + 3 * 2**28, "total": 90 * 2**30,
                                                     "rate": 58 * 2**20})
-            self.assertEqual(text, "Étape 3/4 · Téléchargement · 12,8 / 90,0 Go · 58 Mo/s · ~23 min")
+            self.assertEqual(text, "Étape 3/4 · Téléchargement · 14 % · 12,8 / 90,0 Go · 58 Mo/s · ~23 min")
+            self.assertEqual(self.x.step_text("metadata", elapsed=102),
+                             "Étape 2/4 · Lecture du paquet du jeu · 1:42")
             self.assertEqual(self.x.step_text("finalizing"), "Étape 4/4 · Finalisation")
         with mock.patch.object(self.x, "_lang", return_value="en"):
             self.assertEqual(self.x.step_text("downloading", {"done": 2**30, "total": 2 * 2**30, "rate": 0}),
-                             "Step 3/4 · Downloading · 1.0 / 2.0 GB")
+                             "Step 3/4 · Downloading · 50 % · 1.0 / 2.0 GB")
 
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")

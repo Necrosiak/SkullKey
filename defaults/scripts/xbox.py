@@ -19,6 +19,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -360,17 +361,21 @@ STEPS = {
 STEP_ORDER = ("engine", "metadata", "downloading", "finalizing")
 
 
-def step_text(phase, p=None):
+def step_text(phase, p=None, elapsed=None):
+    """The engine gives no measure while it reads the package: show the time
+    spent instead, so the step visibly moves."""
     word, names, gb, mbs, dec = STEPS.get(_lang(), STEPS["en"])
     phase = phase if phase in names else "downloading"
     text = f"{word} {STEP_ORDER.index(phase) + 1}/4 · {names[phase]}"
     if phase == "downloading" and p and p.get("total"):
         fmt = lambda v: f"{v / 2**30:.1f}".replace(".", dec)
-        text += f" · {fmt(p['done'])} / {fmt(p['total'])} {gb}"
+        text += f" · {int(p['done'] * 100 / p['total'])} % · {fmt(p['done'])} / {fmt(p['total'])} {gb}"
         rate = p.get("rate") or 0
         if rate > 0:
             left = (p["total"] - p["done"]) / rate / 60
             text += f" · {rate / 2**20:.0f} {mbs} · ~{max(1, round(left))} min"
+    elif elapsed is not None:
+        text += f" · {int(elapsed) // 60}:{int(elapsed) % 60:02d}"
     return text
 
 
@@ -398,6 +403,16 @@ def worker(pid):
             m, _ = market()
             proc = xbox_cli.start_streaming(pid, root, m, job.get("contentId"))
             last = None
+            started = time.time()
+            write_progress(pid, 0, step_text("metadata", elapsed=0), pid=os.getpid())
+            stop_ticker = threading.Event()
+
+            def tick():
+                # No progress records while the package is read: refresh the
+                # elapsed time every second until real numbers arrive.
+                while not stop_ticker.wait(1):
+                    write_progress(pid, 0, step_text("metadata", elapsed=time.time() - started), pid=os.getpid())
+            threading.Thread(target=tick, daemon=True).start()
             for line in proc.stdout:
                 p = xbox_cli.parse_progress(line)
                 if not p:
@@ -405,7 +420,11 @@ def worker(pid):
                 last = p
                 pct = int(p["percent"] or 0)
                 phase = {"initializing": "metadata", "complete": "finalizing"}.get(p["phase"], p["phase"])
-                write_progress(pid, min(pct, 99), step_text(phase, p), pid=os.getpid())
+                if phase == "metadata" and not p.get("total"):
+                    continue
+                stop_ticker.set()
+                write_progress(pid, min(pct, 99), step_text(phase, p, time.time() - started), pid=os.getpid())
+            stop_ticker.set()
             code = proc.wait()
             if code != 0 or not last or last["phase"] != "complete":
                 raise RuntimeError("The download did not complete (licence, network or disk space).")
