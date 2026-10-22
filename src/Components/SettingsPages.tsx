@@ -1,7 +1,7 @@
 // Settings pages: installed games of every platform, and switching platforms
 // on or off. Both reuse the store plumbing: the store's own GetContent with
 // installed=true, and the game page every tab already opens.
-import { DialogButton as SteamButton, Focusable, Navigation, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
+import { ConfirmModal, DialogButton as SteamButton, Focusable, Navigation, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
 import { ActionSet, ExecuteArgs, ExecuteGetContentArgs, ContentResult, ContentType, GameDataList } from "../Types/Types";
 import { executeAction } from "../Utils/executeAction";
@@ -46,6 +46,8 @@ const Group: VFC<{ title: string; color: string; icon?: any; children?: any }> =
 
 export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [groups, setGroups] = useState<Installed[] | null>(null);
+    // Size on disk per game, filled in one by one after the list shows.
+    const [sizes, setSizes] = useState<Record<string, number>>({});
 
     const load = async () => {
         const res = await serverAPI.callPluginMethod<{}, Platform[]>("platforms_get", {});
@@ -68,8 +70,38 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
             } catch (e) { /* one store failing never hides the others */ }
         }
         setGroups(out);
+        for (const g of out) {
+            for (const game of g.games) {
+                serverAPI.callPluginMethod<any, number>("game_size", { actionSet: g.setName, shortname: game.shortname })
+                    .then(r => r.success && typeof r.result === "number" && r.result > 0 &&
+                        setSizes(s => ({ ...s, [g.setName + ":" + game.shortname]: r.result })));
+            }
+        }
     };
     useEffect(() => { load(); }, []);
+
+    const remove = (setName: string, game: { name: string; shortname: string; steamClientID: string }) => {
+        showModal(
+            <ConfirmModal strTitle={t("inst_delete_title", { game: game.name })} strDescription={t("inst_delete_desc")}
+                strOKButtonText={t("inst_delete")} bDestructiveWarning
+                onOK={async () => {
+                    notify({ title: "SkullKey", body: t("inst_deleting", { game: game.name }) });
+                    try {
+                        // Discs & Installers: keep the saves, like the safe choice on the game page.
+                        await executeAction<ExecuteArgs, any>(serverAPI, setName, "Uninstall",
+                            { shortname: game.shortname, ...(setName === "DisksActions" ? { keep: "keep" } : {}) } as any);
+                        const id = parseInt(game.steamClientID);
+                        if (id) SteamClient.Apps.RemoveShortcut(id);
+                        notify({ title: "SkullKey", body: t("inst_deleted", { game: game.name }) });
+                    } catch (e) {
+                        notify({ title: "SkullKey", body: t("inst_delete_failed", { game: game.name }) });
+                    }
+                    load();
+                }} />
+        );
+    };
+
+    const fmtSize = (b: number) => b >= 1 << 30 ? `${(b / (1 << 30)).toFixed(1)} GB` : `${Math.max(1, Math.round(b / (1 << 20)))} MB`;
 
     const move = async (setName: string, game: { shortname: string; steamClientID: string }) => {
         const drive = await pickInstallDrive(serverAPI);
@@ -107,6 +139,9 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                             <Focusable key={game.shortname} flow-children="horizontal"
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
+                                <span style={{ fontSize: 12, opacity: 0.6, minWidth: 64, textAlign: "right" }}>
+                                    {sizes[setName + ":" + game.shortname] ? fmtSize(sizes[setName + ":" + game.shortname]) : ""}
+                                </span>
                                 {canMove && (
                                     <DialogButton style={PILL}
                                         onClick={() => move(setName, game)}>{t("inst_move")}</DialogButton>
@@ -116,6 +151,8 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                         const modal = showModal(<GameDetailsItem serverAPI={serverAPI} shortname={game.shortname}
                                             initActionSet={setName} closeModal={() => { modal.Close(); load(); }} />);
                                     }}>{t("inst_manage")}</DialogButton>
+                                <DialogButton style={{ ...PILL, color: "#ff8a80", border: "1px solid rgba(255,82,82,0.35)" }}
+                                    onClick={() => remove(setName, game)}>{t("inst_delete")}</DialogButton>
                             </Focusable>
                         ))}
                     </Group>

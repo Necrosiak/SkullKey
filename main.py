@@ -1114,6 +1114,32 @@ class Plugin:
             decky_plugin.logger.warning(f"[free-games] set: {e!r}")
             return []
 
+    async def game_size(self, actionSet, shortname):
+        """Bytes the installed game takes on disk (0 when its folder is unknown)."""
+        def blocking():
+            import move_game as mg
+            path = None
+            try:
+                if actionSet == "XboxActions":
+                    import xbox
+                    path = (xbox.load_state()["games"].get(shortname) or {}).get("root")
+                else:
+                    path = mg.current_path(actionSet, shortname)
+            except Exception:
+                path = None
+            if not path or not os.path.isdir(path):
+                return 0
+            r = subprocess.run(["du", "-sb", "--", path], capture_output=True, text=True, timeout=120)
+            try:
+                return int(r.stdout.split()[0])
+            except (IndexError, ValueError):
+                return 0
+        try:
+            return await asyncio.get_event_loop().run_in_executor(None, blocking)
+        except Exception as e:
+            decky_plugin.logger.warning(f"[size] {actionSet} {shortname}: {e!r}")
+            return 0
+
     async def platforms_get(self):
         """Every store/media tab with whether it is switched on."""
         try:
