@@ -141,7 +141,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                     <div style={{ flex: 1, fontSize: 12, opacity: 0.7 }}>
                         {d.paused ? t("dl_paused") : (eta ? t("dl_eta", { eta }) : "")}
                     </div>
-                    <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8 }}>
+                    <Focusable flow-children="horizontal" navEntryPreferPosition={2} style={{ display: "flex", gap: 8 }}>
                         <DialogButton style={BTN} onClick={() => setPaused(SET_OF[d.store], d.id, !d.paused)}>
                             {d.paused ? <FaPlay size={11} /> : <FaPause size={11} />} {d.paused ? t("dl_resume") : t("dl_pause")}
                         </DialogButton>
@@ -160,7 +160,9 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serv
     const th = storeTheme(q.set);
     const Icon = th.icon;
     return (
-        <Focusable flow-children="horizontal" style={{ display: "flex", alignItems: "center", gap: 16, padding: "6px 0" }}>
+        // Up/down keep the column (Remove -> Remove), like Steam's lists.
+        <Focusable flow-children="horizontal" navEntryPreferPosition={2}
+            style={{ display: "flex", alignItems: "center", gap: 16, padding: "6px 0" }}>
             <div style={{ position: "relative", width: 140, height: 52, flexShrink: 0, background: "#1b232c", overflow: "hidden" }}>
                 {art.capsule && <img src={art.capsule} style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
             </div>
