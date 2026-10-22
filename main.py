@@ -1123,8 +1123,12 @@ class Plugin:
                 env["LD_LIBRARY_PATH"] = orig
             else:
                 env.pop("LD_LIBRARY_PATH", None)
-            r = subprocess.run(["/usr/bin/python3", os.path.join(Helper.working_directory, "scripts", "game_path.py"),
-                                actionSet, shortname], capture_output=True, text=True, timeout=30, env=env)
+            # settings.sh sets the current Steam account folder (EA needs it).
+            env["DECKY_PLUGIN_DIR"] = Helper.working_directory
+            r = subprocess.run(["bash", "-c", 'source "$1/scripts/settings.sh" >/dev/null 2>&1; '
+                                'exec /usr/bin/python3 "$1/scripts/game_path.py" "$2" "$3"',
+                                "_", Helper.working_directory, actionSet, shortname],
+                               capture_output=True, text=True, timeout=30, env=env)
             folders = [l for l in r.stdout.splitlines() if l.strip()]
             if not folders:
                 return 0
