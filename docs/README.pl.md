@@ -56,6 +56,7 @@ Przez Decky Loader, bez pulpitu:
 2. Włącz **tryb dewelopera** w ustawieniach ogólnych Decky
 3. Ustawienia Decky → **Deweloper** → *Zainstaluj wtyczkę z URL*:
    `https://github.com/Necrosiak/SkullKey/releases/latest/download/SkullKey.zip`
+   > ⚠️ Od Decky Loader 3.3 pojawia się tu ostrzeżenie *Third-Party Plugin Installation*, bo wtyczka nie pochodzi z Decky Store. To normalne: odczekaj 5 sekund i potwierdź. Pojawia się tylko raz, a aktualizacje instalują się potem same.
 
 Albo zbuduj ze źródeł:
 

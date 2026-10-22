@@ -56,6 +56,7 @@ Vía Decky Loader, sin pasar por el escritorio:
 2. Activa el **modo desarrollador** en los ajustes generales de Decky
 3. Ajustes de Decky → **Desarrollador** → *Instalar plugin desde URL*:
    `https://github.com/Necrosiak/SkullKey/releases/latest/download/SkullKey.zip`
+   > ⚠️ Desde Decky Loader 3.3 aparece aquí un aviso de *instalación de plugin de terceros*, porque el plugin no viene de la Decky Store. Es normal: espera 5 segundos y confirma. Solo aparece una vez y luego las actualizaciones se instalan solas.
 
 O compila desde las fuentes:
 
