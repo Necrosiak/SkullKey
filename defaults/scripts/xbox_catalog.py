@@ -96,7 +96,12 @@ def installable(product_id, market, deadline=None):
         return hit["content"]
     if deadline is not None and time.monotonic() > deadline:
         return None
-    content = supported_content(xbox_cli.resolve(product_id, market)) or ""
+    resolved = xbox_cli.resolve(product_id, market)
+    if resolved is None:
+        # The engine failed or timed out: unknown, not "unsupported". Ask again
+        # next time instead of caching a wrong verdict for a week.
+        return None
+    content = supported_content(resolved) or ""
     _merge("resolve.json", {key: {"content": content, "t": time.time()}})
     return content
 

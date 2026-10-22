@@ -63,6 +63,12 @@ class CatalogTest(unittest.TestCase):
         self.c.free_games("FR", "fr-fr", fetch=lambda url: LIST)
         self.assertEqual(len(self.resolved), n)
 
+    def test_engine_error_is_unknown_not_unsupported(self):
+        with mock.patch.object(self.c.xbox_cli, "resolve", return_value=None):
+            self.assertIsNone(self.c.installable("9FAIL", "FR"))
+        # Not cached: the next call asks the engine again.
+        self.assertEqual(self.c.installable("9FAIL", "FR"), "c-9FAIL")
+
     def test_store_down_returns_empty_not_raise(self):
         def boom(url):
             raise OSError("offline")
