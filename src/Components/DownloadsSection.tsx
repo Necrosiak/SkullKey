@@ -80,6 +80,8 @@ const Bar: VFC<{ label: string; right: string; pct: number; color: string }> = (
 const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) => {
     const key = d.store + ":" + d.id;
     const art = useArt(serverAPI, SET_OF[d.store], d.id);
+    // A logo is wide; a square/portrait "logo" is box art (Xbox): use the title.
+    const [logoOk, setLogoOk] = useState<boolean | null>(null);
     const th = themeOf(d.store);
     const Icon = th.icon;
     const { speed, amount, eta } = parseDesc(d.desc);
@@ -112,8 +114,10 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                     points={h.map((v, i) => `${HISTORY - h.length + i + 0.5},${100 - (v / peak) * 95}`).join(" ")} />
             </svg>
             <div style={{ position: "absolute", left: 40, top: 0, bottom: 34, width: "26%", display: "flex", alignItems: "center" }}>
-                {art.logo
-                    ? <img src={art.logo} style={{ maxWidth: "100%", maxHeight: 120, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(0,0,0,.7))" }} />
+                {art.logo && logoOk !== false
+                    ? <img src={art.logo} onLoad={e => setLogoOk(e.currentTarget.naturalWidth >= 1.6 * e.currentTarget.naturalHeight)}
+                        style={{ maxWidth: "100%", maxHeight: 120, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(0,0,0,.7))",
+                                 visibility: logoOk ? "visible" : "hidden" }} />
                     : <span style={{ fontSize: 30, fontWeight: 800, textShadow: "0 2px 8px rgba(0,0,0,.9)" }}>{d.title}</span>}
             </div>
             <div style={{ position: "absolute", left: 12, bottom: 12, padding: "4px 10px", background: "rgba(0,0,0,0.65)", fontSize: 12,
