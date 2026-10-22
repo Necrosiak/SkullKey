@@ -999,6 +999,19 @@ PORTS = [
          logo="", color='#3a4a52',
          needs=('pick', 'Silent Hill: Downpour', 'Xbox 360 — your own .iso')),
     # Batch of 22/10/2026 — each engine from its project's own GitHub release.
+    # These two build the game from the player's disc on first launch, with
+    # the tools shipped in the release (DQ8 also needs the system's C++
+    # compiler: present on Bazzite/CachyOS, absent from stock SteamOS).
+    dict(shortname='eternaldarkness', title='Eternal Darkness Recompiled',
+         repo='griches/EternalDarknessRecomp', kind='archive',
+         asset=r'linux-x86_64-.*\.tar\.gz$', exe='play.sh',
+         logo="", color='#3a1a4a',
+         needs=('pick', "Eternal Darkness: Sanity's Requiem", 'GameCube EUROPEAN disc only — .iso/.gcm')),
+    dict(shortname='dq8recomp', title='Dragon Quest VIII Recompiled',
+         repo='Sinan-Karakaya/DQ8-Recompiled', kind='archive',
+         asset=r'Linux-x86_64\.tar\.gz$', exe='dq8-launcher',
+         logo="", color='#2a5aa0',
+         needs=('pick', 'Dragon Quest VIII', 'PS2 North America (SLUS-21207) — .iso')),
     dict(shortname='crackdownrecomp', title='Crackdown Recompiled',
          repo='saulob/crackdown-xbox360-recompiled', kind='appimage',
          asset='CrackdownRecompiled-v[\\d.]+-x86_64\\.AppImage$', exe='',
