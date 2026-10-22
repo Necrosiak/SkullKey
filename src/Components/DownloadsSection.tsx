@@ -1,5 +1,5 @@
 import { DialogButton, Focusable, Navigation, ServerAPI } from "decky-frontend-lib";
-import { VFC, useEffect, useState } from "react";
+import React, { VFC, useEffect, useState } from "react";
 import { FaSkull, FaTimes, FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { storeTheme } from "./Styled";
 import { t } from "../i18n";
@@ -267,12 +267,39 @@ function topBarHolder(doc: Document): HTMLElement | null {
     if (first) item = first;
     const holder = doc.createElement("div");
     holder.setAttribute("data-sk-topbar", "");
-    holder.style.cssText = "display:flex;align-items:center;justify-content:center;padding:0 10px;cursor:pointer";
+    holder.style.cssText = "display:flex;align-items:center;justify-content:center;cursor:pointer";
     row.insertBefore(holder, item);
     return holder;
 }
 
+// Steam hands each panel's navigation node down through a React context. Re-
+// providing the top bar row's node around our button makes it a child of that
+// row in the controller navigation, like Steam's own icons (no Steam code is
+// modified; if the context is not found the icon stays touch-only).
+function rowNavContext(row: HTMLElement): { type: any; value: any } | null {
+    const fk = Object.keys(row).find(k => k.startsWith("__reactFiber"));
+    let f = fk ? (row as any)[fk] : null;
+    for (let i = 0; i < 12 && f; i++, f = f.return) {
+        const v = f.memoizedProps?.value;
+        if (v && v.m_element === row && f.type) return { type: f.type, value: v };
+    }
+    return null;
+}
+
+// Our node joins the row last; put it where it sits on screen so left/right
+// reach it between Steam's icons.
+function sortRowNav(holder: HTMLElement) {
+    const row = holder.parentElement;
+    const nav = row ? rowNavContext(row) : null;
+    const kids: any[] | undefined = nav?.value?.m_rgChildren;
+    if (!kids || !kids.some(c => holder.contains(c.m_element))) return;
+    const before = kids.map(c => c);
+    kids.sort((a, b) => (a.m_element && b.m_element && (a.m_element.compareDocumentPosition(b.m_element) & 4)) ? -1 : 1);
+    if (kids.some((c, i) => c !== before[i]) && nav!.value.m_iLastActiveChildIndex !== undefined) nav!.value.m_iLastActiveChildIndex = -1;
+}
+
 export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [focused, setFocused] = useState(false);
     const [d, setD] = useState<Dl | null>(null);
     const [count, setCount] = useState(0);
     const [holder, setHolder] = useState<HTMLElement | null>(null);
@@ -288,7 +315,11 @@ export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) =>
             const list = r.success && Array.isArray(r.result) ? r.result : [];
             setD(list[0] || null);
             setCount(list.length + q.pending.length);
-            if (list.length) setHolder(topBarHolder(doc));
+            if (list.length) {
+                const h = topBarHolder(doc);
+                setHolder(h);
+                if (h) setTimeout(() => sortRowNav(h), 300);
+            }
             else { doc.querySelector("[data-sk-topbar]")?.remove(); setHolder(null); }
         };
         poll();
@@ -303,16 +334,20 @@ export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) =>
     const pct = step ? ((Number(step[1]) - 1) + raw / 100) / Number(step[2]) * 100 : raw;
     const createPortal = (window as any).SP_REACTDOM?.createPortal;
     if (!createPortal) return probe;
+    const nav = holder.parentElement ? rowNavContext(holder.parentElement) : null;
+    const open = () => Navigation.Navigate(DOWNLOADS_ROUTE);
     // Like Steam's download icon: the icon, and a thin blue line under it
     // that fills with the game being downloaded.
-    return <>{probe}{createPortal(
-        <div onClick={() => Navigation.Navigate(DOWNLOADS_ROUTE)} title={`${d.title} · ${Math.floor(pct)} %${count > 1 ? ` (${count})` : ""}`}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-            <FaSkull size={20} color={d.paused ? "#9aa4b2" : "#ffffff"} />
-            <div style={{ width: 22, height: 2, background: "rgba(255,255,255,0.18)" }}>
+    const button = (
+        <Focusable onActivate={open} onClick={open} noFocusRing
+            onGamepadFocus={() => setFocused(true)} onGamepadBlur={() => setFocused(false)}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 8px",
+                     background: focused ? "#ffffff" : "transparent", borderRadius: 2 }}>
+            <FaSkull size={20} color={focused ? "#0e141b" : (d.paused ? "#9aa4b2" : "#ffffff")} />
+            <div style={{ width: 22, height: 2, background: "rgba(127,127,127,0.35)" }}>
                 <div style={{ width: `${pct}%`, height: "100%", background: d.paused ? "#9aa4b2" : "#1a9fff", transition: "width .5s" }} />
             </div>
-        </div>,
-        holder,
-    )}</>;
+        </Focusable>
+    );
+    return <>{probe}{createPortal(nav ? React.createElement(nav.type, { value: nav.value }, button) : button, holder)}</>;
 };
