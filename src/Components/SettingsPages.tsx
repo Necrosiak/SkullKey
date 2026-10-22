@@ -26,11 +26,12 @@ async function storeSetName(serverAPI: ServerAPI): Promise<string | null> {
     return (init?.Content as ActionSet)?.SetName ?? null;
 }
 
-const Group: VFC<{ title: string; color: string; children?: any }> = ({ title, color, children }) => (
+const Group: VFC<{ title: string; color: string; icon?: any; children?: any }> = ({ title, color, icon: Icon, children }) => (
     <div style={{ margin: "8px 0", padding: "10px 12px", borderRadius: 6, background: "rgba(255,255,255,0.04)",
                   borderLeft: `3px solid ${color}` }}>
-        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color, marginBottom: 6 }}>
-            {title}
+        <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color, marginBottom: 6,
+                      display: "flex", alignItems: "center", gap: 8 }}>
+            {Icon && <Icon size={16} />}{title}
         </div>
         {children}
     </div>
@@ -94,7 +95,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                 const theme = storeTheme(platform.Title);
                 const canMove = setName === "XboxActions" || MOVABLE.includes(setName);
                 return (
-                    <Group key={platform.ActionId} title={tabLabel(platform.Title)} color={theme.color}>
+                    <Group key={platform.ActionId} title={tabLabel(platform.Title)} color={theme.color} icon={theme.icon}>
                         {games.map(game => (
                             <Focusable key={game.shortname} flow-children="horizontal"
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
@@ -117,6 +118,19 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     );
 };
 
+// Platform name with its store icon, tinted with the store colour.
+const PlatformLabel: VFC<{ title: string }> = ({ title }) => {
+    const { color, icon: Icon } = storeTheme(title);
+    return (
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+            <span style={{ width: 22, display: "inline-flex", justifyContent: "center", color }}>
+                {Icon && <Icon size={20} />}
+            </span>
+            {tabLabel(title)}
+        </span>
+    );
+};
+
 export const PlatformsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [platforms, setPlatforms] = useState<Platform[]>([]);
     useEffect(() => {
@@ -133,7 +147,7 @@ export const PlatformsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
             {(["games", "media"] as const).map(cat => (
                 <Group key={cat} title={t(cat === "games" ? "cat_games" : "cat_media")} color={cat === "games" ? "#4caf50" : "#00bcd4"}>
                     {platforms.filter(p => p.Category === cat).map(p => (
-                        <ToggleField key={p.ActionId} label={tabLabel(p.Title)} checked={p.enabled}
+                        <ToggleField key={p.ActionId} label={<PlatformLabel title={p.Title} />} checked={p.enabled}
                             onChange={(v: boolean) => toggle(p, v)} />
                     ))}
                 </Group>
