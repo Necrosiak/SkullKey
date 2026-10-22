@@ -55,7 +55,21 @@ function parseDesc(desc: string) {
 const HISTORY = 60;
 const history: Record<string, number[]> = {};
 
-const BTN = { minWidth: 0, width: "auto", height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, fontSize: 12 };
+// Our plugins' pill buttons (same as the filters and Installed games page):
+// light fill, thin border, white ring under the controller focus.
+const PILL = { minWidth: 0, width: "auto", height: 30, lineHeight: "30px", padding: "0 16px", borderRadius: 15,
+    display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, letterSpacing: ".3px",
+    background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.14)" };
+const Pill: VFC<{ onClick: () => void; danger?: boolean; children?: any }> = ({ onClick, danger, children }) => {
+    const [focus, setFocus] = useState(false);
+    const base = danger ? { ...PILL, color: "#ff8a80", border: "1px solid rgba(255,82,82,0.35)" } : PILL;
+    return (
+        <DialogButton onClick={onClick} onGamepadFocus={() => setFocus(true)} onGamepadBlur={() => setFocus(false)}
+            style={focus ? { ...base, outline: "2px solid #fff", outlineOffset: 2, filter: "brightness(1.3)" } : base}>
+            {children}
+        </DialogButton>
+    );
+};
 
 const Stat: VFC<{ label: string; value: string; color: string }> = ({ label, value, color }) => (
     <div style={{ flex: 1 }}>
@@ -84,6 +98,13 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
     const art = useArt(serverAPI, SET_OF[d.store], d.id);
     // A logo is wide; a square/portrait "logo" is box art (Xbox): use the title.
     const [logoOk, setLogoOk] = useState<boolean | null>(null);
+    // No real logo from the store: try the one of the game's Steam page.
+    const [steamLogo, setSteamLogo] = useState<string>("");
+    useEffect(() => {
+        if (art.logo && logoOk !== false) return;
+        serverAPI.callPluginMethod<{ title: string }, string>("steam_logo", { title: d.title })
+            .then(r => r.success && r.result && setSteamLogo(r.result));
+    }, [d.title, art.logo, logoOk]);
     const th = themeOf(d.store);
     const Icon = th.icon;
     const parsed = parseDesc(d.desc);
@@ -118,7 +139,9 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                     points={h.map((v, i) => `${HISTORY - h.length + i + 0.5},${100 - (v / peak) * 95}`).join(" ")} />
             </svg>
             <div style={{ position: "absolute", left: 40, top: 0, bottom: 34, width: "26%", display: "flex", alignItems: "center" }}>
-                {art.logo && logoOk !== false
+                {steamLogo && !(art.logo && logoOk)
+                    ? <img src={steamLogo} style={{ maxWidth: "100%", maxHeight: 120, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(0,0,0,.7))" }} />
+                    : art.logo && logoOk !== false
                     ? <img src={art.logo} onLoad={e => setLogoOk(e.currentTarget.naturalWidth >= 1.6 * e.currentTarget.naturalHeight)}
                         style={{ maxWidth: "100%", maxHeight: 120, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(0,0,0,.7))",
                                  visibility: logoOk ? "visible" : "hidden" }} />
@@ -142,12 +165,12 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                         {d.paused ? t("dl_paused") : (eta ? t("dl_eta", { eta }) : "")}
                     </div>
                     <Focusable flow-children="horizontal" navEntryPreferPosition={2} style={{ display: "flex", gap: 8 }}>
-                        <DialogButton style={BTN} onClick={() => setPaused(SET_OF[d.store], d.id, !d.paused)}>
-                            {d.paused ? <FaPlay size={11} /> : <FaPause size={11} />} {d.paused ? t("dl_resume") : t("dl_pause")}
-                        </DialogButton>
-                        <DialogButton style={BTN} onClick={() => removeCurrent(SET_OF[d.store], d.id)}>
-                            <FaTimes size={11} /> {t("queue_remove")}
-                        </DialogButton>
+                        <Pill onClick={() => setPaused(SET_OF[d.store], d.id, !d.paused)}>
+                            {d.paused ? <FaPlay size={10} /> : <FaPause size={10} />} {d.paused ? t("dl_resume") : t("dl_pause")}
+                        </Pill>
+                        <Pill danger onClick={() => removeCurrent(SET_OF[d.store], d.id)}>
+                            <FaTimes size={10} /> {t("queue_remove")}
+                        </Pill>
                     </Focusable>
                 </div>
             </div>
@@ -179,12 +202,12 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number; progress?: 
                     </div>
                 )}
             </div>
-            <DialogButton style={BTN} onClick={() => prioritize(q)}>
-                <FaDownload size={11} /> {t("dl_now")}
-            </DialogButton>
-            <DialogButton style={BTN} onClick={() => removeFromQueue(q.set, q.shortname)}>
-                <FaTimes size={11} /> {t("queue_remove")}
-            </DialogButton>
+            <Pill onClick={() => prioritize(q)}>
+                <FaDownload size={10} /> {t("dl_now")}
+            </Pill>
+            <Pill danger onClick={() => removeFromQueue(q.set, q.shortname)}>
+                <FaTimes size={10} /> {t("queue_remove")}
+            </Pill>
         </Focusable>
     );
 };
@@ -232,8 +255,9 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
                 .filter(d => !(d.paused && pending.some(q => STORE_OF[q.set] === d.store && q.shortname === d.id)))
                 .map(d => <CurrentBanner key={d.store + ":" + d.id} serverAPI={serverAPI} d={d} />)}
             <div style={{ padding: "14px 24px" }}>
-                <div style={{ fontSize: 20, margin: "4px 0 8px", display: "flex", alignItems: "center", gap: 10 }}>
-                    {t("queue_next")} <span style={{ opacity: 0.6 }}>({pending.length})</span>
+                <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color: accent,
+                              margin: "4px 0 10px", display: "flex", alignItems: "center", gap: 10 }}>
+                    {t("queue_next")} <span style={{ opacity: 0.7 }}>({pending.length})</span>
                     <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.15)" }} />
                 </div>
                 {!pending.length && <div style={{ opacity: 0.6, fontSize: 15 }}>{t("queue_empty")}</div>}
