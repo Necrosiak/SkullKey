@@ -169,6 +169,44 @@ class ActionsTest(unittest.TestCase):
             self.x.prefetch(["9A", "9B"])
         self.assertEqual(seen, [("9A", None), ("9B", None)])
 
+    def write_manifest(self, root, langs):
+        res = "".join(f'<Resource Language="{l}"/>' for l in langs)
+        (root / "MicrosoftGame.config").write_text(
+            f'<Game><Resources>{res}</Resources><ExecutableList><Executable Name="g.exe"/></ExecutableList></Game>')
+
+    def test_game_locale_picks_machine_language(self):
+        root = self.install_fake("9OWN")
+        self.write_manifest(root, ["en-US", "fr-FR", "de-DE"])
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            self.assertEqual(self.x.game_locale(root), "fr-FR")
+        self.write_manifest(root, ["en-US", "fr"])
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            self.assertEqual(self.x.game_locale(root), "fr")
+        self.write_manifest(root, ["en-US"])
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            self.assertIsNone(self.x.game_locale(root))
+
+    def test_locale_environment(self):
+        env = self.x.locale_env({}, "fr-FR")
+        self.assertEqual((env["XODUS_PACKAGE_LOCALE"], env["WINEUSERLOCALE"], env["LANG"], env["LANGUAGE"]),
+                         ("fr-FR", "fr-FR", "fr_FR.UTF-8", "fr_FR:fr"))
+        self.assertEqual(self.x.locale_env({"A": "1"}, None), {"A": "1"})
+
+    def test_run_passes_the_game_language(self):
+        root = self.install_fake("9OWN")
+        self.write_manifest(root, ["en-US", "fr-FR"])
+        session = mock.Mock(env={})
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_prefix, "ensure_prefix"), \
+             mock.patch.object(self.x.xbox_prefix, "write_runner", return_value=Path("/r")), \
+             mock.patch.object(self.x, "sync_prefix_locale") as sync, \
+             mock.patch.object(self.x.xbox_tools, "cli_path", return_value=Path("/cli")), \
+             mock.patch.object(self.x, "_lang", return_value="fr"), \
+             mock.patch.object(self.x.subprocess, "call", return_value=0) as call:
+            self.x.action_run("9OWN")
+        self.assertEqual(call.call_args.kwargs["env"]["XODUS_PACKAGE_LOCALE"], "fr-FR")
+        sync.assert_called_once()
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

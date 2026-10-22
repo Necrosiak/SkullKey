@@ -299,6 +299,68 @@ SLOW_START = {
 }
 
 
+# ── game language ────────────────────────────────────────────────────────────
+# Adapted from Xodus Nexus src/main/game-locale.ts and proton.ts (MIT).
+
+REGIONS = {"en": "en-US", "fr": "fr-FR", "de": "de-DE", "es": "es-ES", "it": "it-IT", "pt": "pt-PT",
+           "nl": "nl-NL", "pl": "pl-PL", "ru": "ru-RU"}
+
+
+def game_locale(root):
+    """The package language matching the machine language, or None."""
+    import re
+    import xml.etree.ElementTree as ET
+    root = Path(root)
+    entries = {p.name.lower(): p for p in root.iterdir()} if root.is_dir() else {}
+    langs = []
+    for name in ("microsoftgame.config", "appxmanifest.xml"):
+        if name not in entries:
+            continue
+        try:
+            tree = ET.fromstring(entries[name].read_text(errors="ignore"))
+        except ET.ParseError:
+            continue
+        for el in tree.iter():
+            lang = el.get("Language")
+            if el.tag.rsplit("}", 1)[-1] == "Resource" and lang and re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", lang):
+                langs.append(lang)
+    want = REGIONS.get(_lang(), "en-US")
+    exact = next((l for l in langs if l.lower() == want.lower()), None)
+    return exact or next((l for l in langs if l.lower().split("-")[0] == want.split("-")[0]), None)
+
+
+def locale_env(env, locale):
+    env = dict(env)
+    if not locale:
+        return env
+    env.update(XODUS_PACKAGE_LOCALE=locale, WINEUSERLOCALE=locale)
+    parts = locale.split("-")
+    if len(parts) == 2 and len(parts[1]) == 2:
+        unix = f"{parts[0].lower()}_{parts[1].upper()}.UTF-8"
+        for key in ("LANG", "LC_ALL", "LC_MESSAGES", "LC_CTYPE", "LC_TIME", "LC_COLLATE", "LC_MONETARY",
+                    "LC_NUMERIC", "LC_PAPER"):
+            env[key] = unix
+        env["LANGUAGE"] = f"{parts[0].lower()}_{parts[1].upper()}:{parts[0].lower()}"
+    return env
+
+
+def sync_prefix_locale(pid, runner, locale, env):
+    """Wine fixes the Windows user locale when the prefix is created; drop the
+    key once per language so Wine rebuilds it from the launch environment."""
+    if not locale or "-" not in locale:
+        return
+    mark = xbox_prefix.prefix_dir(pid) / ".skullkey-locale"
+    try:
+        if mark.read_text().strip() == locale:
+            return
+    except OSError:
+        pass
+    code = subprocess.call([str(runner), "reg", "delete", "HKCU\\Control Panel\\International", "/f"],
+                           env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if code == 0:
+        mark.write_text(locale)
+
+
 def anticheat(pid):
     g = load_state()["games"].get(pid) or {}
     root = Path(g.get("root", "/nonexistent"))
@@ -603,7 +665,9 @@ def action_run(pid):
             print("The game's executable was not found in its package.", file=sys.stderr)
             return 4
         m, _ = market()
-        env = xbox_cli._env()
+        locale = game_locale(g["root"])
+        env = locale_env(xbox_cli._env(), locale)
+        sync_prefix_locale(pid, runner, locale, env)
         # In-game Xbox sign-in, Store licence checks and cloud saves go
         # through the account service, reached over its loopback bridge.
         session = xbox_service.start(env)
