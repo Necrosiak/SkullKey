@@ -122,6 +122,33 @@ class ActionsTest(unittest.TestCase):
             self.assertEqual(self.x.step_text("downloading", {"done": 2**30, "total": 2 * 2**30, "rate": 0}),
                              "Step 3/4 · Downloading · 50 % · 1.0 / 2.0 GB")
 
+    def test_anticheat_detected_in_installed_game(self):
+        root = self.install_fake("9OWN")
+        (root / "AntiCheatExpert").mkdir()
+        self.assertEqual(self.x.anticheat("9OWN"), "AntiCheatExpert (ACE)")
+
+    def test_anticheat_known_before_install(self):
+        self.assertEqual(self.x.anticheat("9N1BZS0V3K0C"), "AntiCheatExpert (ACE)")
+        self.assertIsNone(self.x.anticheat("9OWN"))
+
+    def test_details_warn_about_anticheat(self):
+        root = self.install_fake("9OWN")
+        (root / "EasyAntiCheat").mkdir()
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            desc = self.call(self.x.action_getgamedetails, "9OWN")["Content"]["Description"]
+        self.assertIn("⚠️ Anti-triche Easy Anti-Cheat", desc)
+
+    def test_run_log_records_exit_code(self):
+        self.install_fake("9OWN")
+        session = mock.Mock(env={})
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_prefix, "ensure_prefix"), \
+             mock.patch.object(self.x.xbox_prefix, "write_runner", return_value=Path("/r")), \
+             mock.patch.object(self.x.xbox_tools, "cli_path", return_value=Path("/cli")), \
+             mock.patch.object(self.x.subprocess, "call", return_value=7):
+            self.x.action_run("9OWN")
+        self.assertIn("SkullKey: the game exited with code 7", (self.x.XBOX_DIR / "logs" / "9OWN.log").read_text())
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

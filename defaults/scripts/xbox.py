@@ -231,6 +231,39 @@ def import_nexus_games():
                                          "imported": True})
 
 
+# ── anti-cheat ───────────────────────────────────────────────────────────────
+
+# Folders shipped by kernel or Windows-only anti-cheats. Easy Anti-Cheat and
+# BattlEye work only when the publisher enabled their Proton support.
+ANTICHEAT_DIRS = {"anticheatexpert": "AntiCheatExpert (ACE)", "easyanticheat": "Easy Anti-Cheat",
+                  "easyanticheat_eos": "Easy Anti-Cheat", "battleye": "BattlEye",
+                  "be": None, "vanguard": "Vanguard", "xigncode": "XIGNCODE3", "gameguard": "nProtect GameGuard"}
+# Known before download (tested): product id -> anti-cheat.
+ANTICHEAT_KNOWN = {"9N1BZS0V3K0C": "AntiCheatExpert (ACE)"}  # Mecha BREAK, 22/10/2026
+ANTICHEAT_LABELS = {
+    "en": "⚠️ Anti-cheat {name}: this game will probably not run on Linux.",
+    "fr": "⚠️ Anti-triche {name} : ce jeu ne fonctionnera probablement pas sous Linux.",
+    "de": "⚠️ Anti-Cheat {name}: Dieses Spiel läuft unter Linux wahrscheinlich nicht.",
+    "es": "⚠️ Antitrampas {name}: probablemente este juego no funcione en Linux.",
+    "it": "⚠️ Anti-cheat {name}: probabilmente questo gioco non funzionerà su Linux.",
+    "pt": "⚠️ Antitrapaça {name}: este jogo provavelmente não funcionará no Linux.",
+    "nl": "⚠️ Anti-cheat {name}: deze game werkt waarschijnlijk niet op Linux.",
+    "pl": "⚠️ Anti-cheat {name}: ta gra prawdopodobnie nie zadziała w systemie Linux.",
+    "ru": "⚠️ Античит {name}: игра, вероятно, не запустится в Linux.",
+}
+
+
+def anticheat(pid):
+    g = load_state()["games"].get(pid) or {}
+    root = Path(g.get("root", "/nonexistent"))
+    if root.is_dir():
+        for d in root.iterdir():
+            name = ANTICHEAT_DIRS.get(d.name.lower())
+            if d.is_dir() and name:
+                return name
+    return ANTICHEAT_KNOWN.get(pid)
+
+
 # ── grid & details ───────────────────────────────────────────────────────────
 
 def action_getgames(filter_str="", installed="false"):
@@ -269,6 +302,9 @@ def action_getgamedetails(pid):
     labels = {"owned": "Owned", "gamepass": "Game Pass", "free": "Free"}
     lines = [d.get("description", "")] if d.get("description") else []
     lines.append(labels.get(access["access"], ""))
+    ac = anticheat(pid)
+    if ac:
+        lines.append(ANTICHEAT_LABELS.get(_lang(), ANTICHEAT_LABELS["en"]).format(name=ac))
     if access["reason"] == "subscription-required":
         lines.append("Game Pass subscription required to play.")
     g = load_state()["games"].get(pid) or {}
@@ -533,7 +569,12 @@ def action_run(pid):
             logs = XBOX_DIR / "logs"
             logs.mkdir(parents=True, exist_ok=True)
             with open(logs / f"{pid}.log", "w") as log:
-                return subprocess.call(cmd, env=env, cwd=g["root"], stdout=log, stderr=subprocess.STDOUT)
+                code = subprocess.call(cmd, env=env, cwd=g["root"], stdout=log, stderr=subprocess.STDOUT)
+                log.write(f"\nSkullKey: the game exited with code {code}\n")
+                ac = anticheat(pid)
+                if ac and code:
+                    log.write(f"SkullKey: this game ships {ac}, which usually blocks Linux.\n")
+                return code
         finally:
             session.stop()
 
