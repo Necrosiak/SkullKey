@@ -47,6 +47,12 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
     // Ubisoft, Battle.net, Minecraft… n'en ont pas, et l'appeler ouvrait une
     // fenêtre « Action not found » (SkullKey #4).
     const [hasTabConfig, setHasTabConfig] = useState(false);
+    // A sign-in that finished on its own page (Xbox) changes the library.
+    useEffect(() => {
+        const onDone = () => refreshContent({ ...argsCache, limited: isLimited });
+        window.addEventListener("skullkey-login-done", onDone);
+        return () => window.removeEventListener("skullkey-login-done", onDone);
+    }, [argsCache, isLimited]);
     useEffect(() => {
         serverAPI.callPluginMethod<{ actionSet: string; actionName: string }, boolean>(
             "has_action", { actionSet: initActionSet, actionName: "GetTabConfigActions" })

@@ -56,6 +56,9 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
             // NavigateBack : dans le navigateur il recule dans SON historique
             // (Epic = 3 pages) au lieu de le quitter (mesuré 04/10).
             Navigation.Navigate(route);
+            // Xbox signs in on its own page: the store page never left, so
+            // tell it to reload the account bar and the grid.
+            if (status === "done") window.dispatchEvent(new CustomEvent("skullkey-login-done"));
         }
     }, 1500);
     return true;
@@ -77,6 +80,11 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
             updateLoginStatus();
         }
     }, [LoggedIn, actionSetName]);
+    useEffect(() => {
+        const onDone = () => { if (actionSetName !== "") updateLoginStatus(); };
+        window.addEventListener("skullkey-login-done", onDone);
+        return () => window.removeEventListener("skullkey-login-done", onDone);
+    }, [actionSetName]);
     const loadRemoveInfo = async () => {
         // Seul Ubisoft a cette action : la demander ailleurs ouvrait une
         // fenêtre « Action not found » sur chaque magasin (régression 1.14.0).

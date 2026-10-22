@@ -23,7 +23,9 @@ async function run(response, status = { success: true, result: { status: 'done' 
     Navigation: { Navigate: route => calls.push(['route', route]),
                   NavigateToExternalWeb: url => calls.push(['web', url]) },
     setInterval: fn => { poll = fn; calls.push(['timer']); return 1; },
-    clearInterval: () => calls.push(['clear']), Date,
+    clearInterval: () => calls.push(["clear"]), Date,
+    window: { dispatchEvent: e => calls.push(["event", e.type]) },
+    CustomEvent: class { constructor(type) { this.type = type; } },
   });
   vm.runInContext(source, context);
   const result = await context.start({ callPluginMethod: async method => {
@@ -158,4 +160,14 @@ test("Xbox inline sign-in polls without opening a URL", async () => {
 test("Xbox login always takes the Steam browser path", () => {
   const src = fs.readFileSync(path.join(__dirname, "../src/Components/LoginContent.tsx"), "utf8");
   assert.ok(src.includes("actionSetName.startsWith(\"Xbox\") || (need.success && need.result)"));
+});
+
+test("a finished sign-in tells the store page to refresh", async () => {
+  const events = [];
+  globalThis.window = { dispatchEvent: e => events.push(e.type) };
+  globalThis.CustomEvent = class { constructor(type) { this.type = type; } };
+  const src = fs.readFileSync(path.join(__dirname, "../src/Components/LoginContent.tsx"), "utf8");
+  assert.ok(src.includes('window.dispatchEvent(new CustomEvent("skullkey-login-done"))'));
+  const grid = fs.readFileSync(path.join(__dirname, "../src/Components/GridContent.tsx"), "utf8");
+  assert.ok(grid.includes('addEventListener("skullkey-login-done"'));
 });
