@@ -51,6 +51,14 @@ def _running(data, path):
     return _alive(data.get("pid")) or _fresh(path)
 
 
+def _fresh(path, _orig=_fresh):
+    # A frozen (paused) download stops writing: its file stays "fresh".
+    stem = Path(path).stem.replace("mihoyo_progress_", "").replace("job-", "")
+    if any(k.endswith(":" + stem) for k in paused_keys()):
+        return True
+    return _orig(path)
+
+
 def _entry(store, gid, title, data):
     return {"store": store, "id": gid, "title": title or gid,
             "pct": float(data.get("Percentage", data.get("pct", 0)) or 0),
@@ -205,6 +213,79 @@ def dest_label(path):
         return ""
 
 
+# ── pause / resume ──────────────────────────────────────────────────────────
+# Xbox: the engine pauses natively (the worker relays SIGUSR1/SIGUSR2).
+# Every other store: the download process and its children are frozen
+# (SIGSTOP) and thawed (SIGCONT), so they continue exactly where they were.
+# Never a whole process group: some stores start from a shell that shares
+# Decky's group.
+PAUSED_FILE = RUNTIME / "download_paused.json"
+
+
+def paused_keys():
+    return set((_json(PAUSED_FILE) or {}).get("paused") or [])
+
+
+def _set_paused(key, on):
+    keys = paused_keys()
+    (keys.add if on else keys.discard)(key)
+    PAUSED_FILE.write_text(json.dumps({"paused": sorted(keys)}))
+
+
+def find_pid(store, gid):
+    if store == "xbox":
+        return (_json(RUNTIME / "xbox" / "progress" / f"{gid}.json") or {}).get("pid")
+    if store == "ports":
+        return (_json(RUNTIME / "ports_progress" / f"{gid}.json") or {}).get("pid")
+    if store == "mihoyo":
+        return (_json(RUNTIME / f"mihoyo_progress_{gid}.json") or {}).get("pid")
+    if store == "disks":
+        return (_json(RUNTIME / "disks" / "progress" / f"{gid}.json") or {}).get("pid")
+    if store == "ea":
+        for f in glob.glob(str(RUNTIME / "accounts" / "*" / "ea" / f"job-{gid}.json")):
+            return (_json(f) or {}).get("worker_pid")
+        return None
+    try:
+        return int((LOGS / f"{gid}.pid").read_text().split()[0])
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def _tree(pid):
+    """pid and all its descendants (from /proc)."""
+    children = {}
+    for stat in glob.glob("/proc/[0-9]*/stat"):
+        try:
+            parts = Path(stat).read_text().rsplit(")", 1)[1].split()
+            children.setdefault(int(parts[1]), []).append(int(Path(stat).parent.name))
+        except (OSError, ValueError, IndexError):
+            continue
+    out, todo = [], [int(pid)]
+    while todo:
+        p = todo.pop()
+        out.append(p)
+        todo += children.get(p, [])
+    return out
+
+
+def control(store, gid, action):
+    import signal
+    pid = find_pid(store, gid)
+    if not _alive(pid):
+        return False
+    if store == "xbox":
+        os.kill(int(pid), signal.SIGUSR1 if action == "pause" else signal.SIGUSR2)
+    else:
+        sig = signal.SIGSTOP if action == "pause" else signal.SIGCONT
+        for p in _tree(pid):
+            try:
+                os.kill(p, sig)
+            except OSError:
+                pass
+    _set_paused(f"{store}:{gid}", action == "pause")
+    return True
+
+
 def active():
     out = []
     for fn in (xbox, ports, mihoyo, disks, ea, log_stores):
@@ -212,10 +293,21 @@ def active():
             out += fn()
         except Exception as e:  # one store failing never hides the others
             print(f"downloads: {fn.__name__}: {e!r}", file=sys.stderr)
+    # A paused download writes no progress: keep it listed while its process lives.
+    paused = paused_keys()
+    listed = {f"{e['store']}:{e['id']}" for e in out}
+    for key in paused - listed:
+        store, gid = key.split(":", 1)
+        if _alive(find_pid(store, gid)):
+            out.append({"store": store, "id": gid, "title": gid, "pct": 0, "desc": ""})
     for e in out:
         e["dest"] = dest_label(_dest_path(e["store"], e["id"]))
+        e["paused"] = f"{e['store']}:{e['id']}" in paused
     return out
 
 
 if __name__ == "__main__":
-    print(json.dumps(active()))
+    if len(sys.argv) == 5 and sys.argv[1] == "control":
+        print(json.dumps(control(sys.argv[2], sys.argv[3], sys.argv[4])))
+    else:
+        print(json.dumps(active()))

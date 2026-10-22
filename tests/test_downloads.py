@@ -48,5 +48,20 @@ class DownloadsTest(unittest.TestCase):
         self.assertEqual([x["id"] for x in self.d.active()], ["slow"])
 
 
+    def test_pause_freezes_and_resume_thaws_the_process(self):
+        import subprocess
+        proc = subprocess.Popen(["sleep", "30"])
+        self.addCleanup(proc.kill)
+        self.write("ports_progress/game.json", {"Percentage": 20, "pid": proc.pid})
+        state = lambda: Path(f"/proc/{proc.pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
+        self.assertTrue(self.d.control("ports", "game", "pause"))
+        time.sleep(0.2)
+        self.assertEqual(state(), "T")
+        self.assertTrue(next(x for x in self.d.active() if x["id"] == "game")["paused"])
+        self.assertTrue(self.d.control("ports", "game", "resume"))
+        time.sleep(0.2)
+        self.assertNotEqual(state(), "T")
+        self.assertFalse(next(x for x in self.d.active() if x["id"] == "game")["paused"])
+
 if __name__ == "__main__":
     unittest.main()

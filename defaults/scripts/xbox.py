@@ -631,6 +631,9 @@ def worker(pid):
             xbox_cli.cancel(proc)
         raise SystemExit(130)
     signal.signal(signal.SIGTERM, stop)
+    # Pause / resume from the Downloads page: the engine does it natively.
+    signal.signal(signal.SIGUSR1, lambda *_: proc and xbox_cli.control(proc, "pause"))
+    signal.signal(signal.SIGUSR2, lambda *_: proc and xbox_cli.control(proc, "resume"))
     try:
         with xbox_tools.hold(f"install-{pid}"):
             res = xbox_tools.ensure(update=False)

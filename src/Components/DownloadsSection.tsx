@@ -1,19 +1,17 @@
 import { DialogButton, Focusable, Navigation, ServerAPI } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
-import { FaSkull, FaTimes, FaDownload } from "react-icons/fa";
+import { FaSkull, FaTimes, FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { storeTheme } from "./Styled";
 import { t } from "../i18n";
-import { QueueItem, getQueue, onQueueChange, removeFromQueue } from "../Utils/downloadQueue";
+import { QueueItem, SET_OF, getQueue, onQueueChange, prioritize, removeCurrent, removeFromQueue, setPaused } from "../Utils/downloadQueue";
 import { executeAction } from "../Utils/executeAction";
 
-interface Dl { store: string; id: string; title: string; pct: number; desc: string; dest?: string }
+interface Dl { store: string; id: string; title: string; pct: number; desc: string; dest?: string; paused?: boolean }
 
 // downloads.py store key -> name storeTheme understands (icon + colour) and
 // the store's action set (for its artwork).
 const THEME: Record<string, string> = { ports: "classics", disks: "disks" };
 const themeOf = (key: string) => storeTheme(THEME[key] || key);
-const SET_OF: Record<string, string> = { xbox: "XboxActions", epic: "EpicActions", gog: "GOGActions", amazon: "AmazonActions",
-    ea: "EAActions", mihoyo: "MiHoYoActions", ports: "PortsActions", disks: "DisksActions" };
 
 // Artwork per game, fetched once (the stores cache it on disk too).
 type Art = { hero?: string; logo?: string; capsule?: string };
@@ -57,6 +55,8 @@ function parseDesc(desc: string) {
 const HISTORY = 60;
 const history: Record<string, number[]> = {};
 
+const BTN = { minWidth: 0, width: "auto", height: 32, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, fontSize: 12 };
+
 const Stat: VFC<{ label: string; value: string; color: string }> = ({ label, value, color }) => (
     <div style={{ flex: 1 }}>
         <div style={{ fontSize: 10, letterSpacing: ".5px", textTransform: "uppercase", opacity: 0.75, display: "flex", alignItems: "center", gap: 6 }}>
@@ -86,7 +86,9 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
     const [logoOk, setLogoOk] = useState<boolean | null>(null);
     const th = themeOf(d.store);
     const Icon = th.icon;
-    const { speed, amount, eta } = parseDesc(d.desc);
+    const parsed = parseDesc(d.desc);
+    const { amount, eta } = parsed;
+    const speed = d.paused ? 0 : parsed.speed;
     const h = history[key] = history[key] || [];
     if (speed !== null && (h.length === 0 || (h as any).last !== d.desc)) {
         h.push(speed);
@@ -135,7 +137,19 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
                 </div>
                 <Bar label={t("dl_data")} right={amount ? `${amount}  ·  ${Math.floor(dataPct)} %` : `${Math.floor(dataPct)} %`} pct={dataPct} color="#2f7fd0" />
                 <Bar label={t("dl_install")} right={`${Math.floor(installPct)} %`} pct={installPct} color="#5bd35b" />
-                <div style={{ fontSize: 12, opacity: 0.7, minHeight: 15 }}>{eta ? t("dl_eta", { eta }) : ""}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, fontSize: 12, opacity: 0.7 }}>
+                        {d.paused ? t("dl_paused") : (eta ? t("dl_eta", { eta }) : "")}
+                    </div>
+                    <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8 }}>
+                        <DialogButton style={BTN} onClick={() => setPaused(SET_OF[d.store], d.id, !d.paused)}>
+                            {d.paused ? <FaPlay size={11} /> : <FaPause size={11} />} {d.paused ? t("dl_resume") : t("dl_pause")}
+                        </DialogButton>
+                        <DialogButton style={BTN} onClick={() => removeCurrent(SET_OF[d.store], d.id)}>
+                            <FaTimes size={11} /> {t("queue_remove")}
+                        </DialogButton>
+                    </Focusable>
+                </div>
             </div>
         </Focusable>
     );
@@ -154,10 +168,14 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serv
                 <div style={{ fontSize: 18, display: "flex", alignItems: "center", gap: 10 }}>
                     {q.name}<span style={{ color: th.color, display: "inline-flex" }}>{Icon && <Icon size={16} />}</span>
                 </div>
-                <div style={{ fontSize: 11, opacity: 0.6, letterSpacing: ".4px", textTransform: "uppercase" }}>{t("queue_position", { n: i + 1 })}</div>
+                <div style={{ fontSize: 11, opacity: 0.6, letterSpacing: ".4px", textTransform: "uppercase" }}>
+                    {q.paused ? t("dl_paused") : t("queue_position", { n: i + 1 })}
+                </div>
             </div>
-            <DialogButton style={{ minWidth: 0, width: "auto", height: 34, padding: "0 14px", display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}
-                onClick={() => removeFromQueue(q.set, q.shortname)}>
+            <DialogButton style={BTN} onClick={() => prioritize(q)}>
+                <FaDownload size={11} /> {t("dl_now")}
+            </DialogButton>
+            <DialogButton style={BTN} onClick={() => removeFromQueue(q.set, q.shortname)}>
                 <FaTimes size={11} /> {t("queue_remove")}
             </DialogButton>
         </Focusable>
@@ -221,14 +239,47 @@ export const SkullKeyDownloadsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI
 export const DOWNLOADS_ROUTE = "/skullkey-downloads";
 
 // Top bar indicator, like Steam's own download icon: shown while SkullKey
-// downloads, with one bar for the whole job (download + install). Clicking it
-// opens the SkullKey Downloads page. It sits left of the top bar icons
-// (Steam adds its own download icon there too, so the spot is measured).
+// downloads, a skull that fills from the bottom with the whole job (download
+// + install). It is placed INSIDE Steam's row of top bar icons (a portal in
+// front of the first icon), so it lines up and never overlaps them; the spot
+// is checked again on every poll in case Steam redraws its bar.
+// Plugin code runs in Steam's shared JS context: `document` there is not the
+// Big Picture window. The window's own document comes from a rendered node.
+function topBarHolder(doc: Document): HTMLElement | null {
+    const win = doc.defaultView || window;
+    const existing = doc.querySelector("[data-sk-topbar]") as HTMLElement | null;
+    if (existing && existing.isConnected) return existing;
+    const icons = [...doc.querySelectorAll("svg")]
+        .filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.top < 45 && b.width >= 14 && b.left > win.innerWidth / 2; })
+        .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+    if (!icons.length) return null;
+    // climb from the leftmost icon to the row that holds several icons
+    let item: HTMLElement = icons[0] as unknown as HTMLElement;
+    while (item.parentElement && item.parentElement.querySelectorAll("svg").length < 3) item = item.parentElement;
+    const row = item.parentElement;
+    if (!row) return null;
+    // Insert before the first visible icon button on the right half (the
+    // search icon, or Steam's own download icon when it shows).
+    const first = ([...row.children] as HTMLElement[]).find(c => {
+        const b = c.getBoundingClientRect();
+        return b.width > 20 && b.width < 120 && b.left > win.innerWidth / 2;
+    });
+    if (first) item = first;
+    const holder = doc.createElement("div");
+    holder.setAttribute("data-sk-topbar", "");
+    holder.style.cssText = "display:flex;align-items:center;justify-content:center;padding:0 10px;cursor:pointer";
+    row.insertBefore(holder, item);
+    return holder;
+}
+
 export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [d, setD] = useState<Dl | null>(null);
     const [count, setCount] = useState(0);
-    const [right, setRight] = useState(380);
+    const [holder, setHolder] = useState<HTMLElement | null>(null);
+    const [anchor, setAnchor] = useState<HTMLSpanElement | null>(null);
     useEffect(() => {
+        if (!anchor) return;
+        const doc = anchor.ownerDocument;
         let alive = true;
         const poll = async () => {
             const r = await serverAPI.callPluginMethod<{}, Dl[]>("downloads_list", {});
@@ -237,30 +288,31 @@ export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) =>
             const list = r.success && Array.isArray(r.result) ? r.result : [];
             setD(list[0] || null);
             setCount(list.length + q.pending.length);
-            // leftmost icon of the top bar (search, battery, Steam's download…)
-            const icons = [...document.querySelectorAll("svg")].map(e => e.getBoundingClientRect())
-                .filter(b => b.top >= 0 && b.top < 45 && b.width >= 14 && b.left > window.innerWidth / 2);
-            if (icons.length) setRight(window.innerWidth - Math.min(...icons.map(b => b.left)) + 18);
+            if (list.length) setHolder(topBarHolder(doc));
+            else { doc.querySelector("[data-sk-topbar]")?.remove(); setHolder(null); }
         };
         poll();
         const timer = setInterval(poll, 3000);
-        return () => { alive = false; clearInterval(timer); };
-    }, []);
-    if (!d) return null;
+        return () => { alive = false; clearInterval(timer); doc.querySelector("[data-sk-topbar]")?.remove(); };
+    }, [anchor]);
+    const probe = <span ref={setAnchor} style={{ display: "none" }} />;
+    if (!d || !holder) return probe;
     // Whole job: with steps ("Étape 3/4"), count the finished steps too.
     const step = d.desc.replace(/<[^>]+>/g, " ").match(/(?:[ée]tape|step)\s*(\d+)\s*\/\s*(\d+)/i);
     const raw = Math.min(100, Math.max(0, d.pct));
     const pct = step ? ((Number(step[1]) - 1) + raw / 100) / Number(step[2]) * 100 : raw;
-    const accent = storeTheme("classics").color;
-    return (
-        <div onClick={() => Navigation.Navigate(DOWNLOADS_ROUTE)}
-            style={{ position: "fixed", top: 7, right, zIndex: 7000, display: "flex", alignItems: "center", gap: 8,
-                     padding: "4px 10px", borderRadius: 14, background: "rgba(255,255,255,0.08)", cursor: "pointer" }}>
-            <FaSkull size={16} color={accent} />
-            <div style={{ width: 70, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)" }}>
-                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 2, background: "#2f7fd0", transition: "width .5s" }} />
+    const createPortal = (window as any).SP_REACTDOM?.createPortal;
+    if (!createPortal) return probe;
+    // Like Steam's download icon: the icon, and a thin blue line under it
+    // that fills with the game being downloaded.
+    return <>{probe}{createPortal(
+        <div onClick={() => Navigation.Navigate(DOWNLOADS_ROUTE)} title={`${d.title} · ${Math.floor(pct)} %${count > 1 ? ` (${count})` : ""}`}
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <FaSkull size={20} color={d.paused ? "#9aa4b2" : "#ffffff"} />
+            <div style={{ width: 22, height: 2, background: "rgba(255,255,255,0.18)" }}>
+                <div style={{ width: `${pct}%`, height: "100%", background: d.paused ? "#9aa4b2" : "#1a9fff", transition: "width .5s" }} />
             </div>
-            <span style={{ fontSize: 11, opacity: 0.85 }}>{Math.floor(pct)} %{count > 1 ? ` · ${count}` : ""}</span>
-        </div>
-    );
+        </div>,
+        holder,
+    )}</>;
 };

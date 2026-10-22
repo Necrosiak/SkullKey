@@ -11,7 +11,57 @@ import Logger from "./logger";
 // reload; this runner drives it from the Steam UI, because creating the Steam
 // shortcut at the end needs SteamClient.
 
-export interface QueueItem { set: string; shortname: string; name: string; drive: string; update?: boolean }
+export interface QueueItem { set: string; shortname: string; name: string; drive: string; update?: boolean; paused?: boolean }
+
+// action set <-> store key used by scripts/downloads.py
+export const STORE_OF: Record<string, string> = { XboxActions: "xbox", EpicActions: "epic", GOGActions: "gog",
+    AmazonActions: "amazon", EAActions: "ea", MiHoYoActions: "mihoyo", PortsActions: "ports", DisksActions: "disks" };
+export const SET_OF: Record<string, string> = Object.fromEntries(Object.entries(STORE_OF).map(([k, v]) => [v, k]));
+
+async function control(set: string, shortname: string, action: "pause" | "resume") {
+    const r = await api!.callPluginMethod<any, boolean>("download_control", { store: STORE_OF[set], gid: shortname, action });
+    return r.success && !!r.result;
+}
+
+/** Pause / resume the download running now (any store). */
+export async function setPaused(set: string, shortname: string, paused: boolean) {
+    if (!api) return;
+    await control(set, shortname, paused ? "pause" : "resume");
+    const state = await load();
+    if (state.current && state.current.set === set && state.current.shortname === shortname) {
+        state.current = { ...state.current, paused };
+        await save(state);
+    } else listeners.forEach(l => l());
+}
+
+/** Stop and remove the download running now; the next one starts. */
+export async function removeCurrent(set: string, shortname: string) {
+    if (!api) return;
+    await control(set, shortname, "resume");  // a frozen process cannot stop
+    await executeAction<any, any>(api, set, "CancelInstall", { shortname });
+    await cancelCurrent(set, shortname);
+    await tick();
+}
+
+/** "Download now" on a waiting game: the running one pauses and waits first in line. */
+export async function prioritize(item: QueueItem) {
+    if (!api) return;
+    const state = await load();
+    const same = (q: QueueItem) => q.set === item.set && q.shortname === item.shortname;
+    state.pending = state.pending.filter(q => !same(q));
+    if (state.current) {
+        await control(state.current.set, state.current.shortname, "pause");
+        state.pending.unshift({ ...state.current, paused: true });
+    }
+    state.current = { ...item, paused: false };
+    await save(state);
+    if (item.paused) await control(item.set, item.shortname, "resume");
+    else if (!(await start(item))) {
+        notify({ title: "SkullKey", body: t("queue_failed", { game: item.name }) });
+        state.current = null;
+        await save(state);
+    }
+}
 interface QueueState { current: QueueItem | null; pending: QueueItem[] }
 
 // Steam UI globals (present at runtime in the Steam JS context).
@@ -130,6 +180,7 @@ async function tick() {
     busy = true;
     try {
         const state = await load();
+        if (state.current?.paused) return;  // paused by the player: the line waits
         if (state.current) {
             const p = (await executeAction<any, any>(api, state.current.set, "GetProgress", { shortname: state.current.shortname }))?.Content;
             if (p?.Error) {
@@ -151,12 +202,13 @@ async function tick() {
         // Something started outside the queue (an update from the game page,
         // an auto-update) keeps the line waiting too.
         const running = await api.callPluginMethod<{}, any[]>("downloads_list", {});
-        if (running.success && Array.isArray(running.result) && running.result.length) return;
+        if (running.success && Array.isArray(running.result) && running.result.some((d: any) => !d.paused)) return;
         const next = state.pending.shift();
         if (!next) return;
-        state.current = next;
+        state.current = { ...next, paused: false };
         await save(state);
-        if (!(await start(next))) {
+        if (next.paused) await control(next.set, next.shortname, "resume");  // it was frozen: thaw it
+        else if (!(await start(next))) {
             notify({ title: "SkullKey", body: t("queue_failed", { game: next.name }) });
             state.current = null;
             await save(state);
