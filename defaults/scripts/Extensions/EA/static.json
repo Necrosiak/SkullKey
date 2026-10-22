@@ -30,7 +30,7 @@
   "Content": {
    "Tabs": [
     {
-     "Title": "EA / Maxima (Experimental)",
+     "Title": "EA / Maxima",
      "Type": "GameGrid",
      "ActionId": "GetEAActions",
      "Category": "games"

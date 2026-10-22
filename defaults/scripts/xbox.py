@@ -44,7 +44,7 @@ LAUNCH_DIR = XBOX_DIR / "launch"
 STORE = "Xbox"
 DEFAULT_BASE = HOME / "Games" / STORE
 PYEXE = sys.executable or "/usr/bin/python3"
-PROFILE_TTL = 24 * 3600
+PROFILE_TTL = 6 * 3600  # Game Pass arrivals/departures show up within 6 h
 MARKETS = {"fr": ("FR", "fr-fr"), "de": ("DE", "de-de"), "es": ("ES", "es-es"), "it": ("IT", "it-it"),
            "pt": ("PT", "pt-pt"), "nl": ("NL", "nl-nl"), "pl": ("PL", "pl-pl"), "ru": ("US", "ru-ru")}
 
@@ -479,18 +479,18 @@ def action_getgamedetails(pid):
     if not info:
         return error("Unknown game.")
     d = xbox_catalog.details([pid], m, lang).get(pid) or {}
-    labels = {"owned": "Owned", "gamepass": "Game Pass", "free": "Free"}
+    words = DETAIL_LABELS.get(_lang(), DETAIL_LABELS["en"])
     lines = [d.get("description", "")] if d.get("description") else []
-    lines.append(labels.get(access["access"], ""))
+    lines.append(words.get(access["access"], ""))
     ac = anticheat(pid)
     if ac:
         lines.append(ANTICHEAT_LABELS.get(_lang(), ANTICHEAT_LABELS["en"]).format(name=ac))
     lines.append(SLOW_START.get(_lang(), SLOW_START["en"]))
     if access["reason"] == "subscription-required":
-        lines.append("Game Pass subscription required to play.")
+        lines.append(words["subscription"])
     g = load_state()["games"].get(pid) or {}
     if g.get("root"):
-        lines.append("Location: " + g["root"].replace(str(HOME), "~"))
+        lines.append(words["location"] + g["root"].replace(str(HOME), "~"))
     cover = (info.get("art") or {}).get("cover")
     emit("GameDetails", {
         "Name": info["title"], "Description": "<br><br>".join(l for l in lines if l),
@@ -956,6 +956,27 @@ def action_loginstatus():
     active = xbox_access.subscription_active(view["profile"])
     emit("LoginStatus", {"Username": f"{name} · {_sub_label(active)}", "LoggedIn": True})
 
+
+DETAIL_LABELS = {
+    "en": {"owned": "Owned", "gamepass": "Game Pass", "free": "Free to play",
+           "subscription": "Game Pass subscription required to play.", "location": "Location: "},
+    "fr": {"owned": "Possédé", "gamepass": "Game Pass", "free": "Gratuit",
+           "subscription": "Abonnement Game Pass requis pour jouer.", "location": "Emplacement : "},
+    "de": {"owned": "Gekauft", "gamepass": "Game Pass", "free": "Kostenlos",
+           "subscription": "Game-Pass-Abo zum Spielen erforderlich.", "location": "Speicherort: "},
+    "es": {"owned": "Comprado", "gamepass": "Game Pass", "free": "Gratis",
+           "subscription": "Se necesita una suscripción a Game Pass para jugar.", "location": "Ubicación: "},
+    "it": {"owned": "Acquistato", "gamepass": "Game Pass", "free": "Gratuito",
+           "subscription": "Per giocare serve un abbonamento Game Pass.", "location": "Posizione: "},
+    "pt": {"owned": "Comprado", "gamepass": "Game Pass", "free": "Gratuito",
+           "subscription": "É necessária uma subscrição Game Pass para jogar.", "location": "Localização: "},
+    "nl": {"owned": "Gekocht", "gamepass": "Game Pass", "free": "Gratis",
+           "subscription": "Game Pass-abonnement nodig om te spelen.", "location": "Locatie: "},
+    "pl": {"owned": "Kupiona", "gamepass": "Game Pass", "free": "Darmowa",
+           "subscription": "Do gry wymagana jest subskrypcja Game Pass.", "location": "Lokalizacja: "},
+    "ru": {"owned": "Куплено", "gamepass": "Game Pass", "free": "Бесплатно",
+           "subscription": "Для игры нужна подписка Game Pass.", "location": "Расположение: "},
+}
 
 SUB_LABELS = {
     "en": ("Game Pass: active", "Game Pass: inactive"), "fr": ("Game Pass : actif", "Game Pass : inactif"),

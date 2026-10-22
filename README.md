@@ -20,7 +20,7 @@ New in v1.18.0: 82 more Classics (150+ in total: Metroid Prime, Silent Hill, Gol
 - 🟩 **Xbox** *(experimental)* — Microsoft Store / Xbox PC games without Xodus Nexus: owned, Game Pass (while subscribed) and free-to-play games, DLC and campaigns included, Steam's language, daily updates; sign in from Game Mode
 - ⚙️ **Installed games & Platforms** — see every installed game by platform (move Xbox games to another drive) and switch off the stores you don't use
 - ⚠️ **Anti-cheat warning** — game pages say when an anti-cheat blocks Linux ([AreWeAntiCheatYet](https://areweanticheatyet.com))
-- 🟦 **EA** *(experimental)* — your EA library through [Maxima](https://github.com/Starkka15/Maxima): sign in from Game Mode, install, play through Proton, cloud saves; the game language follows Steam's
+- 🟦 **EA** — your EA library through [Maxima](https://github.com/Starkka15/Maxima): sign in from Game Mode, install, play through Proton, cloud saves; the game language follows Steam's
 - 💽 **Pick the drive at install** — system drive, microSD, USB or internal drives (with free space and SSD/HDD shown), for Epic, GOG, Xbox, Amazon, EA, miHoYo and Classics
 - 💿 **Discs & Installers** — install Windows games from your own disc images (ISO, BIN/CUE…), inserted CDs/DVDs/Blu-rays, offline installers (GOG…) or ready-to-play folders, or scan a folder like Downloads: the installer runs in Game Mode, SkullKey finds the game's executable and adds it to Steam with its artwork
 - 👥 **One store space per Steam account (multi-account)** — every Steam user of the machine gets their own Epic/GOG/Amazon logins and library; switching the Steam account switches everything automatically (existing logins are kept by the account active at first run)

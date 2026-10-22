@@ -349,6 +349,14 @@ class ActionsTest(unittest.TestCase):
         self.assertTrue((root / "game.bin").exists())
         self.assertEqual(self.x.load_state()["games"]["9OWN"]["root"], str(root))
 
+    def test_details_labels_are_translated(self):
+        self.install_fake("9OWN")
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            desc = self.call(self.x.action_getgamedetails, "9OWN")["Content"]["Description"]
+        self.assertIn("Possédé", desc)
+        self.assertIn("Emplacement : ", desc)
+        self.assertNotIn("Owned", desc)
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

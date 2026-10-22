@@ -432,7 +432,7 @@ def description(g):
                          ("Release Date", info.get("released") or "")):
         if value:
             out += "<p>%s: %s</p>" % (label, esc(value))
-    return out + "<p>EA / Maxima (experimental)</p></div>"
+    return out + "<p>EA / Maxima</p></div>"
 
 
 def cover(g):
@@ -852,7 +852,7 @@ def launch_options(action, slug=""):
                     + "exec " + shlex.join(command) + "\n")
     path.chmod(0o700)
     return {"Exe": str(path), "Options": "", "WorkingDir": str(root()),
-            "Compatibility": False, "Name": "EA / Maxima (experimental)" if not slug else game(slug)["name"]}
+            "Compatibility": False, "Name": "EA / Maxima" if not slug else game(slug)["name"]}
 
 
 def dispatch(action, args):
@@ -1047,7 +1047,7 @@ def dispatch(action, args):
         g = game(slug)
         return {"Type": "Images", "Content": images(g) if g else {}}
     if action == "getgamesize":
-        return {"Type": "GameSize", "Content": {"Size": "EA / Maxima (experimental)"}}
+        return {"Type": "GameSize", "Content": {"Size": "EA / Maxima"}}
     if action == "uninstall":
         # maxima-cli v0.14.3 has no uninstall command; it considers a game
         # installed while its executable exists. Remove only SkullKey's own
@@ -1097,4 +1097,4 @@ if __name__ == "__main__":
         print(json.dumps(dispatch(sys.argv[1], sys.argv[2:])))
     except Exception:
         # Deliberately no raw exception/CLI output: it may contain EA secrets.
-        print(json.dumps({"Type": "Error", "Content": {"Message": "EA / Maxima experimental action failed. Check desktop OAuth setup, authentication and runtime; no game data was removed."}}))
+        print(json.dumps({"Type": "Error", "Content": {"Message": "EA / Maxima action failed. Check desktop OAuth setup, authentication and runtime; no game data was removed."}}))

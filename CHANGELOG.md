@@ -24,6 +24,7 @@
 
 ### Changed
 
+- **EA is no longer experimental** — the tab is now simply "EA / Maxima".
 - New tab icons for Xbox, EA, Minecraft and Discs & Installers; Xbox sits right
   after GOG.
 - Store grids always take focus on their first game.
