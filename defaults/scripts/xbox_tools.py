@@ -176,6 +176,42 @@ def _path(kind, *parts):
 # (~/.xodus-keyring.ron, like other launchers) instead of KDE Wallet, so no
 # wallet prompt ever blocks Game Mode. Preferred over the official build.
 OWN_ENGINE = "engine-file-keychain"
+# Built from the official backend-v0.2.10 source with only the upstream
+# `key-chain-file` feature switched on (see xodus-engine/BUILD.md), published
+# as a SkullKey release asset and pinned here by checksum.
+OWN_ENGINE_ASSET = "xodus-engine-skullkey-0.2.10-linux-x86_64.tar.xz"
+OWN_ENGINE_URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.20.0/" + OWN_ENGINE_ASSET
+OWN_ENGINE_SHA512 = ("0bb39dec68f8d7e222cd765b57d619f3647671be28b076d46f72420a0b9b003736a38c7f9ef6f2b468ce73efbf7de0e3"
+                     "98870c8d1eefa6004051230154f3f529")
+
+
+def install_own_engine(download=None):
+    download = download or http_download
+    import hashlib
+    cache = XBOX_DIR / "cache"
+    cache.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=cache) as work:
+        dl = Path(work) / OWN_ENGINE_ASSET
+        try:
+            download(OWN_ENGINE_URL, dl)
+        except Exception as e:
+            raise ToolsError("Download failed (Xbox engine).") from e
+        h = hashlib.sha512(dl.read_bytes()).hexdigest()
+        if h != OWN_ENGINE_SHA512:
+            raise ToolsError("The Xbox engine download did not match its checksum.")
+        staging = Path(tempfile.mkdtemp(dir=XBOX_DIR, prefix=".engine-"))
+        try:
+            with tarfile.open(dl, "r:xz") as tar:
+                tar.extractall(staging, filter="tar")
+            inner = staging / "xodus-engine-skullkey"
+            final = XBOX_DIR / OWN_ENGINE
+            if final.exists():
+                shutil.rmtree(final)
+            inner.rename(final)
+            for name in ("xodus-cli", "xodus-service"):
+                (final / name).chmod(0o755)
+        finally:
+            shutil.rmtree(staging, ignore_errors=True)
 
 
 def _own(name):
@@ -260,6 +296,12 @@ def ensure(update=True, components=("backend", "runtime"), present=present):
     """Install what is missing; refresh the rest at most every 6 h when idle.
     Returns {"installed": [...], "updated": [...], "errors": [...]}."""
     result = {"installed": [], "updated": [], "errors": []}
+    if "backend" in components and not _own("xodus-cli"):
+        try:
+            install_own_engine()
+            result["installed"].append("engine")
+        except ToolsError as e:
+            result["errors"].append(str(e))
     missing = [k for k in components if not present(k)]
     for kind in missing:
         try:

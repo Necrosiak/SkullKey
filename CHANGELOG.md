@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.20.0 — 2026-10-22
+
+### New
+
+- **Xbox (experimental)** — your Microsoft Store / Xbox PC games, without
+  Xodus Nexus: sign in from Game Mode in Steam's own browser; the grid shows
+  the games you own, Game Pass games while your subscription is active, and
+  free-to-play games (popular list and search). Install with the drive picker,
+  play through the Xodus engine and its Proton runtime, uninstall. Additional
+  content you own (DLC, and campaigns sold as content, like DOOM Eternal's) is
+  installed with the game and checked at every launch. Games start in Steam's
+  language, sign in to Xbox in-game, and get daily automatic updates. Games
+  already installed by Xodus Nexus are picked up. Suggested by
+  [bastiHST90](https://github.com/bastiHST90) in
+  [#11](https://github.com/Necrosiak/SkullKey/issues/11).
+- **Settings → Installed games** — every installed game, grouped by platform,
+  with its page one press away; Xbox games can be moved to another drive.
+- **Settings → Platforms** — switch off the stores and media sections you do
+  not use; their tab disappears from the store and the menu.
+- **Anti-cheat warning** — any store's game page warns when the game's
+  anti-cheat does not run on Linux (data from AreWeAntiCheatYet).
+
+### Changed
+
+- New tab icons for Xbox, EA, Minecraft and Discs & Installers; Xbox sits right
+  after GOG.
+- Store grids always take focus on their first game.
+- A game page opened straight from the Steam library after an update no longer
+  shows "Action not found".
+
+### Known limitations (Xbox)
+
+- Games packaged in the older EAPPX format (for example Phantom Dust) cannot
+  be installed by the Xodus engine yet and are hidden.
+- Games with an anti-cheat that blocks Linux (for example Mecha BREAK) install
+  but do not start; their page says so.
+- Games take longer to start than on Windows: the engine decrypts them at each
+  launch, and the first launch also prepares their Proton prefix.
+- The Microsoft sign-in is kept in a private file
+  (`~/.xodus-keyring.ron`), like other launchers keep theirs, instead of KDE
+  Wallet, so no wallet password is ever asked in Game Mode.
+- EA games are not updated automatically: Maxima has no update command yet.
+
 ## 1.19.0 — 2026-10-20
 
 ### New

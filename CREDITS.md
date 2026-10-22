@@ -29,6 +29,8 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
   added in v1.15.0)
 - EA login failing on a stock Steam Deck, with the log that showed where it
   stopped ([#9](https://github.com/Necrosiak/SkullKey/issues/9), fixed in v1.18.1)
+- The idea of bringing Xodus Nexus to SkullKey
+  ([#11](https://github.com/Necrosiak/SkullKey/issues/11), Xbox tab added in v1.20.0)
 
 ### [@arsaban](https://github.com/arsaban)
 

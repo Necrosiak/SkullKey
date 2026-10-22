@@ -125,6 +125,37 @@ class ToolsTest(unittest.TestCase):
         self.assertEqual(self.t.service_path(), own / "xodus-service")
         self.assertTrue(self.t.present("backend"))
 
+    def test_own_engine_downloaded_and_checked(self):
+        arc = self.src / self.t.OWN_ENGINE_ASSET
+        digest = make_archive(arc, "xodus-engine-skullkey", {"xodus-cli": b"#!/bin/sh\n", "xodus-service": b"x", "LICENSE": b"GPL"})
+        with mock.patch.object(self.t, "OWN_ENGINE_SHA512", digest):
+            self.t.install_own_engine(download=lambda url, dest: Path(dest).write_bytes(arc.read_bytes()))
+        self.assertEqual(self.t.cli_path(), self.t.XBOX_DIR / self.t.OWN_ENGINE / "xodus-cli")
+
+    def test_own_engine_with_wrong_checksum_refused(self):
+        arc = self.src / self.t.OWN_ENGINE_ASSET
+        make_archive(arc, "xodus-engine-skullkey", {"xodus-cli": b"evil"})
+        with self.assertRaises(self.t.ToolsError):
+            self.t.install_own_engine(download=lambda url, dest: Path(dest).write_bytes(arc.read_bytes()))
+        self.assertFalse((self.t.XBOX_DIR / self.t.OWN_ENGINE / "xodus-cli").exists())
+
+    def test_ensure_installs_own_engine_first(self):
+        def fake_own():
+            d = self.t.XBOX_DIR / self.t.OWN_ENGINE
+            d.mkdir(parents=True)
+            (d / "xodus-cli").write_text("x")
+        with mock.patch.object(self.t, "install_own_engine", side_effect=fake_own) as own, \
+             mock.patch.object(self.t, "install_component") as official:
+            self.t.ensure(update=False, components=("backend",))
+        own.assert_called_once()
+        official.assert_not_called()
+
+    def test_official_engine_is_the_fallback(self):
+        with mock.patch.object(self.t, "install_own_engine", side_effect=self.t.ToolsError("offline")), \
+             mock.patch.object(self.t, "install_component") as official:
+            self.t.ensure(update=False, components=("backend",))
+        official.assert_called_once_with("backend")
+
     def test_dead_lock_pid_not_busy(self):
         locks = self.t.XBOX_DIR / "locks"
         locks.mkdir(parents=True)
