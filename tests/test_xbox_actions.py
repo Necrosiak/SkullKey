@@ -47,7 +47,7 @@ class ActionsTest(unittest.TestCase):
             mock.patch.object(self.x.xbox_catalog, "details", side_effect=details),
             mock.patch.object(self.x.xbox_catalog, "free_games", return_value=[FREE]),
             mock.patch.object(self.x.xbox_catalog, "search", return_value=[FREE]),
-            mock.patch.object(self.x.xbox_catalog, "installable", return_value="c-x"),
+            mock.patch.object(self.x.xbox_catalog, "installable", side_effect=lambda pid, m, deadline=None: "c-" + pid),
             mock.patch.object(self.x, "market", return_value=("FR", "fr-fr")),
             mock.patch.object(self.x.xbox_tools, "ensure", return_value={"installed": [], "updated": [], "errors": []}),
         ]
@@ -286,6 +286,21 @@ class ActionsTest(unittest.TestCase):
             self.assertFalse(self.x.update_game("9OWN"))
         self.assertTrue((root / "game.bin").exists())
         self.assertIn("9OWN", self.x.load_state()["games"])
+
+    def test_editions_sharing_one_package_are_shown_once(self):
+        a = {"productId": "9AOE", "status": "Active", "isTrial": False, "satisfiedByProductId": "CFQ7TTC0KGQ8"}
+        b = {"productId": "9AOEANNIV", "status": "Active", "isTrial": False, "satisfiedByProductId": "CFQ7TTC0KGQ8"}
+        names = {"9AOE": "Age of Empires IV", "9AOEANNIV": "Age of Empires IV : Édition anniversaire"}
+
+        def det(ids, m, l, fetch=None):
+            return {i: {"title": names[i], "publisher": "", "description": "", "game": True, "art": {}} for i in ids}
+        self.sub = {"status": "active"}
+        with mock.patch.object(self.x.xbox_cli, "library", return_value=[a, b]), \
+             mock.patch.object(self.x.xbox_catalog, "details", side_effect=det), \
+             mock.patch.object(self.x.xbox_catalog, "free_games", return_value=[]), \
+             mock.patch.object(self.x.xbox_catalog, "installable", return_value="same-content-id"):
+            names_shown = self.grid_names()
+        self.assertEqual(names_shown, ["Age of Empires IV"])
 
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")

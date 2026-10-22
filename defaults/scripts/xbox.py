@@ -198,10 +198,30 @@ def catalogue(query="", refresh=False):
         if pid not in info:
             out.append((pid, {"title": g.get("title", pid), "art": g.get("art") or {}},
                         xbox_access.classify(ents.get(pid), None, True, sub)))
+    out = _one_per_package(out, installed)
     out.sort(key=lambda x: (x[0] not in installed, x[1]["title"].lower()))
     if unchecked:
         _start_prefetch(unchecked)
     return out
+
+
+RANK = {"owned": 0, "gamepass": 1, "free": 2}
+
+
+def _one_per_package(entries, installed):
+    """Editions and bundles of one game share its package: keep one entry —
+    the installed one, else owned, else Game Pass, else free, then the
+    simplest title."""
+    best, order = {}, []
+    for pid, info, access in entries:
+        key = info.get("contentId") or pid
+        score = (pid not in installed, RANK.get(access["access"], 3), len(info.get("title", "")), info.get("title", ""))
+        if key not in best:
+            order.append(key)
+            best[key] = (score, (pid, info, access))
+        elif score < best[key][0]:
+            best[key] = (score, (pid, info, access))
+    return [best[k][1] for k in order]
 
 
 def _start_prefetch(pids):
