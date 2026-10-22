@@ -68,6 +68,7 @@ export interface GameDetails extends ContentType {
   HasBatFiles: boolean;
   Editors: EditorAction[];
   UpdateAvailable?: string;
+  InstallBlocked?: boolean;
 }
 export interface EditorAction {
   Type: string;

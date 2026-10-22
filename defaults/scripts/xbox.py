@@ -161,7 +161,7 @@ def account_view(refresh=False):
     return view
 
 
-def catalogue(query="", refresh=False):
+def catalogue(query="", refresh=False, unsupported=False):
     """[(id, info, access)] for the grid. info: title, publisher, art, contentId."""
     m, lang = market()
     state = load_state()
@@ -193,8 +193,10 @@ def catalogue(query="", refresh=False):
         access = xbox_access.classify(ent, st, pid in installed, sub)
         if access["access"] == "hidden" and pid not in installed:
             continue
+        if (access["access"] == "unsupported") != unsupported:
+            continue
         out.append((pid, info[pid], access))
-    for pid, g in installed.items():
+    for pid, g in ({} if unsupported else installed).items():
         if pid not in info:
             out.append((pid, {"title": g.get("title", pid), "art": g.get("art") or {}},
                         xbox_access.classify(ents.get(pid), None, True, sub)))
@@ -430,7 +432,7 @@ def drop_grid_cache():
 def build_grid(filter_str="", installed="false", access_filter=""):
     games = []
     state_games = load_state()["games"]
-    for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
+    for i, (pid, info, access) in enumerate(catalogue(filter_str, unsupported=access_filter == "unsupported"), start=1):
         if (installed.lower() == "true" or access_filter == "installed") and pid not in state_games:
             continue
         if access_filter in ("owned", "gamepass", "free") and access["access"] != access_filter:
@@ -466,7 +468,7 @@ def action_getgames(filter_str="", installed="false", limited="false", access_fi
 
 
 def _entry(pid):
-    for p, info, access in catalogue(refresh=False):
+    for p, info, access in catalogue(refresh=False) + catalogue(refresh=False, unsupported=True):
         if p == pid:
             return info, access
     g = load_state()["games"].get(pid)
@@ -490,6 +492,9 @@ def action_getgamedetails(pid):
     lines.append(SLOW_START.get(_lang(), SLOW_START["en"]))
     if access["reason"] == "subscription-required":
         lines.append(words["subscription"])
+    blocked = access["access"] == "unsupported"
+    if blocked:
+        lines.insert(0, words["unsupported"])
     g = load_state()["games"].get(pid) or {}
     if g.get("root"):
         lines.append(words["location"] + g["root"].replace(str(HOME), "~"))
@@ -499,7 +504,7 @@ def action_getgamedetails(pid):
         "ApplicationPath": "", "ManualPath": "", "RootFolder": "", "DatabaseID": pid,
         "ConfigurationPath": "", "Images": [cover] if cover else [], "ShortName": pid,
         "SteamClientID": g.get("steamClientID", ""), "HasDosConfig": False, "HasBatFiles": False,
-        "Editors": []})
+        "Editors": [], "InstallBlocked": blocked})
 
 
 def _b64(url):
@@ -545,6 +550,8 @@ def action_download(pid):
     info, access = _entry(pid)
     if not info:
         return error("Unknown game.")
+    if access["access"] == "unsupported":
+        return error("This game cannot be installed by SkullKey yet.")
     if not access["playable"]:
         return error("A Game Pass subscription is required for this game.")
     root = Path(_drives().assign(STORE, pid, DEFAULT_BASE / pid))
@@ -960,23 +967,23 @@ def action_loginstatus():
 
 
 DETAIL_LABELS = {
-    "en": {"owned": "Owned", "gamepass": "Game Pass", "free": "Free to play",
+    "en": {"unsupported": "⛔ Not supported yet: this game uses an older Xbox package format that SkullKey cannot install for now.", "owned": "Owned", "gamepass": "Game Pass", "free": "Free to play",
            "subscription": "Game Pass subscription required to play.", "location": "Location: "},
-    "fr": {"owned": "Possédé", "gamepass": "Game Pass", "free": "Gratuit",
+    "fr": {"unsupported": "⛔ Pas encore compatible : ce jeu utilise un ancien format de paquet Xbox que SkullKey ne sait pas encore installer.", "owned": "Possédé", "gamepass": "Game Pass", "free": "Gratuit",
            "subscription": "Abonnement Game Pass requis pour jouer.", "location": "Emplacement : "},
-    "de": {"owned": "Gekauft", "gamepass": "Game Pass", "free": "Kostenlos",
+    "de": {"unsupported": "⛔ Noch nicht unterstützt: Dieses Spiel nutzt ein älteres Xbox-Paketformat, das SkullKey noch nicht installieren kann.", "owned": "Gekauft", "gamepass": "Game Pass", "free": "Kostenlos",
            "subscription": "Game-Pass-Abo zum Spielen erforderlich.", "location": "Speicherort: "},
-    "es": {"owned": "Comprado", "gamepass": "Game Pass", "free": "Gratis",
+    "es": {"unsupported": "⛔ Aún no compatible: este juego usa un formato de paquete Xbox antiguo que SkullKey todavía no puede instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratis",
            "subscription": "Se necesita una suscripción a Game Pass para jugar.", "location": "Ubicación: "},
-    "it": {"owned": "Acquistato", "gamepass": "Game Pass", "free": "Gratuito",
+    "it": {"unsupported": "⛔ Non ancora supportato: questo gioco usa un vecchio formato di pacchetto Xbox che SkullKey non può ancora installare.", "owned": "Acquistato", "gamepass": "Game Pass", "free": "Gratuito",
            "subscription": "Per giocare serve un abbonamento Game Pass.", "location": "Posizione: "},
-    "pt": {"owned": "Comprado", "gamepass": "Game Pass", "free": "Gratuito",
+    "pt": {"unsupported": "⛔ Ainda não suportado: este jogo usa um formato de pacote Xbox antigo que o SkullKey ainda não consegue instalar.", "owned": "Comprado", "gamepass": "Game Pass", "free": "Gratuito",
            "subscription": "É necessária uma subscrição Game Pass para jogar.", "location": "Localização: "},
-    "nl": {"owned": "Gekocht", "gamepass": "Game Pass", "free": "Gratis",
+    "nl": {"unsupported": "⛔ Nog niet ondersteund: deze game gebruikt een ouder Xbox-pakketformaat dat SkullKey nog niet kan installeren.", "owned": "Gekocht", "gamepass": "Game Pass", "free": "Gratis",
            "subscription": "Game Pass-abonnement nodig om te spelen.", "location": "Locatie: "},
-    "pl": {"owned": "Kupiona", "gamepass": "Game Pass", "free": "Darmowa",
+    "pl": {"unsupported": "⛔ Jeszcze nieobsługiwana: ta gra używa starszego formatu pakietu Xbox, którego SkullKey nie potrafi jeszcze zainstalować.", "owned": "Kupiona", "gamepass": "Game Pass", "free": "Darmowa",
            "subscription": "Do gry wymagana jest subskrypcja Game Pass.", "location": "Lokalizacja: "},
-    "ru": {"owned": "Куплено", "gamepass": "Game Pass", "free": "Бесплатно",
+    "ru": {"unsupported": "⛔ Пока не поддерживается: игра использует старый формат пакетов Xbox, который SkullKey пока не умеет устанавливать.", "owned": "Куплено", "gamepass": "Game Pass", "free": "Бесплатно",
            "subscription": "Для игры нужна подписка Game Pass.", "location": "Расположение: "},
 }
 

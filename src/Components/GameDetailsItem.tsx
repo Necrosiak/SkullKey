@@ -638,6 +638,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                             uninstaller={uninstall}
                             editors={(gameData.Content as GameDetails).Editors}
                             updateAvailable={(gameData.Content as GameDetails).UpdateAvailable}
+                            installBlocked={!!(gameData.Content as GameDetails).InstallBlocked}
                             initActionSet={initActionSet}
                         runner={() => {
                                 closeModal && closeModal();

@@ -1,7 +1,7 @@
 // Settings pages: installed games of every platform, and switching platforms
 // on or off. Both reuse the store plumbing: the store's own GetContent with
 // installed=true, and the game page every tab already opens.
-import { DialogButton, Focusable, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
+import { DialogButton as SteamButton, Focusable, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
 import { ActionSet, ExecuteArgs, ExecuteGetContentArgs, ContentResult, ContentType, GameDataList } from "../Types/Types";
 import { executeAction } from "../Utils/executeAction";
@@ -16,6 +16,13 @@ import { configureShortcut } from "../Utils/utils";
 const PILL = { minWidth: 0, width: "auto", height: 28, lineHeight: "28px", padding: "0 16px", borderRadius: 14,
                fontSize: 12, fontWeight: 600, letterSpacing: ".3px", background: "rgba(255,255,255,0.06)",
                color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.12)" };
+// DialogButton drops className, so the focus ring is driven from focus events.
+const DialogButton: VFC<any> = ({ style, ...props }) => {
+    const [focus, setFocus] = useState(false);
+    return <SteamButton {...props} onGamepadFocus={() => setFocus(true)} onGamepadBlur={() => setFocus(false)}
+        style={focus ? { ...style, outline: "2px solid #fff", outlineOffset: 2, filter: "brightness(1.3)" } : style} />;
+};
+
 const MOVABLE = ["GOGActions", "AmazonActions", "EpicActions", "PortsActions", "DisksActions"];
 
 interface Platform { ActionId: string; Title: string; Category: string; enabled: boolean }
@@ -36,8 +43,6 @@ const Group: VFC<{ title: string; color: string; icon?: any; children?: any }> =
         {children}
     </div>
 );
-
-const PILL_FOCUS = <style>{`.sk-pill.gpfocus { outline: 2px solid #fff !important; outline-offset: 2px; filter: brightness(1.35); }`}</style>;
 
 export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [groups, setGroups] = useState<Installed[] | null>(null);
@@ -92,7 +97,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     if (groups === null) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_loading")}</div>;
     if (!groups.length) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_none")}</div>;
     return (
-        <div style={{ padding: "0 8px" }}>{PILL_FOCUS}
+        <div style={{ padding: "0 8px" }}>
             {groups.map(({ platform, setName, games }) => {
                 const theme = storeTheme(platform.Title);
                 const canMove = setName === "XboxActions" || MOVABLE.includes(setName);
@@ -103,10 +108,10 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
                                 {canMove && (
-                                    <DialogButton className="sk-pill" style={PILL}
+                                    <DialogButton style={PILL}
                                         onClick={() => move(setName, game)}>{t("inst_move")}</DialogButton>
                                 )}
-                                <DialogButton className="sk-pill" style={PILL}
+                                <DialogButton style={PILL}
                                     onClick={() => {
                                         const modal = showModal(<GameDetailsItem serverAPI={serverAPI} shortname={game.shortname}
                                             initActionSet={setName} closeModal={() => { modal.Close(); load(); }} />);

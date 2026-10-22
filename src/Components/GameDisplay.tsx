@@ -52,6 +52,7 @@ interface GameDisplayProperties {
     resetLaunchOptions: () => void;
     updater: () => void;
     updateAvailable?: string;
+    installBlocked?: boolean;
     scriptRunner: (actionSet: string, actionId: string, args: any) => void;
     reloadData: () => void;
     onExeExit: () => void;
@@ -67,6 +68,7 @@ const GameDisplay: VFC<GameDisplayProperties> = (
         images,
         steamClientID,
         installer,
+        installBlocked,
         uninstaller,
         cancelInstall,
         runner,
@@ -244,8 +246,10 @@ const GameDisplay: VFC<GameDisplayProperties> = (
                                 <ActionCard
                                     big
                                     active
-                                    color={installing ? '#f44336' : isInstalled ? '#4caf50' : storeTheme(initActionSet).color}
-                                    onClick={installing ? cancelInstall : !isInstalled ? installer : runner}
+                                    color={installing ? '#f44336' : isInstalled ? '#4caf50' : installBlocked ? '#555' : storeTheme(initActionSet).color}
+                                    // Games SkullKey cannot install yet keep a greyed, inert button.
+                                    disabled={!isInstalled && !installing && installBlocked}
+                                    onClick={installing ? cancelInstall : !isInstalled ? (installBlocked ? () => {} : installer) : runner}
                                 >
                                     {installing ? <FaTimes size={14} /> : !isInstalled ? <FaDownload size={14} /> : <FaPlay size={14} />}
                                     <span>{installing ? t('btn_cancel') : !isInstalled ? t('btn_install_game') : t('btn_play')}</span>

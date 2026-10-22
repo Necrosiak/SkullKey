@@ -49,6 +49,7 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
     // fenêtre « Action not found » (SkullKey #4).
     const [hasTabConfig, setHasTabConfig] = useState(false);
     const [accessFilter, setAccessFilter] = useState<string>("");
+    const [pillFocus, setPillFocus] = useState<string | null>(null);
     // A sign-in that finished on its own page (Xbox) changes the library.
     useEffect(() => {
         const onDone = () => refreshContent({ ...argsCache, limited: isLimited });
@@ -199,18 +200,13 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 </div>
             )}
             {initActionSet === "XboxActions" && (
-                // Steam marks the controller-focused button with .gpfocus; our inline
-                // colours would hide its highlight, so draw a clear ring instead.
-                <style>{`.sk-pill.gpfocus { outline: 2px solid #fff !important; outline-offset: 2px;
-                    filter: brightness(1.35); transform: scale(1.06); }`}</style>
-            )}
-            {initActionSet === "XboxActions" && (
                 <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 12, flexWrap: "wrap" }}>
-                    {(["", "owned", "gamepass", "free", "installed"] as const).map(key => {
+                    {(["", "owned", "gamepass", "free", "installed", "unsupported"] as const).map(key => {
                         const active = accessFilter === key;
                         const color = storeTheme(initActionSet).color;
                         return (
-                            <DialogButton key={key || "all"} className="sk-pill"
+                            <DialogButton key={key || "all"}
+                                onGamepadFocus={() => setPillFocus(key)} onGamepadBlur={() => setPillFocus(null)}
                                 style={{
                                     minWidth: 0, width: "auto", height: 32, padding: "0 18px", whiteSpace: "nowrap",
                                     borderRadius: 16, fontSize: 13, fontWeight: 600, letterSpacing: ".3px",
@@ -219,6 +215,8 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                                     color: active ? "#fff" : "rgba(255,255,255,0.75)",
                                     border: active ? `1px solid ${color}` : "1px solid rgba(255,255,255,0.12)",
                                     boxShadow: active ? `0 0 10px ${color}66` : "none",
+                                    // Controller focus: a white ring the inline colours cannot hide.
+                                    ...(pillFocus === key ? { outline: "2px solid #fff", outlineOffset: 2, filter: "brightness(1.3)" } : {}),
                                 }}
                                 onClick={() => {
                                     setAccessFilter(key);

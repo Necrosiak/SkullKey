@@ -44,9 +44,9 @@ class AccessTest(unittest.TestCase):
         for bad in ({**OWNED, "status": "Expired"}, {**OWNED, "isTrial": True}):
             self.assertEqual(A.classify(bad, None, False, True)["access"], "hidden")
 
-    def test_owned_but_unsupported_format_hidden(self):
+    def test_owned_but_unsupported_format_listed_as_unsupported(self):
         r = A.classify(OWNED, {"price": "paid", "installable": False}, False, False)
-        self.assertEqual((r["access"], r["reason"]), ("hidden", "not-installable"))
+        self.assertEqual((r["access"], r["playable"], r["reason"]), ("unsupported", False, "not-installable"))
 
     def test_owned_installed_stays_even_if_store_says_unsupported(self):
         r = A.classify(OWNED, {"price": "paid", "installable": False}, True, False)
