@@ -114,7 +114,7 @@ async def _auto_update_check():
             # Refused: plugin_loader is a system unit and this plugin is not
             # root, so polkit asks for an authentication nobody can give here
             # (measured 2026-09-22). The files are in place; the code is not.
-            log(f"[updater] {info['latest']} written to disk; loader restart "
+            decky_plugin.logger.info(f"[updater] {info['latest']} written to disk; loader restart "
                 "refused (plugin is not root) — active at next Steam start")
             _PENDING_UPDATE = {"version": info["latest"], "reload": True}
             return

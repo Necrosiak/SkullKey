@@ -1,9 +1,18 @@
 # Changelog
 
-## 1.20.1 — 2026-10-22
+## 1.20.2 — 2026-10-22
+
+Replaces 1.20.1, which was withdrawn: opening an Xbox game page could take
+up to 30 seconds and freeze the SkullKey panel meanwhile.
 
 ### Fixed
 
+- **Xbox: game pages open instantly again** — a game page no longer asks the
+  Xbox engine to re-check the whole library, and checks that fail are
+  remembered for a few hours instead of being retried on every page.
+- **Updates: the "active at next Steam start" notice works again** — when
+  Decky could not be restarted after an update, the notice crashed instead
+  of being shown.
 - **Xbox: controller focus is visible on the filters** — the All / Owned /
   Game Pass / Free / Installed buttons (and Move / Manage in Installed games)
   now show a clear white ring under the controller selection.
