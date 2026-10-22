@@ -12,6 +12,10 @@ import { t, tabLabel } from "../i18n";
 import { configureShortcut } from "../Utils/utils";
 
 // Stores whose games SkullKey can move between drives (Xbox moves itself).
+// Compact pill buttons, same look as the Xbox filters.
+const PILL = { minWidth: 0, width: "auto", height: 28, lineHeight: "28px", padding: "0 16px", borderRadius: 14,
+               fontSize: 12, fontWeight: 600, letterSpacing: ".3px", background: "rgba(255,255,255,0.06)",
+               color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.12)" };
 const MOVABLE = ["GOGActions", "AmazonActions", "EpicActions", "PortsActions", "DisksActions"];
 
 interface Platform { ActionId: string; Title: string; Category: string; enabled: boolean }
@@ -96,10 +100,10 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
                                 {canMove && (
-                                    <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 12px" }}
+                                    <DialogButton style={PILL}
                                         onClick={() => move(setName, game)}>{t("inst_move")}</DialogButton>
                                 )}
-                                <DialogButton style={{ minWidth: 0, width: "auto", padding: "0 12px" }}
+                                <DialogButton style={PILL}
                                     onClick={() => {
                                         const modal = showModal(<GameDetailsItem serverAPI={serverAPI} shortname={game.shortname}
                                             initActionSet={setName} closeModal={() => { modal.Close(); load(); }} />);
