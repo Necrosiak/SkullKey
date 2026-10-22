@@ -138,6 +138,9 @@ class ActionsTest(unittest.TestCase):
             self.assertEqual(self.x.action_run("9OWN"), 0)
         env = call.call_args.kwargs["env"]
         self.assertEqual((env["XODUS_BRIDGE_KEY"], env["XODUS_SAVE_SYNC"]), ("k", "auto"))
+        log = call.call_args.kwargs["stdout"]
+        self.assertTrue(log.name.endswith("logs/9OWN.log"))
+        self.assertIs(call.call_args.kwargs["stderr"], self.x.subprocess.STDOUT)
         session.stop.assert_called_once()
 
     def test_download_refused_without_subscription(self):

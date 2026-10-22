@@ -475,7 +475,12 @@ def action_run(pid):
             env.update(session.env)
             cmd = [str(xbox_tools.cli_path()), "run", g["root"], str(runner), "--exe", exe,
                    "--materialize-chain", "--market", m]
-            return subprocess.call(cmd, env=env, cwd=g["root"])
+            # Keep the engine output of the last launch: licence and Store
+            # errors only show up there. No account data is printed by it.
+            logs = XBOX_DIR / "logs"
+            logs.mkdir(parents=True, exist_ok=True)
+            with open(logs / f"{pid}.log", "w") as log:
+                return subprocess.call(cmd, env=env, cwd=g["root"], stdout=log, stderr=subprocess.STDOUT)
         finally:
             session.stop()
 
