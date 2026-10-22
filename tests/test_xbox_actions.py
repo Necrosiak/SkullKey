@@ -149,6 +149,12 @@ class ActionsTest(unittest.TestCase):
             self.x.action_run("9OWN")
         self.assertIn("SkullKey: the game exited with code 7", (self.x.XBOX_DIR / "logs" / "9OWN.log").read_text())
 
+    def test_details_explain_slower_start(self):
+        self.install_fake("9OWN")
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            desc = self.call(self.x.action_getgamedetails, "9OWN")["Content"]["Description"]
+        self.assertIn("ℹ️ Démarrage plus long", desc)
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

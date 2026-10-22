@@ -253,6 +253,19 @@ ANTICHEAT_LABELS = {
 }
 
 
+SLOW_START = {
+    "en": "ℹ️ Slower start: the Xbox engine decrypts the game each time it starts, and the very first launch also prepares its Proton prefix.",
+    "fr": "ℹ️ Démarrage plus long : le moteur Xbox déchiffre le jeu à chaque lancement, et le tout premier lancement prépare aussi son préfixe Proton.",
+    "de": "ℹ️ Längerer Start: Die Xbox-Engine entschlüsselt das Spiel bei jedem Start, beim ersten Start wird außerdem das Proton-Präfix vorbereitet.",
+    "es": "ℹ️ Inicio más lento: el motor de Xbox descifra el juego en cada inicio, y el primer inicio también prepara su prefijo de Proton.",
+    "it": "ℹ️ Avvio più lento: il motore Xbox decifra il gioco a ogni avvio, e il primo avvio prepara anche il suo prefisso Proton.",
+    "pt": "ℹ️ Início mais lento: o motor Xbox descriptografa o jogo a cada início, e o primeiro início também prepara o prefixo Proton.",
+    "nl": "ℹ️ Langzamere start: de Xbox-engine ontsleutelt de game bij elke start, en de allereerste start maakt ook de Proton-prefix klaar.",
+    "pl": "ℹ️ Wolniejsze uruchamianie: silnik Xbox odszyfrowuje grę przy każdym uruchomieniu, a pierwsze uruchomienie przygotowuje też prefiks Proton.",
+    "ru": "ℹ️ Долгий запуск: движок Xbox расшифровывает игру при каждом запуске, а первый запуск ещё и готовит префикс Proton.",
+}
+
+
 def anticheat(pid):
     g = load_state()["games"].get(pid) or {}
     root = Path(g.get("root", "/nonexistent"))
@@ -305,6 +318,7 @@ def action_getgamedetails(pid):
     ac = anticheat(pid)
     if ac:
         lines.append(ANTICHEAT_LABELS.get(_lang(), ANTICHEAT_LABELS["en"]).format(name=ac))
+    lines.append(SLOW_START.get(_lang(), SLOW_START["en"]))
     if access["reason"] == "subscription-required":
         lines.append("Game Pass subscription required to play.")
     g = load_state()["games"].get(pid) or {}
