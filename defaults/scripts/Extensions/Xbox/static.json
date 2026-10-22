@@ -113,6 +113,12 @@
      "Title": "Refresh",
      "Type": "Refresh",
      "Command": "./scripts/xbox.py refresh"
+    },
+    {
+     "Id": "Move",
+     "Title": "Move",
+     "Type": "Move",
+     "Command": "./scripts/xbox.py move"
     }
    ]
   }

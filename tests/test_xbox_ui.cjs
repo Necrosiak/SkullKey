@@ -15,3 +15,16 @@ test("entering a store grid lands on its first game, not under the button you ca
   const grid = fs.readFileSync(path.join(__dirname, "../src/Components/GridContent.tsx"), "utf8");
   assert.ok(grid.includes("navEntryPreferPosition={0}"));
 });
+
+test("settings have Installed games and Platforms pages", () => {
+  const about = fs.readFileSync(path.join(__dirname, "../src/About.tsx"), "utf8");
+  assert.ok(about.includes("<InstalledGamesPage") && about.includes("<PlatformsPage"));
+  const pages = fs.readFileSync(path.join(__dirname, "../src/Components/SettingsPages.tsx"), "utf8");
+  assert.ok(pages.includes("platforms_set") && pages.includes("installed: \"true\""));
+});
+
+test("settings strings exist in the 9 languages", () => {
+  const i18n = fs.readFileSync(path.join(__dirname, "../src/i18n.ts"), "utf8");
+  for (const key of ["tab_installed", "tab_platforms", "inst_move", "plat_desc"])
+    assert.equal((i18n.match(new RegExp(key + ":", "g")) || []).length, 9, key);
+});

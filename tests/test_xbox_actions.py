@@ -315,6 +315,40 @@ class ActionsTest(unittest.TestCase):
         self.call(self.x.action_logout)
         self.assertFalse(list((self.x.XBOX_DIR / "cache").glob("grid-*.json")))
 
+    def test_move_game_to_another_drive(self):
+        root = self.install_fake("9OWN")
+        (root / "game.bin").write_text("data")
+        drive = Path(self.tmp.name) / "sd"
+        drive.mkdir()
+        with mock.patch.object(self.x, "_drives") as drives:
+            drives.return_value.list_drives.return_value = [{"path": str(drive), "system": False}]
+            drives.return_value.install_dir.return_value = str(drive / "SkullKey" / "Xbox") + "/"
+            self.x.move_worker("9OWN", str(drive))
+        new_root = drive / "SkullKey" / "Xbox" / "9OWN"
+        self.assertEqual((new_root / "game.bin").read_text(), "data")
+        self.assertFalse(root.exists())
+        self.assertEqual(self.x.load_state()["games"]["9OWN"]["root"], str(new_root))
+
+    def test_move_refused_while_running_or_to_unknown_drive(self):
+        self.install_fake("9OWN")
+        with mock.patch.object(self.x, "_drives") as drives:
+            drives.return_value.list_drives.return_value = []
+            self.assertEqual(self.call(self.x.action_move, "9OWN", "/mnt/nowhere")["Type"], "Error")
+        with self.x.xbox_tools.hold("run-9OWN"):
+            self.assertEqual(self.call(self.x.action_move, "9OWN", "")["Type"], "Error")
+
+    def test_failed_move_keeps_the_game_where_it_was(self):
+        root = self.install_fake("9OWN")
+        (root / "game.bin").write_text("data")
+        drive = Path(self.tmp.name) / "sd"
+        drive.mkdir()
+        with mock.patch.object(self.x, "_drives") as drives, \
+             mock.patch.object(self.x.shutil, "copytree", side_effect=OSError("disk full")):
+            drives.return_value.install_dir.return_value = str(drive / "SkullKey" / "Xbox") + "/"
+            self.x.move_worker("9OWN", str(drive))
+        self.assertTrue((root / "game.bin").exists())
+        self.assertEqual(self.x.load_state()["games"]["9OWN"]["root"], str(root))
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

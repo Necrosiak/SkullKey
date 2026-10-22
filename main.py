@@ -1049,6 +1049,46 @@ class Plugin:
             Helper.pending_install_root = ""
             return {"ok": False, "error": str(e)}
 
+    async def platforms_get(self):
+        """Every store/media tab with whether it is switched on."""
+        try:
+            env = dict(os.environ, SK_ALL_TABS="1", DECKY_PLUGIN_RUNTIME_DIR=decky_plugin.DECKY_PLUGIN_RUNTIME_DIR)
+            orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+            if orig is not None:
+                env["LD_LIBRARY_PATH"] = orig
+            else:
+                env.pop("LD_LIBRARY_PATH", None)
+            out = subprocess.run(["/usr/bin/python3", os.path.join(Helper.working_directory, "scripts", "get-json.py"),
+                                  "skullkey-tabs"], cwd=Helper.working_directory, capture_output=True, text=True,
+                                 timeout=15, env=env)
+            tabs = json.loads(out.stdout)["Content"]["Tabs"]
+            disabled = set(Plugin._platforms_disabled())
+            return [{"ActionId": t["ActionId"], "Title": t["Title"], "Category": t.get("Category", "games"),
+                     "enabled": t["ActionId"] not in disabled} for t in tabs]
+        except Exception as e:
+            decky_plugin.logger.warning(f"[platforms] list: {e!r}")
+            return []
+
+    @staticmethod
+    def _platforms_disabled():
+        try:
+            with open(os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "platforms.json")) as f:
+                return list(json.load(f).get("disabled") or [])
+        except (OSError, ValueError):
+            return []
+
+    async def platforms_set(self, actionId, enabled):
+        disabled = set(Plugin._platforms_disabled())
+        if enabled:
+            disabled.discard(actionId)
+        else:
+            disabled.add(actionId)
+        path = os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "platforms.json")
+        with open(path + ".tmp", "w") as f:
+            json.dump({"disabled": sorted(disabled)}, f)
+        os.replace(path + ".tmp", path)
+        return {"ok": True}
+
     async def set_autoupdate(self, enabled):
         return updater.set_autoupdate_enabled(enabled)
 

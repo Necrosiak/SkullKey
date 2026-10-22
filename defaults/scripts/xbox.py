@@ -890,6 +890,62 @@ def action_uninstall(pid, keep=""):
     emit("Success", {"Message": "Uninstalled"})
 
 
+# ── move to another drive ────────────────────────────────────────────────────
+
+def action_move(pid, drive=""):
+    """Move an installed game to another drive ("" = internal storage)."""
+    g = load_state()["games"].get(pid)
+    if not g:
+        return error("Unknown game.")
+    if _running(pid) or xbox_tools.busy_with(f"install-{pid}"):
+        return error("Quit or finish this game before moving it.")
+    if drive and drive not in [d["path"] for d in _drives().list_drives() if not d.get("system")]:
+        return error("This drive is not available.")
+    write_progress(pid, 0, "Moving…")
+    subprocess.Popen([PYEXE, os.path.abspath(__file__), "moveworker", pid, drive], start_new_session=True,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=os.environ.copy())
+    emit("Progress", {"Message": "Moving"})
+
+
+def move_worker(pid, drive):
+    g = load_state()["games"].get(pid)
+    if not g:
+        return
+    old = Path(g["root"])
+    env_root = os.environ.get("SK_INSTALL_ROOT")
+    os.environ["SK_INSTALL_ROOT"] = drive
+    try:
+        base = _drives().install_dir(STORE, str(DEFAULT_BASE) + "/")
+    finally:
+        if env_root is None:
+            os.environ.pop("SK_INSTALL_ROOT", None)
+        else:
+            os.environ["SK_INSTALL_ROOT"] = env_root
+    new = Path(base) / pid
+    if new == old:
+        return write_progress(pid, 100, "Installed")
+    with xbox_tools.hold(f"install-{pid}"):
+        write_progress(pid, 10, "Moving…", pid=os.getpid())
+        try:
+            new.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(old, new, symlinks=True)
+        except Exception as e:  # noqa: BLE001
+            shutil.rmtree(new, ignore_errors=True)
+            return write_progress(pid, 0, "Failed", f"The game could not be moved ({type(e).__name__}).")
+        with locked_state() as st:
+            st["games"][pid]["root"] = str(new)
+        shutil.rmtree(old, ignore_errors=True)
+        give_to_user(new)
+        if drive:
+            data = _drives()._load_paths()
+            data.setdefault(STORE, {})[pid] = str(new)
+            _drives()._save_paths(data)
+        else:
+            _drives().forget(STORE, pid)
+    drop_grid_cache()
+    write_progress(pid, 100, "Installed")
+
+
 # ── account actions ──────────────────────────────────────────────────────────
 
 def action_loginstatus():
@@ -969,6 +1025,8 @@ ACTIONS = {
     "login": lambda a: emit("Success", {"Message": "Use the Steam browser sign-in."}),
     "logout": lambda a: action_logout(),
     "refresh": lambda a: action_refresh(),
+    "move": lambda a: action_move(a[0], a[1] if len(a) > 1 else ""),
+    "moveworker": lambda a: move_worker(a[0], a[1] if len(a) > 1 else ""),
     "refreshgrid": lambda a: build_grid(a[0] if a else "", a[1] if len(a) > 1 else "false"),
     "autoupdate": lambda a: action_autoupdate(),
     "getsetting": lambda a: action_getsetting(*(a or [""])),

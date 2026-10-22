@@ -13,6 +13,7 @@ import { ScrollableWindowRelative } from './ScrollableWindow';
 import { Developer } from "./Developer";
 import { ActionCard, ACCENT } from "./Components/Styled";
 import { t } from "./i18n";
+import { InstalledGamesPage, PlatformsPage } from "./Components/SettingsPages";
 
 const GITHUB_URL = "https://github.com/Necrosiak/SkullKey";
 
@@ -498,6 +499,14 @@ export const About: VFC<{ serverAPI: ServerAPI; }> = ({ serverAPI }) => {
                     {
                         title: t("tab_settings"),
                         content: <SettingsTab serverAPI={serverAPI} />
+                    },
+                    {
+                        title: t("tab_installed"),
+                        content: <InstalledGamesPage serverAPI={serverAPI} />
+                    },
+                    {
+                        title: t("tab_platforms"),
+                        content: <PlatformsPage serverAPI={serverAPI} />
                     },
                     {
                         title: t("tab_deps"),

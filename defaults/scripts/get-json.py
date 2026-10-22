@@ -49,9 +49,24 @@ while queue:
 TAB_ORDER = ["GetEpicActions", "GetGOGActions", "GetXboxActions", "GetAmazonActions", "GetBattleNetActions",
              "GetUbisoftActions", "GetEAActions",
              "GetMiHoYoActions", "GetMinecraftActions", "GetPortsActions", "GetDisksActions"]
+# Platforms the player switched off in SkullKey's settings are left out
+# everywhere (store bar and Quick Access menu). SK_ALL_TABS lists them all.
+def _disabled_tabs():
+    if os.environ.get("SK_ALL_TABS"):
+        return set()
+    runtime = os.environ.get("DECKY_PLUGIN_RUNTIME_DIR") or os.path.expanduser("~/homebrew/data/SkullKey")
+    try:
+        with open(os.path.join(runtime, "platforms.json")) as f:
+            return set(json.load(f).get("disabled") or [])
+    except (OSError, ValueError):
+        return set()
+
+
+DISABLED = _disabled_tabs()
 for fragment in json_fragments.values():
     tabs = fragment.get("Content", {}).get("Tabs") if isinstance(fragment, dict) else None
     if isinstance(tabs, list):
+        tabs[:] = [tab for tab in tabs if tab.get("ActionId") not in DISABLED]
         tabs.sort(key=lambda tab: TAB_ORDER.index(tab.get("ActionId"))
                   if tab.get("ActionId") in TAB_ORDER else len(TAB_ORDER))
 
