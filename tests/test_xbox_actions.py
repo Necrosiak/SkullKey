@@ -256,6 +256,15 @@ class ActionsTest(unittest.TestCase):
             res = self.call(self.x.action_autoupdate)
         upd.assert_called_once_with("9OWN")
         self.assertIn("1 updated", res["Content"]["Message"])
+
+    def test_autoupdate_asks_with_the_installed_store_id(self):
+        root = self.install_fake("9BUNDLE")
+        (root / "MicrosoftGame.config").write_text("<Game><StoreId>9BASE</StoreId><Identity Name=\"A\" Publisher=\"B\" Version=\"1.0.0.0\"/></Game>")
+        session = mock.Mock(env={"XODUS_SOCKET": "/s"})
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_updates, "query", return_value={"available": False}) as q:
+            self.call(self.x.action_autoupdate)
+        self.assertEqual(q.call_args.args[1], "9BASE")
         session.stop.assert_called_once()
 
     def test_autoupdate_skips_running_games(self):

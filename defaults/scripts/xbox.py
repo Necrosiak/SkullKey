@@ -689,7 +689,8 @@ def action_autoupdate():
             if not version:
                 continue
             checked += 1
-            answer = xbox_updates.query(session.env["XODUS_SOCKET"], pid, version)
+            store_id = xbox_cli.inspect_game(g["root"]).get("storeId") or pid
+            answer = xbox_updates.query(session.env["XODUS_SOCKET"], store_id, version)
             if answer.get("available") and update_game(pid):
                 updated += 1
     finally:
