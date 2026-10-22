@@ -28,3 +28,10 @@ test("settings strings exist in the 9 languages", () => {
   for (const key of ["tab_installed", "tab_platforms", "inst_move", "plat_desc"])
     assert.equal((i18n.match(new RegExp(key + ":", "g")) || []).length, 9, key);
 });
+
+test("every store page shows the anti-cheat warning", () => {
+  const src = fs.readFileSync(path.join(__dirname, "../src/Components/GameDetailsItem.tsx"), "utf8");
+  assert.ok(src.includes("\"compat_check\"") && src.includes("compatNote"));
+  const i18n = fs.readFileSync(path.join(__dirname, "../src/i18n.ts"), "utf8");
+  assert.equal((i18n.match(/compat_warn:/g) || []).length, 9);
+});

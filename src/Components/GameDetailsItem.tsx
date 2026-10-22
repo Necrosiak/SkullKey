@@ -37,6 +37,16 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
     logger.log("GameDetailsItem startup");
     const [scriptActions, setScriptActions] = useState<MenuAction[]>([]);
     const [gameData, setGameData] = useState<ContentResult<GameDetails | EmptyContent>>({ Type: "Empty", Content: { Details: {} } });
+    // Known anti-cheat problem on Linux (AreWeAntiCheatYet), on every store's page.
+    const [compatNote, setCompatNote] = useState("");
+    useEffect(() => {
+        const name = (gameData.Content as GameDetails)?.Name;
+        if (gameData.Type !== "GameDetails" || !name) return;
+        serverAPI.callPluginMethod<{ name: string }, any>("compat_check", { name }).then(r => {
+            const c = r.success ? r.result : null;
+            setCompatNote(c ? t("compat_warn", { anticheat: (c.anticheats || []).join(", ") || "?" }) : "");
+        }).catch(() => setCompatNote(""));
+    }, [gameData.Type, (gameData.Content as GameDetails)?.Name]);
     logger.log("GameDetailsItem gameData", gameData);
     const [steamClientID, setSteamClientID] = useState("");
     logger.log("GameDetailsItem steamClientID", steamClientID);
@@ -615,7 +625,9 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                             serverApi={serverAPI}
                             name={(gameData.Content as GameDetails).Name}
                             shortName={(gameData.Content as GameDetails).ShortName}
-                            description={(gameData.Content as GameDetails).Description}
+                            description={compatNote && !(gameData.Content as GameDetails).Description?.includes("⚠️")
+                                ? `${compatNote}<br><br>${(gameData.Content as GameDetails).Description ?? ""}`
+                                : (gameData.Content as GameDetails).Description}
                             images={(gameData.Content as GameDetails).Images}
                             steamClientID={steamClientID}
                             closeModal={closeModal}

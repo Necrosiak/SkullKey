@@ -1049,6 +1049,15 @@ class Plugin:
             Helper.pending_install_root = ""
             return {"ok": False, "error": str(e)}
 
+    async def compat_check(self, name=""):
+        """Known anti-cheat problem on Linux for this title (any store)."""
+        try:
+            import compat
+            return await asyncio.get_event_loop().run_in_executor(None, compat.check, name)
+        except Exception as e:
+            decky_plugin.logger.warning(f"[compat] {e!r}")
+            return None
+
     async def platforms_get(self):
         """Every store/media tab with whether it is switched on."""
         try:
