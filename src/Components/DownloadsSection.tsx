@@ -3,7 +3,7 @@ import React, { VFC, useEffect, useState } from "react";
 import { FaSkull, FaTimes, FaDownload, FaPause, FaPlay } from "react-icons/fa";
 import { storeTheme } from "./Styled";
 import { t } from "../i18n";
-import { QueueItem, SET_OF, getQueue, onQueueChange, prioritize, removeCurrent, removeFromQueue, setPaused } from "../Utils/downloadQueue";
+import { QueueItem, SET_OF, STORE_OF, getQueue, onQueueChange, prioritize, removeCurrent, removeFromQueue, setPaused } from "../Utils/downloadQueue";
 import { executeAction } from "../Utils/executeAction";
 
 interface Dl { store: string; id: string; title: string; pct: number; desc: string; dest?: string; paused?: boolean }
@@ -215,7 +215,10 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
     return (
         <div>
             {header}
-            {active.map(d => <CurrentBanner key={d.store + ":" + d.id} serverAPI={serverAPI} d={d} />)}
+            {active
+                // a paused game waiting in line is shown once, under "Up next"
+                .filter(d => !(d.paused && pending.some(q => STORE_OF[q.set] === d.store && q.shortname === d.id)))
+                .map(d => <CurrentBanner key={d.store + ":" + d.id} serverAPI={serverAPI} d={d} />)}
             <div style={{ padding: "14px 24px" }}>
                 <div style={{ fontSize: 20, margin: "4px 0 8px", display: "flex", alignItems: "center", gap: 10 }}>
                     {t("queue_next")} <span style={{ opacity: 0.6 }}>({pending.length})</span>
@@ -315,7 +318,7 @@ export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) =>
             const q = await getQueue();
             if (!alive) return;
             const list = r.success && Array.isArray(r.result) ? r.result : [];
-            setD(list[0] || null);
+            setD(list.find(x => !x.paused) || list[0] || null);  // the one actually downloading
             setCount(list.length + q.pending.length);
             if (list.length) {
                 const h = topBarHolder(doc);
