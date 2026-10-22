@@ -292,7 +292,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
             // updates stay where the game already is.
             // Ubisoft/Battle.net install through their own client (which has
             // its own folder picker); Minecraft/media have nothing to place.
-            const drivePicker = /^(Epic|GOG|Amazon|EA|MiHoYo|Ports)Actions$/.test(initActionSet);
+            const drivePicker = /^(Epic|GOG|Xbox|Amazon|EA|MiHoYo|Ports)Actions$/.test(initActionSet);
             const drive = update || !drivePicker ? "" : await pickInstallDrive(serverAPI);
             if (drive === null) return;
             await serverAPI.callPluginMethod("set_install_root", { path: drive });
