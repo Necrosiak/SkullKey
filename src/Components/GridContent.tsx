@@ -5,7 +5,7 @@ import { Dispatch, SetStateAction, VFC, memo, useEffect, useState } from "react"
 import GameGridItem from './GameGridItem';
 import { GameDetailsItem } from './GameDetailsItem';
 import Logger from "../Utils/logger";
-import { FaSlidersH, FaCog, FaRegCheckCircle } from 'react-icons/fa';
+import { FaSlidersH, FaCog, FaRegCheckCircle, FaDownload } from 'react-icons/fa';
 import { LoginContent } from './LoginContent';
 import { executeAction } from '../Utils/executeAction';
 import { ConfEditor } from '../ConfEditor';
@@ -174,6 +174,13 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 )}
                 <IconBtn color={storeTheme(initActionSet).color} onClick={actionsMenu} disabled={!scriptActions}>
                     <FaSlidersH style={{ verticalAlign: 'middle' }} />
+                </IconBtn>
+                {/* Steam's Downloads page, where SkullKey's queue is shown on top */}
+                <IconBtn color={storeTheme(initActionSet).color} onClick={() => {
+                    Navigation.CloseSideMenus();
+                    SteamClient.URL.ExecuteSteamURL("steam://open/downloads");
+                }}>
+                    <FaDownload style={{ verticalAlign: 'middle' }} />
                 </IconBtn>
                 {hasTabConfig && <IconBtn color={storeTheme(initActionSet).color} onClick={() => showModal(
                     <ConfEditor

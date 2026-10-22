@@ -317,7 +317,11 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                     setShouldUpdateShortcut(false);  // the queue creates the shortcut at the end
                     setInstalling(true);
                 } else {
-                    notify({ title: "SkullKey", body: t("queue_added", { game: name, place }) });
+                    notify({
+                        title: "SkullKey", body: t("queue_added", { game: name, place }),
+                        clickKey: `queue-added:${initActionSet}:${shortname}`,
+                        onClick: () => { Navigation.CloseSideMenus(); SteamClient.URL.ExecuteSteamURL("steam://open/downloads"); },
+                    });
                 }
                 return;
             }
