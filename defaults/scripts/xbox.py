@@ -684,7 +684,9 @@ def worker(pid):
         _cleanup_partial(pid, root)
         raise
     except Exception as e:  # noqa: BLE001
-        _cleanup_partial(pid, root)
+        # A failed download keeps what is already on disk (and the pending
+        # install), so trying again does not start from zero. Only an explicit
+        # cancel (Remove) deletes the partial folder.
         write_progress(pid, 0, "Failed", str(e)[:200])
 
 

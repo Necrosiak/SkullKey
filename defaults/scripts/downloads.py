@@ -298,6 +298,11 @@ def control(store, gid, action):
     return True
 
 
+def _store_key(set_name):
+    return {"XboxActions": "xbox", "EpicActions": "epic", "GOGActions": "gog", "AmazonActions": "amazon",
+            "EAActions": "ea", "MiHoYoActions": "mihoyo", "PortsActions": "ports", "DisksActions": "disks"}.get(set_name or "", "")
+
+
 def active():
     out = []
     for fn in (xbox, ports, mihoyo, disks, ea, log_stores):
@@ -306,6 +311,13 @@ def active():
         except Exception as e:  # one store failing never hides the others
             print(f"downloads: {fn.__name__}: {e!r}", file=sys.stderr)
     # A paused download writes no progress: keep it listed while its process lives.
+    # Marks left by a download that is gone and no longer queued are dropped.
+    queued = {f"{_store_key(q.get('set'))}:{q.get('shortname')}"
+              for q in ((_json(RUNTIME / "download_queue.json") or {}).get("pending") or [])}
+    for key in paused_keys():
+        store, gid = key.split(":", 1)
+        if key not in queued and not _alive(find_pid(store, gid)):
+            _set_paused(key, False)
     paused = paused_keys()
     listed = {f"{e['store']}:{e['id']}" for e in out}
     for key in paused - listed:
