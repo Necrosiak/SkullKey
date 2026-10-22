@@ -12,7 +12,6 @@ import { ConfEditor } from '../ConfEditor';
 import { FaStore } from "react-icons/fa6";
 import { IconBtn, storeTheme } from './Styled';
 import { t } from '../i18n';
-import { FreeBanner } from './FreeBanner';
 
 export const contentTabsContainerClass = 'content-tabs-container';
 export const gridContentContainerClass = 'grid-content-container';
@@ -200,7 +199,6 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                     <LoginContent serverAPI={serverAPI} initActionSet={initActionSet} initAction="GetLoginActions" />
                 </div>
             )}
-            <FreeBanner serverAPI={serverAPI} actionSet={initActionSet} />
             {initActionSet === "XboxActions" && (
                 <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 12, flexWrap: "wrap" }}>
                     {(["", "owned", "gamepass", "free", "installed", "unsupported"] as const).map(key => {
