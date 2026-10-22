@@ -72,6 +72,9 @@ declare const appStore: any, appDetailsCache: any, appDetailsStore: any, setting
 const logger = new Logger("downloadQueue");
 let api: ServerAPI | null = null;
 let busy = false;
+// Ticks in a row the current download had no live process (after a reboot,
+// a Steam exit or a crash): it is started again over the files on disk.
+let deadTicks = 0;
 const listeners = new Set<() => void>();
 
 // Stores that install through their own client (shown to the player) stay
@@ -189,6 +192,17 @@ async function tick() {
                 notify({ title: "SkullKey", body: t("queue_failed", { game: state.current.name }) });
                 state.current = null;
                 await save(state);
+            } else if (p && p.Percentage < 100) {
+                const live = await api.callPluginMethod<{}, any[]>("downloads_list", {});
+                const cur = state.current;
+                const listed = live.success && Array.isArray(live.result) &&
+                    live.result.some((d: any) => d.store === STORE_OF[cur.set] && d.id === cur.shortname);
+                deadTicks = listed ? 0 : deadTicks + 1;
+                if (deadTicks >= 3) {
+                    deadTicks = 0;
+                    logger.log("restarting interrupted download", cur.shortname);
+                    await start(cur);
+                }
             } else if (p && p.Percentage >= 100) {
                 const done = state.current;
                 state.current = null;

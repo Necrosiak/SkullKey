@@ -681,7 +681,13 @@ def worker(pid):
         write_progress(pid, 100, "Installed")
         drop_grid_cache()
     except SystemExit:
-        _cleanup_partial(pid, root)
+        # Only the Remove button (it leaves a .cancel mark) deletes the partial
+        # download. A shutdown, a Steam exit or a plugin reload also stops the
+        # worker: the files stay, and the queue starts it again afterwards.
+        mark = PROGRESS_DIR / f"{pid}.cancel"
+        if mark.exists():
+            mark.unlink(missing_ok=True)
+            _cleanup_partial(pid, root)
         raise
     except Exception as e:  # noqa: BLE001
         # A failed download keeps what is already on disk (and the pending
@@ -795,6 +801,8 @@ def action_getprogress(pid):
 
 
 def action_cancelinstall(pid):
+    PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
+    (PROGRESS_DIR / f"{pid}.cancel").write_text("1")  # the worker deletes the partial files
     try:
         wpid = json.loads((PROGRESS_DIR / f"{pid}.json").read_text()).get("pid")
         if wpid and _alive(wpid) and str(pid) in Path(f"/proc/{wpid}/cmdline").read_bytes().decode(errors="ignore"):
