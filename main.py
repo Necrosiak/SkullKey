@@ -1143,6 +1143,26 @@ class Plugin:
             decky_plugin.logger.warning(f"[size] {actionSet} {shortname}: {e!r}")
             return 0
 
+    async def downloads_list(self):
+        """Downloads in progress across every store (see scripts/downloads.py)."""
+        def blocking():
+            env = dict(os.environ, DECKY_PLUGIN_RUNTIME_DIR=decky_plugin.DECKY_PLUGIN_RUNTIME_DIR,
+                       DECKY_PLUGIN_LOG_DIR=decky_plugin.DECKY_PLUGIN_LOG_DIR, DECKY_PLUGIN_DIR=Helper.working_directory)
+            orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+            if orig is not None:
+                env["LD_LIBRARY_PATH"] = orig
+            else:
+                env.pop("LD_LIBRARY_PATH", None)
+            r = subprocess.run(["bash", "-c", 'source "$1/scripts/settings.sh" >/dev/null 2>&1; '
+                                'exec /usr/bin/python3 "$1/scripts/downloads.py"', "_", Helper.working_directory],
+                               capture_output=True, text=True, timeout=30, env=env)
+            return json.loads(r.stdout or "[]")
+        try:
+            return await asyncio.get_event_loop().run_in_executor(None, blocking)
+        except Exception as e:
+            decky_plugin.logger.warning(f"[downloads] {e!r}")
+            return []
+
     async def platforms_get(self):
         """Every store/media tab with whether it is switched on."""
         try:
