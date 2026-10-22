@@ -165,6 +165,46 @@ def log_stores():
     return out
 
 
+# Folder each store installs a game into (where we can tell).
+def _dest_path(store, gid):
+    try:
+        import drives
+        if store == "xbox":
+            st = _json(RUNTIME / "xbox" / "state.json") or {}
+            g = (st.get("pending") or {}).get(gid) or (st.get("games") or {}).get(gid) or {}
+            return g.get("root")
+        if store == "ports":
+            import ports as p
+            return str(p.port_dir(p.APPS[gid])) if gid in p.APPS else None
+        if store == "disks":
+            st = _json(RUNTIME / "disks" / "state.json") or {}
+            return ((st.get("games") or {}).get(gid) or {}).get("root")
+        if store == "mihoyo":
+            return drives.game_path("mihoyo", gid, os.path.expanduser(f"~/Games/mihoyo/{gid}"))
+        if store in ("epic", "gog", "amazon", "ea"):
+            key = {"epic": "epic", "gog": "gog", "amazon": "amazon", "ea": "ea"}[store]
+            return drives.game_path(key, gid, os.path.expanduser(f"~/Games/{key}"))
+    except Exception:
+        return None
+    return None
+
+
+def dest_label(path):
+    """Name of the drive holding path: its volume label, or "System"."""
+    if not path:
+        return ""
+    try:
+        import drives
+        best = None
+        for d in drives.list_drives():
+            if path == d["path"] or path.startswith(d["path"].rstrip("/") + "/"):
+                if best is None or len(d["path"]) > len(best["path"]):
+                    best = d
+        return best["label"] if best else ""
+    except Exception:
+        return ""
+
+
 def active():
     out = []
     for fn in (xbox, ports, mihoyo, disks, ea, log_stores):
@@ -172,6 +212,8 @@ def active():
             out += fn()
         except Exception as e:  # one store failing never hides the others
             print(f"downloads: {fn.__name__}: {e!r}", file=sys.stderr)
+    for e in out:
+        e["dest"] = dest_label(_dest_path(e["store"], e["id"]))
     return out
 
 
