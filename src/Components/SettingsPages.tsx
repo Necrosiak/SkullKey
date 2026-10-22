@@ -37,6 +37,8 @@ const Group: VFC<{ title: string; color: string; icon?: any; children?: any }> =
     </div>
 );
 
+const PILL_FOCUS = <style>{`.sk-pill.gpfocus { outline: 2px solid #fff !important; outline-offset: 2px; filter: brightness(1.35); }`}</style>;
+
 export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [groups, setGroups] = useState<Installed[] | null>(null);
 
@@ -90,7 +92,7 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
     if (groups === null) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_loading")}</div>;
     if (!groups.length) return <div style={{ padding: 12, opacity: 0.7 }}>{t("inst_none")}</div>;
     return (
-        <div style={{ padding: "0 8px" }}>
+        <div style={{ padding: "0 8px" }}>{PILL_FOCUS}
             {groups.map(({ platform, setName, games }) => {
                 const theme = storeTheme(platform.Title);
                 const canMove = setName === "XboxActions" || MOVABLE.includes(setName);
@@ -101,10 +103,10 @@ export const InstalledGamesPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI })
                                 style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 0" }}>
                                 <span style={{ flex: 1, fontSize: 13 }}>{game.name}</span>
                                 {canMove && (
-                                    <DialogButton style={PILL}
+                                    <DialogButton className="sk-pill" style={PILL}
                                         onClick={() => move(setName, game)}>{t("inst_move")}</DialogButton>
                                 )}
-                                <DialogButton style={PILL}
+                                <DialogButton className="sk-pill" style={PILL}
                                     onClick={() => {
                                         const modal = showModal(<GameDetailsItem serverAPI={serverAPI} shortname={game.shortname}
                                             initActionSet={setName} closeModal={() => { modal.Close(); load(); }} />);

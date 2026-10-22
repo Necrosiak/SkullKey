@@ -199,12 +199,18 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 </div>
             )}
             {initActionSet === "XboxActions" && (
+                // Steam marks the controller-focused button with .gpfocus; our inline
+                // colours would hide its highlight, so draw a clear ring instead.
+                <style>{`.sk-pill.gpfocus { outline: 2px solid #fff !important; outline-offset: 2px;
+                    filter: brightness(1.35); transform: scale(1.06); }`}</style>
+            )}
+            {initActionSet === "XboxActions" && (
                 <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 12, flexWrap: "wrap" }}>
                     {(["", "owned", "gamepass", "free", "installed"] as const).map(key => {
                         const active = accessFilter === key;
                         const color = storeTheme(initActionSet).color;
                         return (
-                            <DialogButton key={key || "all"}
+                            <DialogButton key={key || "all"} className="sk-pill"
                                 style={{
                                     minWidth: 0, width: "auto", height: 32, padding: "0 18px", whiteSpace: "nowrap",
                                     borderRadius: 16, fontSize: 13, fontWeight: 600, letterSpacing: ".3px",
