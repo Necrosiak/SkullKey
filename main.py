@@ -1,6 +1,7 @@
 import asyncio
 import os
 import json
+import subprocess
 import sys
 import time
 
@@ -409,7 +410,31 @@ class Helper:
                     for action in data:
                         if action["Id"] == actionName:
                             result = action
+        if not result:
+            # A game page opened straight from the Steam library after a
+            # plugin reload: its tab was never opened, so load the set.
+            actions = Helper.load_static_action_set(actionSet)
+            if actions:
+                Helper.action_cache[actionSet] = actions
+                result = next((a for a in actions if a.get("Id") == actionName), None)
         return result
+
+    @staticmethod
+    def load_static_action_set(actionSet):
+        """XboxActions -> get-json.py xbox-actions (the static.json key)."""
+        if not actionSet.endswith("Actions") or not actionSet[:-7].isalnum():
+            return None
+        key = actionSet[:-7].lower() + "-actions"
+        try:
+            out = subprocess.run([os.path.join(Helper.working_directory, "scripts", "get-json.py"), key],
+                                 cwd=Helper.working_directory, capture_output=True, text=True, timeout=15)
+            data = json.loads(out.stdout or "{}")
+        except Exception:
+            return None
+        content = data.get("Content") if isinstance(data, dict) else None
+        if data.get("Type") != "ActionSet" or not isinstance(content, dict) or content.get("SetName") != actionSet:
+            return None
+        return content.get("Actions") or None
 
     @staticmethod
     async def execute_action(
