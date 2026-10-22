@@ -1,7 +1,7 @@
 // Settings pages: installed games of every platform, and switching platforms
 // on or off. Both reuse the store plumbing: the store's own GetContent with
 // installed=true, and the game page every tab already opens.
-import { ConfirmModal, DialogButton as SteamButton, Focusable, Navigation, ServerAPI, ToggleField, showModal } from "decky-frontend-lib";
+import { ConfirmModal, DialogButton as SteamButton, Focusable, Navigation, ServerAPI, TextField, ToggleField, showModal } from "decky-frontend-lib";
 import { VFC, useEffect, useState } from "react";
 import { ActionSet, ExecuteArgs, ExecuteGetContentArgs, ContentResult, ContentType, GameDataList } from "../Types/Types";
 import { executeAction } from "../Utils/executeAction";
@@ -188,6 +188,35 @@ const PlatformLabel: VFC<{ title: string }> = ({ title }) => {
     );
 };
 
+// Optional SteamGridDB key: logos for every game (Downloads page) when the
+// store and the Steam page have none. Stays on this machine.
+const SgdbKey: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
+    const [has, setHas] = useState<boolean | null>(null);
+    const [value, setValue] = useState("");
+    const [msg, setMsg] = useState("");
+    useEffect(() => { serverAPI.callPluginMethod<{}, boolean>("sgdb_has_key", {}).then(r => r.success && setHas(!!r.result)); }, []);
+    const save = async () => {
+        setMsg(t("sgdb_checking"));
+        const r = await serverAPI.callPluginMethod<{ key: string }, boolean>("sgdb_set_key", { key: value });
+        const ok = r.success && !!r.result;
+        setMsg(ok ? t("sgdb_saved") : t("sgdb_invalid"));
+        if (ok) { setHas(true); setValue(""); }
+    };
+    return (
+        <Group title={t("sgdb_title")} color="#5b8def">
+            <div style={{ fontSize: 12, opacity: 0.75, margin: "2px 0 8px" }}>{t("sgdb_desc")}</div>
+            <div style={{ fontSize: 13, marginBottom: 6 }}>{has ? "\u2713 " + t("sgdb_has") : t("sgdb_none")}</div>
+            <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                    <TextField bIsPassword value={value} onChange={(e: any) => setValue(e.target.value)} />
+                </div>
+                <DialogButton style={PILL} onClick={save}>{t("sgdb_save")}</DialogButton>
+            </Focusable>
+            {msg && <div style={{ fontSize: 12, marginTop: 6, opacity: 0.85 }}>{msg}</div>}
+        </Group>
+    );
+};
+
 export const PlatformsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [platforms, setPlatforms] = useState<Platform[]>([]);
     useEffect(() => {
@@ -209,6 +238,7 @@ export const PlatformsPage: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     ))}
                 </Group>
             ))}
+            <SgdbKey serverAPI={serverAPI} />
         </div>
     );
 };

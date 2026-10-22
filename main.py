@@ -1184,6 +1184,27 @@ class Plugin:
             decky_plugin.logger.warning(f"[downloads] control: {e!r}")
             return False
 
+    @staticmethod
+    def _logo_tool(args, stdin=None):
+        env = dict(os.environ, DECKY_PLUGIN_RUNTIME_DIR=decky_plugin.DECKY_PLUGIN_RUNTIME_DIR)
+        orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+        if orig is not None:
+            env["LD_LIBRARY_PATH"] = orig
+        else:
+            env.pop("LD_LIBRARY_PATH", None)
+        r = subprocess.run(["/usr/bin/python3", os.path.join(Helper.working_directory, "scripts", "steam_logo.py"), *args],
+                           input=stdin, capture_output=True, text=True, timeout=40, env=env)
+        return r.stdout.strip()
+
+    async def sgdb_has_key(self):
+        return await asyncio.get_event_loop().run_in_executor(None, lambda: Plugin._logo_tool(["--has-key"]) == "yes")
+
+    async def sgdb_set_key(self, key):
+        """Checks the player's SteamGridDB key, then keeps it on this machine
+        only (passed on stdin, never on a command line)."""
+        return await asyncio.get_event_loop().run_in_executor(
+            None, lambda: Plugin._logo_tool(["--set-key"], stdin=str(key)) == "ok")
+
     async def steam_logo(self, title):
         """Transparent logo from the game's Steam page (data: URI) or ""."""
         def blocking():
