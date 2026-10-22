@@ -306,6 +306,26 @@ REGIONS = {"en": "en-US", "fr": "fr-FR", "de": "de-DE", "es": "es-ES", "it": "it
            "nl": "nl-NL", "pl": "pl-PL", "ru": "ru-RU"}
 
 
+STEAM_LANGUAGES = {
+    "english": "en-US", "french": "fr-FR", "german": "de-DE", "spanish": "es-ES", "latam": "es-MX",
+    "italian": "it-IT", "brazilian": "pt-BR", "portuguese": "pt-PT", "polish": "pl-PL", "russian": "ru-RU",
+    "dutch": "nl-NL", "japanese": "ja-JP", "koreana": "ko-KR", "tchinese": "zh-TW", "schinese": "zh-CN",
+    "arabic": "ar-SA", "turkish": "tr-TR", "czech": "cs-CZ", "swedish": "sv-SE", "danish": "da-DK",
+    "finnish": "fi-FI", "norwegian": "nb-NO", "hungarian": "hu-HU", "ukrainian": "uk-UA",
+}
+
+
+def steam_locale():
+    """The Steam (SteamOS) interface language, like the EA tab."""
+    import re
+    try:
+        text = (HOME / ".steam" / "registry.vdf").read_text(errors="replace")
+    except OSError:
+        return None
+    match = re.search(r'"language"\s+"([a-z]+)"', text)
+    return STEAM_LANGUAGES.get(match[1]) if match else None
+
+
 def game_locale(root):
     """The package language matching the machine language, or None."""
     import re
@@ -324,7 +344,7 @@ def game_locale(root):
             lang = el.get("Language")
             if el.tag.rsplit("}", 1)[-1] == "Resource" and lang and re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*", lang):
                 langs.append(lang)
-    want = REGIONS.get(_lang(), "en-US")
+    want = steam_locale() or REGIONS.get(_lang(), "en-US")
     exact = next((l for l in langs if l.lower() == want.lower()), None)
     return exact or next((l for l in langs if l.lower().split("-")[0] == want.split("-")[0]), None)
 

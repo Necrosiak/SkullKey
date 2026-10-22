@@ -186,6 +186,15 @@ class ActionsTest(unittest.TestCase):
         with mock.patch.object(self.x, "_lang", return_value="fr"):
             self.assertIsNone(self.x.game_locale(root))
 
+    def test_game_locale_follows_steam_language(self):
+        root = self.install_fake("9OWN")
+        self.write_manifest(root, ["en-US", "fr-FR", "de-DE"])
+        reg = Path(os.environ["HOME"]) / ".steam" / "registry.vdf"
+        reg.parent.mkdir(parents=True, exist_ok=True)
+        reg.write_text('"Registry" { "HKCU" { "Software" { "Valve" { "Steam" { "language" "german" } } } } }')
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            self.assertEqual(self.x.game_locale(root), "de-DE")
+
     def test_locale_environment(self):
         env = self.x.locale_env({}, "fr-FR")
         self.assertEqual((env["XODUS_PACKAGE_LOCALE"], env["WINEUSERLOCALE"], env["LANG"], env["LANGUAGE"]),
