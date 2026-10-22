@@ -430,8 +430,16 @@ class Helper:
         else:
             return None
         try:
-            out = subprocess.run([os.path.join(Helper.working_directory, "scripts", "get-json.py"), key],
-                                 cwd=Helper.working_directory, capture_output=True, text=True, timeout=15)
+            # Decky is a PyInstaller binary: its LD_LIBRARY_PATH breaks the
+            # system Python, so run it with the original library path.
+            env = dict(os.environ)
+            orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+            if orig is not None:
+                env["LD_LIBRARY_PATH"] = orig
+            else:
+                env.pop("LD_LIBRARY_PATH", None)
+            out = subprocess.run(["/usr/bin/python3", os.path.join(Helper.working_directory, "scripts", "get-json.py"), key],
+                                 cwd=Helper.working_directory, capture_output=True, text=True, timeout=15, env=env)
             data = json.loads(out.stdout or "{}")
         except Exception:
             return None

@@ -36,6 +36,11 @@ class StaticActionFallbackTest(unittest.TestCase):
         H = helper()
         self.assertIsNotNone(H.get_action("MainMenu", "SkullKeyInit"))
 
+    def test_runs_without_the_decky_library_path(self):
+        H = helper()
+        with mock.patch.dict(os.environ, {"LD_LIBRARY_PATH": "/tmp/_MEIbroken"}):
+            self.assertIsNotNone(H.get_action("MainMenu", "SkullKeyInit"))
+
     def test_unknown_set_stays_none(self):
         H = helper()
         self.assertIsNone(H.get_action("NopeActions", "GetDetails"))
