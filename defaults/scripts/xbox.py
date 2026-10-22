@@ -161,7 +161,9 @@ def account_view(refresh=False):
     return view
 
 
-def catalogue(query="", refresh=False, unsupported=False):
+def catalogue(query="", refresh=False, unsupported=False, budget=None):
+    """unsupported: False = playable list, True = only the "Not supported"
+    filter, None = both (game pages)."""
     """[(id, info, access)] for the grid. info: title, publisher, art, contentId."""
     m, lang = market()
     state = load_state()
@@ -175,7 +177,7 @@ def catalogue(query="", refresh=False, unsupported=False):
         store[g["id"]] = g
         info.setdefault(g["id"], {"title": g["title"], "publisher": g["publisher"], "art": g["art"]})
         info[g["id"]]["contentId"] = g.get("contentId")
-    deadline = time.monotonic() + xbox_catalog.RESOLVE_BUDGET
+    deadline = time.monotonic() + (xbox_catalog.RESOLVE_BUDGET if budget is None else budget)
     unchecked = []
     out = []
     for pid in list(info):
@@ -193,7 +195,7 @@ def catalogue(query="", refresh=False, unsupported=False):
         access = xbox_access.classify(ent, st, pid in installed, sub)
         if access["access"] == "hidden" and pid not in installed:
             continue
-        if (access["access"] == "unsupported") != unsupported:
+        if unsupported is not None and (access["access"] == "unsupported") != unsupported:
             continue
         out.append((pid, info[pid], access))
     for pid, g in ({} if unsupported else installed).items():
@@ -468,7 +470,8 @@ def action_getgames(filter_str="", installed="false", limited="false", access_fi
 
 
 def _entry(pid):
-    for p, info, access in catalogue(refresh=False) + catalogue(refresh=False, unsupported=True):
+    # A game page only needs what the grid already knows: no engine checks.
+    for p, info, access in catalogue(refresh=False, unsupported=None, budget=0):
         if p == pid:
             return info, access
     g = load_state()["games"].get(pid)

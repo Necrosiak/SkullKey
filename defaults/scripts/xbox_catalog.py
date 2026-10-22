@@ -86,20 +86,24 @@ def supported_content(resolved):
     return next((c.get("contentId") for c in resolved.get("choices") or [] if c.get("supported")), None)
 
 
+FAILED_TTL = 6 * 3600
+
+
 def installable(product_id, market, deadline=None):
     """contentId when installable, "" when not, None when the time budget ran
     out (hidden for now, checked again next time)."""
     cache = _load("resolve.json")
     key = f"{market}:{product_id}"
     hit = cache.get(key)
-    if hit and time.time() - hit["t"] < RESOLVE_TTL:
+    if hit and time.time() - hit["t"] < (RESOLVE_TTL if hit["content"] is not None else FAILED_TTL):
         return hit["content"]
     if deadline is not None and time.monotonic() > deadline:
         return None
     resolved = xbox_cli.resolve(product_id, market)
     if resolved is None:
-        # The engine failed or timed out: unknown, not "unsupported". Ask again
-        # next time instead of caching a wrong verdict for a week.
+        # The engine failed or timed out: unknown, not "unsupported". Remember
+        # it briefly so the same failures do not eat every grid's time budget.
+        _merge("resolve.json", {key: {"content": None, "t": time.time()}})
         return None
     content = supported_content(resolved) or ""
     _merge("resolve.json", {key: {"content": content, "t": time.time()}})
