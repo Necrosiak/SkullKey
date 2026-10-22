@@ -268,14 +268,26 @@ def _tree(pid):
     return out
 
 
+def _handles(pid, sig):
+    """True when the process catches sig (else the default action, e.g.
+    terminate for SIGUSR1, would kill it)."""
+    try:
+        for line in Path(f"/proc/{int(pid)}/status").read_text().splitlines():
+            if line.startswith("SigCgt:"):
+                return bool(int(line.split()[1], 16) & (1 << (int(sig) - 1)))
+    except (OSError, ValueError):
+        pass
+    return False
+
+
 def control(store, gid, action):
     import signal
     pid = find_pid(store, gid)
     if not _alive(pid):
         return False
-    if store == "xbox":
+    if store == "xbox" and _handles(pid, signal.SIGUSR1):
         os.kill(int(pid), signal.SIGUSR1 if action == "pause" else signal.SIGUSR2)
-    else:
+    else:  # other stores, or an Xbox worker started before pause existed
         sig = signal.SIGSTOP if action == "pause" else signal.SIGCONT
         for p in _tree(pid):
             try:

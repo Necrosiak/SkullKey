@@ -55,8 +55,10 @@ export async function prioritize(item: QueueItem) {
     }
     state.current = { ...item, paused: false };
     await save(state);
-    if (item.paused) await control(item.set, item.shortname, "resume");
-    else if (!(await start(item))) {
+    // A paused game resumes in place; if its process is gone, the download
+    // starts again over the files already on disk.
+    if (item.paused && await control(item.set, item.shortname, "resume")) return;
+    if (!(await start(item))) {
         notify({ title: "SkullKey", body: t("queue_failed", { game: item.name }) });
         state.current = null;
         await save(state);
@@ -207,8 +209,8 @@ async function tick() {
         if (!next) return;
         state.current = { ...next, paused: false };
         await save(state);
-        if (next.paused) await control(next.set, next.shortname, "resume");  // it was frozen: thaw it
-        else if (!(await start(next))) {
+        if (next.paused && await control(next.set, next.shortname, "resume")) return;  // thawed in place
+        if (!(await start(next))) {
             notify({ title: "SkullKey", body: t("queue_failed", { game: next.name }) });
             state.current = null;
             await save(state);

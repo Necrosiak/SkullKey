@@ -63,5 +63,16 @@ class DownloadsTest(unittest.TestCase):
         self.assertNotEqual(state(), "T")
         self.assertFalse(next(x for x in self.d.active() if x["id"] == "game")["paused"])
 
+    def test_xbox_worker_without_pause_handler_is_frozen_not_killed(self):
+        import subprocess
+        proc = subprocess.Popen(["sleep", "30"])  # does not catch SIGUSR1
+        self.addCleanup(proc.kill)
+        self.write("xbox/progress/9OLD.json", {"Percentage": 50, "pid": proc.pid})
+        self.assertTrue(self.d.control("xbox", "9OLD", "pause"))
+        time.sleep(0.2)
+        self.assertIsNone(proc.poll())  # still alive
+        self.assertEqual(Path(f"/proc/{proc.pid}/stat").read_text().rsplit(")", 1)[1].split()[0], "T")
+        self.d.control("xbox", "9OLD", "resume")
+
 if __name__ == "__main__":
     unittest.main()

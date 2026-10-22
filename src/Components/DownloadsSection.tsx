@@ -155,7 +155,7 @@ const CurrentBanner: VFC<{ serverAPI: ServerAPI; d: Dl }> = ({ serverAPI, d }) =
     );
 };
 
-const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serverAPI, q, i }) => {
+const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number; progress?: Dl }> = ({ serverAPI, q, i, progress }) => {
     const art = useArt(serverAPI, q.set, q.shortname);
     const th = storeTheme(q.set);
     const Icon = th.icon;
@@ -171,8 +171,13 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serv
                     {q.name}<span style={{ color: th.color, display: "inline-flex" }}>{Icon && <Icon size={16} />}</span>
                 </div>
                 <div style={{ fontSize: 11, opacity: 0.6, letterSpacing: ".4px", textTransform: "uppercase" }}>
-                    {q.paused ? t("dl_paused") : t("queue_position", { n: i + 1 })}
+                    {q.paused ? t("dl_paused") + (progress ? ` · ${Math.floor(progress.pct)} %` : "") : t("queue_position", { n: i + 1 })}
                 </div>
+                {q.paused && progress && (
+                    <div style={{ width: 260, height: 3, marginTop: 5, background: "rgba(255,255,255,0.15)" }}>
+                        <div style={{ width: `${Math.min(100, progress.pct)}%`, height: "100%", background: "#9aa4b2" }} />
+                    </div>
+                )}
             </div>
             <DialogButton style={BTN} onClick={() => prioritize(q)}>
                 <FaDownload size={11} /> {t("dl_now")}
@@ -184,6 +189,10 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number }> = ({ serv
     );
 };
 
+// Last progress seen per game, so a paused game keeps showing its bar even if
+// its process is gone (it will start again from the files on disk).
+const lastKnown: Record<string, Dl> = {};
+
 // SkullKey downloads: the game downloading now and the games waiting.
 export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean }> = ({ serverAPI, showEmpty }) => {
     const [active, setActive] = useState<Dl[]>([]);
@@ -194,7 +203,10 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
             const r = await serverAPI.callPluginMethod<{}, Dl[]>("downloads_list", {});
             const q = await getQueue();
             if (!alive) return;
-            if (r.success && Array.isArray(r.result)) setActive(r.result);
+            if (r.success && Array.isArray(r.result)) {
+                setActive(r.result);
+                for (const d of r.result) lastKnown[(SET_OF[d.store] || d.store) + ":" + d.id] = d;
+            }
             setPending(q.pending);
         };
         poll();
@@ -226,7 +238,8 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
                 </div>
                 {!pending.length && <div style={{ opacity: 0.6, fontSize: 15 }}>{t("queue_empty")}</div>}
                 <Focusable style={{ display: "flex", flexDirection: "column" }}>
-                    {pending.map((q, i) => <QueueRow key={q.set + ":" + q.shortname} serverAPI={serverAPI} q={q} i={i} />)}
+                    {pending.map((q, i) => <QueueRow key={q.set + ":" + q.shortname} serverAPI={serverAPI} q={q} i={i}
+                        progress={active.find(d => d.store === STORE_OF[q.set] && d.id === q.shortname) || lastKnown[q.set + ":" + q.shortname]} />)}
                 </Focusable>
             </div>
         </div>
