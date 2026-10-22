@@ -199,19 +199,29 @@ export const GridContent: VFC<GridContentProps> = ({ content, serverAPI, initAct
                 </div>
             )}
             {initActionSet === "XboxActions" && (
-                <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 10, flexWrap: "wrap" }}>
-                    {(["", "owned", "gamepass", "free", "installed"] as const).map(key => (
-                        <DialogButton key={key || "all"}
-                            style={{ minWidth: 0, width: "auto", padding: "0 14px", whiteSpace: "nowrap",
-                                     opacity: accessFilter === key ? 1 : 0.6,
-                                     border: accessFilter === key ? `2px solid ${storeTheme(initActionSet).color}` : undefined }}
-                            onClick={() => {
-                                setAccessFilter(key);
-                                refreshContent({ ...argsCache, limited: isLimited, access: key });
-                            }}>
-                            {t(key ? `xbox_filter_${key}` : "xbox_filter_all")}
-                        </DialogButton>
-                    ))}
+                <Focusable flow-children="horizontal" style={{ display: "flex", gap: 8, paddingTop: 12, flexWrap: "wrap" }}>
+                    {(["", "owned", "gamepass", "free", "installed"] as const).map(key => {
+                        const active = accessFilter === key;
+                        const color = storeTheme(initActionSet).color;
+                        return (
+                            <DialogButton key={key || "all"}
+                                style={{
+                                    minWidth: 0, width: "auto", height: 32, padding: "0 18px", whiteSpace: "nowrap",
+                                    borderRadius: 16, fontSize: 13, fontWeight: 600, letterSpacing: ".3px",
+                                    lineHeight: "32px",
+                                    background: active ? color : "rgba(255,255,255,0.06)",
+                                    color: active ? "#fff" : "rgba(255,255,255,0.75)",
+                                    border: active ? `1px solid ${color}` : "1px solid rgba(255,255,255,0.12)",
+                                    boxShadow: active ? `0 0 10px ${color}66` : "none",
+                                }}
+                                onClick={() => {
+                                    setAccessFilter(key);
+                                    refreshContent({ ...argsCache, limited: isLimited, access: key });
+                                }}>
+                                {t(key ? `xbox_filter_${key}` : "xbox_filter_all")}
+                            </DialogButton>
+                        );
+                    })}
                 </Focusable>
             )}
             {argsCache.installed && (
