@@ -193,7 +193,20 @@ def parse_log(path):
 
 def log_stores():
     out = []
-    files = [f for f in glob.glob(str(LOGS / "*.progress")) if _fresh(f)]
+    # Active while the store tool runs (its .pid file), or the log moved in
+    # the last few seconds: a stopped download must not linger on the page.
+    def live(f):
+        pid = None
+        try:
+            pid = int((LOGS / f"{Path(f).stem}.pid").read_text().split()[0])
+        except (OSError, ValueError, IndexError):
+            pass
+        try:
+            recent = time.time() - os.path.getmtime(f) < 15
+        except OSError:
+            recent = False
+        return _alive(pid) or recent
+    files = [f for f in glob.glob(str(LOGS / "*.progress")) if live(f)]
     if not files:
         return out
     for store, dbname in LOG_DBS:

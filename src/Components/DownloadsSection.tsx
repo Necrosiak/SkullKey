@@ -261,8 +261,8 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
         <div>
             {header}
             {shown
-                // a paused game waiting in line is shown once, under "Up next"
-                .filter(d => !(d.paused && pending.some(q => STORE_OF[q.set] === d.store && q.shortname === d.id)))
+                // a game waiting in line is shown once, under "Up next"
+                .filter(d => !pending.some(q => STORE_OF[q.set] === d.store && q.shortname === d.id))
                 .map(d => <CurrentBanner key={d.store + ":" + d.id} serverAPI={serverAPI} d={d} />)}
             <div style={{ padding: "14px 24px" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color: accent,
