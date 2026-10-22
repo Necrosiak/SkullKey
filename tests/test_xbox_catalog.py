@@ -113,6 +113,22 @@ class CatalogTest(unittest.TestCase):
         d = self.c.details(["9A"], "FR", "fr-fr", fetch=lambda url: payload)
         self.assertEqual(d["9A"]["description"], "Long text<br>line two")
 
+    def test_concurrent_writers_keep_every_result(self):
+        import subprocess, sys, textwrap
+        code = textwrap.dedent('''
+            import os, sys
+            sys.path.insert(0, sys.argv[1])
+            import xbox_catalog
+            for i in range(40):
+                xbox_catalog._merge("resolve.json", {f"FR:{sys.argv[2]}{i}": {"content": "c", "t": 1}})
+        ''')
+        scripts = str(Path(__file__).resolve().parents[1] / "defaults" / "scripts")
+        procs = [subprocess.Popen([sys.executable, "-c", code, scripts, tag]) for tag in ("A", "B", "C")]
+        for p in procs:
+            p.wait(timeout=60)
+        data = self.c._load("resolve.json")
+        self.assertEqual(len(data), 120)
+
     def test_details_cached(self):
         calls = []
         payload = {"Products": [{"ProductId": "9X", "ProductKind": "Game", "LocalizedProperties": [{"ProductTitle": "X", "Images": []}]}]}

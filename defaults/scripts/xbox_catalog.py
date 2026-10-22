@@ -39,6 +39,19 @@ def _load(name):
         return {}
 
 
+def _merge(name, updates):
+    """Add entries to a cache file under an exclusive lock: the grid and the
+    background check write the same files at the same time."""
+    import fcntl
+    p = _cache(name)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with open(p.with_suffix(".lock"), "a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        data = _load(name)
+        data.update(updates)
+        _save(name, data)
+
+
 def _save(name, data):
     p = _cache(name)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -84,8 +97,7 @@ def installable(product_id, market, deadline=None):
     if deadline is not None and time.monotonic() > deadline:
         return None
     content = supported_content(xbox_cli.resolve(product_id, market)) or ""
-    cache[key] = {"content": content, "t": time.time()}
-    _save("resolve.json", cache)
+    _merge("resolve.json", {key: {"content": content, "t": time.time()}})
     return content
 
 
@@ -190,5 +202,5 @@ def details(ids, market, lang, fetch=http_json):
             out[pid] = d
             cache[f"{market}:{pid}"] = {"t": time.time(), "d": d}
     if todo:
-        _save("details-v2.json", cache)
+        _merge("details-v2.json", {k: v for k, v in cache.items() if k.split(":", 1)[-1] in todo})
     return out
