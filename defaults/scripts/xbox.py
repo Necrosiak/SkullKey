@@ -520,8 +520,30 @@ def action_loginstatus():
         return emit("LoginStatus", {"Username": "<not logged in>", "LoggedIn": False})
     view = account_view()
     name = view["profile"].get("gamertag") or "Xbox"
-    gp = " · Game Pass" if xbox_access.subscription_active(view["profile"]) else ""
-    emit("LoginStatus", {"Username": name + gp, "LoggedIn": True})
+    active = xbox_access.subscription_active(view["profile"])
+    emit("LoginStatus", {"Username": f"{name} · {_sub_label(active)}", "LoggedIn": True})
+
+
+SUB_LABELS = {
+    "en": ("Game Pass: active", "Game Pass: inactive"), "fr": ("Game Pass : actif", "Game Pass : inactif"),
+    "de": ("Game Pass: aktiv", "Game Pass: inaktiv"), "es": ("Game Pass: activo", "Game Pass: inactivo"),
+    "it": ("Game Pass: attivo", "Game Pass: non attivo"), "pt": ("Game Pass: ativo", "Game Pass: inativo"),
+    "nl": ("Game Pass: actief", "Game Pass: niet actief"), "pl": ("Game Pass: aktywny", "Game Pass: nieaktywny"),
+    "ru": ("Game Pass: активен", "Game Pass: не активен"),
+}
+
+
+def _lang():
+    try:
+        from ports_i18n import machine_lang_code
+        return machine_lang_code()
+    except Exception:
+        return "en"
+
+
+def _sub_label(active):
+    on, off = SUB_LABELS.get(_lang(), SUB_LABELS["en"])
+    return on if active else off
 
 
 def action_logout():

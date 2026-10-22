@@ -197,9 +197,16 @@ class ActionsTest(unittest.TestCase):
         self.assertIn("run 9OWN", Path(res["Content"]["Exe"]).read_text())
         self.assertEqual(self.x.load_state()["games"]["9OWN"]["steamClientID"], "123")
 
-    def test_login_status_shows_gamertag(self):
-        res = self.call(self.x.action_loginstatus)
-        self.assertEqual(res["Content"], {"Username": "T", "LoggedIn": True})
+    def test_login_status_shows_gamertag_and_subscription(self):
+        with mock.patch.object(self.x, "_lang", return_value="fr"):
+            res = self.call(self.x.action_loginstatus)
+        self.assertEqual(res["Content"], {"Username": "T · Game Pass : inactif", "LoggedIn": True})
+        self.sub = {"status": "active"}
+        with self.x.locked_state() as st:
+            st.pop("account", None)
+        with mock.patch.object(self.x, "_lang", return_value="en"):
+            res = self.call(self.x.action_loginstatus)
+        self.assertEqual(res["Content"]["Username"], "T · Game Pass: active")
 
     def test_settings_roundtrip(self):
         self.assertEqual(self.call(self.x.action_getsetting, "LoginSteamClientId")["Content"],
