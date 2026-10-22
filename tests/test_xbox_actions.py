@@ -216,6 +216,34 @@ class ActionsTest(unittest.TestCase):
         self.assertEqual(call.call_args.kwargs["env"]["XODUS_PACKAGE_LOCALE"], "fr-FR")
         sync.assert_called_once()
 
+    def test_install_contents_downloads_licensed_missing_content(self):
+        root = self.install_fake("9OWN")
+        offer = {"productId": "9CAMP", "contentId": "a49a529d-7ce4-42b3-b5b7-028b96860773", "title": "Campaign", "family": "F"}
+        proc = mock.Mock(stdout=['NEXUS_PROGRESS {"schema": 1, "event": "progress", "sequence": 1, "phase": "complete", '
+                                 '"completedBytes": 1, "totalBytes": 1, "bytesPerSecond": 0, "paused": false, "canPause": false}'])
+        proc.wait.return_value = 0
+        with mock.patch.object(self.x.xbox_content, "plan", return_value=[offer]) as plan, \
+             mock.patch.object(self.x.xbox_cli, "start_streaming", return_value=proc) as stream:
+            got = self.x.install_contents("9OWN")
+        self.assertEqual(got, ["Campaign"])
+        self.assertEqual(stream.call_args.args[0], offer["contentId"])
+        self.assertIn("9OWN", plan.call_args.args[1])  # licensed set comes from the account
+        self.assertTrue(self.x.xbox_content.installed("9OWN", "9CAMP"))
+
+    def test_run_passes_content_roots(self):
+        self.install_fake("9OWN")
+        session = mock.Mock(env={})
+        with mock.patch.object(self.x.xbox_service, "start", return_value=session), \
+             mock.patch.object(self.x.xbox_prefix, "ensure_prefix"), \
+             mock.patch.object(self.x.xbox_prefix, "write_runner", return_value=Path("/r")), \
+             mock.patch.object(self.x, "install_contents", return_value=[]) as contents, \
+             mock.patch.object(self.x.xbox_content, "roots_env", return_value="Z:\\c\\9CAMP"), \
+             mock.patch.object(self.x.xbox_tools, "cli_path", return_value=Path("/cli")), \
+             mock.patch.object(self.x.subprocess, "call", return_value=0) as call:
+            self.x.action_run("9OWN")
+        contents.assert_called_once_with("9OWN")
+        self.assertEqual(call.call_args.kwargs["env"]["XODUS_CONTENT_ROOTS"], "Z:\\c\\9CAMP")
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

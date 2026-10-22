@@ -30,6 +30,7 @@ sys.path.insert(0, str(HERE / "shared"))
 import xbox_access
 import xbox_catalog
 import xbox_cli
+import xbox_content
 import xbox_prefix
 import xbox_service
 import xbox_tools
@@ -599,6 +600,9 @@ def worker(pid):
             s.get("pending", {}).pop(pid, None)
             s["games"][pid] = {"title": game["title"] or job["title"], "root": str(root), "art": job["art"],
                                "executable": game["executable"], "steamClientID": ""}
+        write_progress(pid, 99, step_text("finalizing"), pid=os.getpid())
+        install_contents(pid, lambda title: write_progress(pid, 99, f"{step_text('finalizing')} · {title}",
+                                                           pid=os.getpid()))
         write_progress(pid, 100, "Installed")
     except SystemExit:
         _cleanup_partial(pid, root)
@@ -606,6 +610,39 @@ def worker(pid):
     except Exception as e:  # noqa: BLE001
         _cleanup_partial(pid, root)
         write_progress(pid, 0, "Failed", str(e)[:200])
+
+
+def install_contents(pid, progress=None):
+    """Download the additional content (DLC, campaigns sold as content) the
+    account is licensed for and that is not installed yet. Returns titles."""
+    g = load_state()["games"].get(pid)
+    if not g:
+        return []
+    view = account_view()
+    licensed = {e["productId"].upper() for e in view["entitlements"]
+                if e.get("productId") and e.get("status") == "Active" and not e.get("isTrial")}
+    licensed.add(pid)
+    m, lang = market()
+    done = []
+    for offer in xbox_content.plan(g["root"], licensed, m, lang):
+        if xbox_content.installed(pid, offer["productId"]):
+            continue
+        dest = xbox_content.content_dir(pid, offer["productId"])
+        dest.mkdir(parents=True, exist_ok=True)
+        if progress:
+            progress(offer["title"])
+        proc = xbox_cli.start_streaming(offer["contentId"], dest, m)
+        last = None
+        for line in proc.stdout:
+            last = xbox_cli.parse_progress(line) or last
+        if proc.wait() == 0 and last and last["phase"] == "complete":
+            xbox_content.mark_installed(pid, offer)
+            done.append(offer["title"])
+        else:
+            shutil.rmtree(dest, ignore_errors=True)
+    if done:
+        give_to_user(xbox_content.content_dir(pid, "").parent)
+    return done
 
 
 def _cleanup_partial(pid, root):
@@ -684,9 +721,13 @@ def action_run(pid):
         if not exe:
             print("The game's executable was not found in its package.", file=sys.stderr)
             return 4
+        install_contents(pid)
         m, _ = market()
         locale = game_locale(g["root"])
         env = locale_env(xbox_cli._env(), locale)
+        roots = xbox_content.roots_env(pid)
+        if roots:
+            env["XODUS_CONTENT_ROOTS"] = roots
         sync_prefix_locale(pid, runner, locale, env)
         # In-game Xbox sign-in, Store licence checks and cloud saves go
         # through the account service, reached over its loopback bridge.
@@ -736,6 +777,7 @@ def action_uninstall(pid, keep=""):
     if root.is_dir() and (root.name == pid or g.get("imported")):
         shutil.rmtree(root, ignore_errors=True)
     shutil.rmtree(xbox_prefix.prefix_dir(pid), ignore_errors=True)
+    shutil.rmtree(xbox_tools.XBOX_DIR / "content" / pid, ignore_errors=True)
     (LAUNCH_DIR / f"{pid}.sh").unlink(missing_ok=True)
     _drives().forget(STORE, pid)
     with locked_state() as st:
