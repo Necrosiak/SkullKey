@@ -220,6 +220,7 @@ const lastKnown: Record<string, Dl> = {};
 export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean }> = ({ serverAPI, showEmpty }) => {
     const [active, setActive] = useState<Dl[]>([]);
     const [pending, setPending] = useState<QueueItem[]>([]);
+    const [current, setCurrent] = useState<QueueItem | null>(null);
     useEffect(() => {
         let alive = true;
         const poll = async () => {
@@ -231,6 +232,7 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
                 for (const d of r.result) lastKnown[(SET_OF[d.store] || d.store) + ":" + d.id] = d;
             }
             setPending(q.pending);
+            setCurrent(q.current);
         };
         poll();
         const timer = setInterval(poll, 2000);
@@ -245,12 +247,20 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
             <span style={{ fontSize: 15, opacity: 0.6, display: "flex", alignItems: "center", gap: 6 }}><FaDownload size={12} /> {t("dl_title")}</span>
         </div>
     );
-    if (!active.length && !pending.length)
+    // An Epic / GOG / Amazon game paused by the player has no process: keep
+    // its banner (last progress seen) so it can be resumed from here.
+    const shown = [...active];
+    if (current?.paused && !active.some(d => d.store === STORE_OF[current.set] && d.id === current.shortname)) {
+        const last = lastKnown[current.set + ":" + current.shortname];
+        shown.unshift({ store: STORE_OF[current.set], id: current.shortname, title: current.name,
+                        pct: last?.pct || 0, desc: last?.desc || "", dest: last?.dest, paused: true });
+    }
+    if (!shown.length && !pending.length)
         return showEmpty ? <div>{header}<div style={{ padding: "8px 24px", opacity: 0.7, fontSize: 16 }}>{t("dl_none")}</div></div> : null;
     return (
         <div>
             {header}
-            {active
+            {shown
                 // a paused game waiting in line is shown once, under "Up next"
                 .filter(d => !(d.paused && pending.some(q => STORE_OF[q.set] === d.store && q.shortname === d.id)))
                 .map(d => <CurrentBanner key={d.store + ":" + d.id} serverAPI={serverAPI} d={d} />)}

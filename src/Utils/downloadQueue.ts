@@ -26,6 +26,21 @@ async function control(set: string, shortname: string, action: "pause" | "resume
 /** Pause / resume the download running now (any store). */
 export async function setPaused(set: string, shortname: string, paused: boolean) {
     if (!api) return;
+    if (RESUMABLE.test(set)) {
+        // legendary / gogdl / nile resume by themselves: pause = stop the
+        // download (files kept), resume = start it again where it was. This
+        // also unsticks a download hung on a dead connection.
+        const state = await load();
+        const same = state.current && state.current.set === set && state.current.shortname === shortname;
+        if (paused) await executeAction<any, any>(api, set, "CancelInstall", { shortname });
+        if (same) {
+            state.current = { ...state.current!, paused };
+            await save(state);
+            if (!paused) await start(state.current!);
+        }
+        listeners.forEach(l => l());
+        return;
+    }
     await control(set, shortname, paused ? "pause" : "resume");
     const state = await load();
     if (state.current && state.current.set === set && state.current.shortname === shortname) {
@@ -50,14 +65,16 @@ export async function prioritize(item: QueueItem) {
     const same = (q: QueueItem) => q.set === item.set && q.shortname === item.shortname;
     state.pending = state.pending.filter(q => !same(q));
     if (state.current) {
-        await control(state.current.set, state.current.shortname, "pause");
+        if (RESUMABLE.test(state.current.set))
+            await executeAction<any, any>(api, state.current.set, "CancelInstall", { shortname: state.current.shortname });
+        else await control(state.current.set, state.current.shortname, "pause");
         state.pending.unshift({ ...state.current, paused: true });
     }
     state.current = { ...item, paused: false };
     await save(state);
     // A paused game resumes in place; if its process is gone, the download
     // starts again over the files already on disk.
-    if (item.paused && await control(item.set, item.shortname, "resume")) return;
+    if (item.paused && !RESUMABLE.test(item.set) && await control(item.set, item.shortname, "resume")) return;
     if (!(await start(item))) {
         notify({ title: "SkullKey", body: t("queue_failed", { game: item.name }) });
         state.current = null;
@@ -75,10 +92,17 @@ let busy = false;
 // Ticks in a row the current download had no live process (after a reboot,
 // a Steam exit or a crash): it is started again over the files on disk.
 let deadTicks = 0;
+// Stall watchdog: legendary / gogdl / nile sometimes hang on a dead CDN
+// connection (0 B/s for ever). Their downloads resume, so after STALL_MS
+// without any progress the download is stopped and started again in place.
+// Not for Xbox: cancelling there removes the partial files.
+const STALL_MS = 3 * 60 * 1000;
+let stall = { key: "", pct: -1, since: 0 };
 const listeners = new Set<() => void>();
 
 // Stores that install through their own client (shown to the player) stay
 // outside the queue.
+const RESUMABLE = /^(Epic|GOG|Amazon)Actions$/;
 export const QUEUEABLE = /^(Epic|GOG|Xbox|Amazon|EA|MiHoYo|Ports|Disks)Actions$/;
 
 async function load(): Promise<QueueState> {
@@ -192,7 +216,18 @@ async function tick() {
                 notify({ title: "SkullKey", body: t("queue_failed", { game: state.current.name }) });
                 state.current = null;
                 await save(state);
-            } else if (p && p.Percentage < 100) {
+            } else if (p && p.Percentage < 100 && RESUMABLE.test(state.current.set)) {
+                const key = state.current.set + ":" + state.current.shortname;
+                if (stall.key !== key || stall.pct !== p.Percentage) stall = { key, pct: p.Percentage, since: Date.now() };
+                else if (Date.now() - stall.since > STALL_MS) {
+                    logger.log("download stalled, restarting", key);
+                    stall.since = Date.now();
+                    await executeAction<any, any>(api, state.current.set, "CancelInstall", { shortname: state.current.shortname });
+                    await start(state.current);
+                }
+            }
+            if (!state.current) return;  // dropped above (failed)
+            if (p && p.Percentage < 100) {
                 const live = await api.callPluginMethod<{}, any[]>("downloads_list", {});
                 const cur = state.current;
                 const listed = live.success && Array.isArray(live.result) &&
@@ -223,7 +258,7 @@ async function tick() {
         if (!next) return;
         state.current = { ...next, paused: false };
         await save(state);
-        if (next.paused && await control(next.set, next.shortname, "resume")) return;  // thawed in place
+        if (next.paused && !RESUMABLE.test(next.set) && await control(next.set, next.shortname, "resume")) return;  // thawed in place
         if (!(await start(next))) {
             notify({ title: "SkullKey", body: t("queue_failed", { game: next.name }) });
             state.current = null;
