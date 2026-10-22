@@ -1117,24 +1117,20 @@ class Plugin:
     async def game_size(self, actionSet, shortname):
         """Bytes the installed game takes on disk (0 when its folder is unknown)."""
         def blocking():
-            import move_game as mg
-            path = None
-            try:
-                if actionSet == "XboxActions":
-                    # Read the state file directly: importing xbox.py inside
-                    # the loader's Python fails silently.
-                    state = os.path.join(decky_plugin.DECKY_PLUGIN_RUNTIME_DIR, "xbox", "state.json")
-                    with open(state) as f:
-                        path = ((json.load(f).get("games") or {}).get(shortname) or {}).get("root")
-                else:
-                    path = mg.current_path(actionSet, shortname)
-            except Exception:
-                path = None
-            if not path or not os.path.isdir(path):
+            env = dict(os.environ, DECKY_PLUGIN_RUNTIME_DIR=decky_plugin.DECKY_PLUGIN_RUNTIME_DIR)
+            orig = env.pop("LD_LIBRARY_PATH_ORIG", None)
+            if orig is not None:
+                env["LD_LIBRARY_PATH"] = orig
+            else:
+                env.pop("LD_LIBRARY_PATH", None)
+            r = subprocess.run(["/usr/bin/python3", os.path.join(Helper.working_directory, "scripts", "game_path.py"),
+                                actionSet, shortname], capture_output=True, text=True, timeout=30, env=env)
+            folders = [l for l in r.stdout.splitlines() if l.strip()]
+            if not folders:
                 return 0
-            r = subprocess.run(["du", "-sb", "--", path], capture_output=True, text=True, timeout=120)
+            r = subprocess.run(["du", "-scb", "--", *folders], capture_output=True, text=True, timeout=180, env=env)
             try:
-                return int(r.stdout.split()[0])
+                return int(r.stdout.strip().splitlines()[-1].split()[0])
             except (IndexError, ValueError):
                 return 0
         try:
