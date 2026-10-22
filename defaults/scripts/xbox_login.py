@@ -176,6 +176,9 @@ class XboxSteamBrowser:
             if self.state["status"] == "waiting":
                 if code == 0:
                     protect_keyring_file()
+                    # A new account: the cached grid belongs to the old one.
+                    for f in (xbox_tools.XBOX_DIR / "cache").glob("grid-*.json"):
+                        f.unlink(missing_ok=True)
                     self.state = {"status": "done", "platform": "Xbox"}
                     self.log("[xbox-login] signed in")
                 else:

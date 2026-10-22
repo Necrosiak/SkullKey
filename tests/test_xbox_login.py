@@ -100,7 +100,11 @@ class LoginTest(unittest.TestCase):
         self.assertTrue({"cxh-protocol", "hostapp", "User-Agent"} <= names)
 
     def test_post_srf_sends_serverdata_once_and_signs_in(self):
+        grid = L.xbox_tools.XBOX_DIR / "cache" / "grid-old.json"
+        grid.parent.mkdir(parents=True, exist_ok=True)
+        grid.write_text("{}")
         b, _ = self.run_login("ok")
+        self.assertFalse(grid.exists())
         sd = [m for m in self.sent() if "SERVERDATA" in m.get("payload", "")]
         self.assertEqual(len(sd), 1)
         self.assertEqual(b.state["status"], "done")

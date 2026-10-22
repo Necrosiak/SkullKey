@@ -302,6 +302,19 @@ class ActionsTest(unittest.TestCase):
             names_shown = self.grid_names()
         self.assertEqual(names_shown, ["Age of Empires IV"])
 
+    def test_grid_served_from_cache_then_refreshed_in_background(self):
+        first = self.grid_names()
+        with mock.patch.object(self.x, "catalogue", side_effect=AssertionError("must not recompute")), \
+             mock.patch.object(self.x.subprocess, "Popen") as popen:
+            again = self.grid_names()
+        self.assertEqual(again, first)
+        self.assertIn("refreshgrid", popen.call_args.args[0])
+
+    def test_grid_cache_dropped_on_account_change(self):
+        self.grid_names()
+        self.call(self.x.action_logout)
+        self.assertFalse(list((self.x.XBOX_DIR / "cache").glob("grid-*.json")))
+
     def test_grid_always_shows_account_bar(self):
         self.assertEqual(self.call(self.x.action_getgames, "", "false")["Content"]["NeedsLogin"], "true")
 

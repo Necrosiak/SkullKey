@@ -416,21 +416,51 @@ def anticheat(pid):
 
 # ── grid & details ───────────────────────────────────────────────────────────
 
-def action_getgames(filter_str="", installed="false"):
-    # The engine is small: install/refresh it when the tab opens. The runtime
-    # (hundreds of MB) waits for the first game install.
-    xbox_tools.ensure(update=True, components=("backend",))
-    import_nexus_games()
+def _grid_cache(filter_str, installed):
+    import hashlib
+    key = hashlib.sha1(f"{filter_str}\0{installed}".encode()).hexdigest()[:16]
+    return XBOX_DIR / "cache" / f"grid-{key}.json"
+
+
+def drop_grid_cache():
+    for f in (XBOX_DIR / "cache").glob("grid-*.json"):
+        f.unlink(missing_ok=True)
+
+
+def build_grid(filter_str="", installed="false"):
     games = []
+    state_games = load_state()["games"]
     for i, (pid, info, access) in enumerate(catalogue(filter_str), start=1):
-        if installed.lower() == "true" and pid not in load_state()["games"]:
+        if installed.lower() == "true" and pid not in state_games:
             continue
         cover = (info.get("art") or {}).get("cover")
         games.append({"ID": i, "Name": info["title"], "Images": [cover] if cover else [], "ShortName": pid,
-                      "SteamClientID": load_state()["games"].get(pid, {}).get("steamClientID", "")})
+                      "SteamClientID": state_games.get(pid, {}).get("steamClientID", "")})
     # "true" keeps the account bar (gamertag, sign in/out) above the grid,
     # like EA; the bar itself shows whether the account is connected.
-    emit("GameGrid", {"Games": games, "NeedsLogin": "true"})
+    grid = {"Games": games, "NeedsLogin": "true"}
+    cache = _grid_cache(filter_str, installed)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    tmp = cache.with_suffix(".tmp")
+    tmp.write_text(json.dumps(grid))
+    tmp.replace(cache)
+    return grid
+
+
+def action_getgames(filter_str="", installed="false"):
+    """Show the last grid at once and rebuild it in the background; build it
+    here only the first time (or after an account change)."""
+    xbox_tools.ensure(update=True, components=("backend",))
+    import_nexus_games()
+    cache = _grid_cache(filter_str, installed)
+    try:
+        grid = json.loads(cache.read_text())
+    except (OSError, ValueError):
+        return emit("GameGrid", build_grid(filter_str, installed))
+    subprocess.Popen([PYEXE, os.path.abspath(__file__), "refreshgrid", filter_str, installed],
+                     start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     env=os.environ.copy())
+    emit("GameGrid", grid)
 
 
 def _entry(pid):
@@ -625,6 +655,7 @@ def worker(pid):
         install_contents(pid, lambda title: write_progress(pid, 99, f"{step_text('finalizing')} · {title}",
                                                            pid=os.getpid()))
         write_progress(pid, 100, "Installed")
+        drop_grid_cache()
     except SystemExit:
         _cleanup_partial(pid, root)
         raise
@@ -855,6 +886,7 @@ def action_uninstall(pid, keep=""):
     _drives().forget(STORE, pid)
     with locked_state() as st:
         st["games"].pop(pid, None)
+    drop_grid_cache()
     emit("Success", {"Message": "Uninstalled"})
 
 
@@ -898,6 +930,7 @@ def action_logout():
         pass
     with locked_state() as st:
         st.pop("account", None)
+    drop_grid_cache()
     emit("Success", {"Message": "Logged out"})
 
 
@@ -914,6 +947,7 @@ def action_savesetting(name, value="", *_):
 
 def action_refresh():
     account_view(refresh=True)
+    drop_grid_cache()
     emit("Success", {"Message": "Refreshed"})
 
 
@@ -935,6 +969,7 @@ ACTIONS = {
     "login": lambda a: emit("Success", {"Message": "Use the Steam browser sign-in."}),
     "logout": lambda a: action_logout(),
     "refresh": lambda a: action_refresh(),
+    "refreshgrid": lambda a: build_grid(a[0] if a else "", a[1] if len(a) > 1 else "false"),
     "autoupdate": lambda a: action_autoupdate(),
     "getsetting": lambda a: action_getsetting(*(a or [""])),
     "savesetting": lambda a: action_savesetting(*(a or [""])),
