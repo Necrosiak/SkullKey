@@ -421,10 +421,14 @@ class Helper:
 
     @staticmethod
     def load_static_action_set(actionSet):
-        """XboxActions -> get-json.py xbox-actions (the static.json key)."""
-        if not actionSet.endswith("Actions") or not actionSet[:-7].isalnum():
+        """XboxActions -> get-json.py xbox-actions (the static.json key);
+        MainMenu -> main-menu-actions."""
+        if actionSet == "MainMenu":
+            key = "main-menu-actions"
+        elif actionSet.endswith("Actions") and actionSet[:-7].isalnum():
+            key = actionSet[:-7].lower() + "-actions"
+        else:
             return None
-        key = actionSet[:-7].lower() + "-actions"
         try:
             out = subprocess.run([os.path.join(Helper.working_directory, "scripts", "get-json.py"), key],
                                  cwd=Helper.working_directory, capture_output=True, text=True, timeout=15)

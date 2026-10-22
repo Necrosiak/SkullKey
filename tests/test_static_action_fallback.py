@@ -32,6 +32,10 @@ class StaticActionFallbackTest(unittest.TestCase):
         self.assertEqual(action["Command"], "./scripts/xbox.py getgamedetails")
         self.assertIn("XboxActions", H.action_cache)
 
+    def test_main_menu_found_after_reload(self):
+        H = helper()
+        self.assertIsNotNone(H.get_action("MainMenu", "SkullKeyInit"))
+
     def test_unknown_set_stays_none(self):
         H = helper()
         self.assertIsNone(H.get_action("NopeActions", "GetDetails"))
