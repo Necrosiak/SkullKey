@@ -41,6 +41,15 @@ def ensure_home_drive(pfx):
     os.symlink(home_root(), drive)
 
 
+def steam_root(product_id=None):
+    """The real Steam folder, like Xodus Nexus (Proton finds Steam's own
+    runtimes there); a private stand-in only when Steam is not installed."""
+    real = Path.home() / ".steam" / "root"
+    if real.is_dir():
+        return real
+    return prefix_dir(product_id) / "steam" if product_id else real
+
+
 def _prefix_ready(pfx):
     return (pfx / "system.reg").exists() and (pfx / "drive_c" / "windows" / "system32" / "kernel32.dll").exists()
 
@@ -52,9 +61,10 @@ def ensure_prefix(product_id):
     if not runtime:
         raise PrefixError("The Xbox runtime is not installed.")
     if not _prefix_ready(pfx):
-        (root / "steam").mkdir(parents=True, exist_ok=True)
+        steam = steam_root(product_id)
+        steam.mkdir(parents=True, exist_ok=True)
         env = {k: v for k, v in os.environ.items() if not k.startswith("LD_LIBRARY_PATH")}
-        env.update(STEAM_COMPAT_DATA_PATH=str(root), STEAM_COMPAT_CLIENT_INSTALL_PATH=str(root / "steam"),
+        env.update(STEAM_COMPAT_DATA_PATH=str(root), STEAM_COMPAT_CLIENT_INSTALL_PATH=str(steam),
                    SteamAppId="0", SteamGameId="0", UMU_ID="xodus-nexus", UMU_USE_STEAM="0")
         p = subprocess.run(["python3", str(runtime / "proton"), "run", "cmd", "/c", "exit"],
                            env=env, capture_output=True, text=True, timeout=600)

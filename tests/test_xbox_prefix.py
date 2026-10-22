@@ -87,7 +87,16 @@ class PrefixTest(unittest.TestCase):
         for k, v in {"SteamAppId": "0", "SteamGameId": "0", "UMU_ID": "xodus-nexus", "UMU_USE_STEAM": "0"}.items():
             self.assertEqual(seen[k], v)
         self.assertEqual(seen["STEAM_COMPAT_DATA_PATH"], str(self.p.prefix_dir("9AAA")))
+        self.assertEqual(seen["STEAM_COMPAT_CLIENT_INSTALL_PATH"], str(self.p.steam_root("9AAA")))
         self.assertTrue((self.pfx / "dosdevices" / "y:").is_symlink())
+
+    def test_steam_root_is_the_real_steam_when_present(self):
+        home = Path(self.tmp.name) / "home"
+        (home / ".steam" / "root").mkdir(parents=True)
+        with mock.patch.object(self.p.Path, "home", return_value=home):
+            self.assertEqual(self.p.steam_root(), home / ".steam" / "root")
+        with mock.patch.object(self.p.Path, "home", return_value=Path(self.tmp.name) / "nohome"):
+            self.assertEqual(self.p.steam_root("9AAA"), self.p.prefix_dir("9AAA") / "steam")
 
     def test_stale_runtime_symlinks_rebased(self):
         old = Path(self.tmp.name) / "rt" / "runtime-old" / "files" / "lib" / "wine" / "x.dll"
