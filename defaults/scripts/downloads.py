@@ -386,13 +386,20 @@ def active():
         except OSError:
             continue
         key = f"{e['store']}:{e['id']}"
+        # Recent (time, free bytes) samples. Some stores write in large bursts
+        # (EA/Maxima: 100 Mo/s, then nothing while a chunk is unpacked): the rate
+        # is the average over the last ~10 s, the real throughput, instead of
+        # spikes and zeros. Old [time, free, ...] entries are simply restarted.
         prev = speeds.get(key)
-        speeds[key] = [now, free]
-        if prev and now - prev[0] > 0.5 and prev[1] > free:
-            rate = (prev[1] - free) / (now - prev[0]) / 1048576
-            e["desc"] = (e["desc"] + " · " if e["desc"] else "") + f"{rate:.0f} Mo/s"
+        samples = [x for x in (prev if prev and isinstance(prev[0], list) else []) if now - x[0] <= 12]
+        samples.append([now, free])
+        speeds[key] = samples
+        first = samples[0]
+        if now - first[0] >= 3 and first[1] > free:
+            rate = (first[1] - free) / (now - first[0]) / 1048576
+            e["desc"] = (e["desc"] + " · " if e["desc"] else "") + f"{rate:.1f} Mo/s"
     try:
-        (RUNTIME / "dl_speed.json").write_text(json.dumps({k: v for k, v in speeds.items() if now - v[0] < 600}))
+        (RUNTIME / "dl_speed.json").write_text(json.dumps({k: v for k, v in speeds.items() if v and isinstance(v[-1], list) and now - v[-1][0] < 600}))
     except OSError:
         pass
     for e in out:

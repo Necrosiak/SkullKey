@@ -5,6 +5,7 @@ import { storeTheme } from "./Styled";
 import { t } from "../i18n";
 import { QueueItem, SET_OF, STORE_OF, getQueue, onQueueChange, prioritize, removeCurrent, removeFromQueue, setPaused } from "../Utils/downloadQueue";
 import { executeAction } from "../Utils/executeAction";
+import { topBarHolder } from "../Utils/topBarPlacement";
 
 interface Dl { store: string; id: string; title: string; pct: number; desc: string; dest?: string; paused?: boolean }
 
@@ -297,32 +298,6 @@ export const DOWNLOADS_ROUTE = "/skullkey-downloads";
 // is checked again on every poll in case Steam redraws its bar.
 // Plugin code runs in Steam's shared JS context: `document` there is not the
 // Big Picture window. The window's own document comes from a rendered node.
-function topBarHolder(doc: Document): HTMLElement | null {
-    const win = doc.defaultView || window;
-    const existing = doc.querySelector("[data-sk-topbar]") as HTMLElement | null;
-    if (existing && existing.isConnected) return existing;
-    const icons = [...doc.querySelectorAll("svg")]
-        .filter(e => { const b = e.getBoundingClientRect(); return b.top >= 0 && b.top < 45 && b.width >= 14 && b.left > win.innerWidth / 2; })
-        .sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
-    if (!icons.length) return null;
-    // climb from the leftmost icon to the row that holds several icons
-    let item: HTMLElement = icons[0] as unknown as HTMLElement;
-    while (item.parentElement && item.parentElement.querySelectorAll("svg").length < 3) item = item.parentElement;
-    const row = item.parentElement;
-    if (!row) return null;
-    // Insert before the first visible icon button on the right half (the
-    // search icon, or Steam's own download icon when it shows).
-    const first = ([...row.children] as HTMLElement[]).find(c => {
-        const b = c.getBoundingClientRect();
-        return b.width > 20 && b.width < 120 && b.left > win.innerWidth / 2;
-    });
-    if (first) item = first;
-    const holder = doc.createElement("div");
-    holder.setAttribute("data-sk-topbar", "");
-    holder.style.cssText = "display:flex;align-items:center;justify-content:center;cursor:pointer";
-    row.insertBefore(holder, item);
-    return holder;
-}
 
 // Steam hands each panel's navigation node down through a React context. Re-
 // providing the top bar row's node around our button makes it a child of that
@@ -393,7 +368,8 @@ export const TopBarDownloads: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) =>
     const button = (
         <Focusable onActivate={open} onClick={open} noFocusRing
             onGamepadFocus={() => setFocused(true)} onGamepadBlur={() => setFocused(false)}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 8px",
+            style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                     boxSizing: "border-box", flex: "0 0 40px", width: 40, height: 40, gap: 3, padding: 4,
                      background: focused ? "#ffffff" : "transparent", borderRadius: 2 }}>
             <FaSkull size={20} color={focused ? "#0e141b" : (d.paused ? "#9aa4b2" : "#ffffff")} />
             <div style={{ width: 22, height: 2, background: "rgba(127,127,127,0.35)" }}>
