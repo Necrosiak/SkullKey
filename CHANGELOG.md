@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.21.0 — 2026-10-25
+
+### New
+
+- **Downloads page** — one download at a time across every store, on a
+  dedicated page (Select button, the downloads button of the store tabs, or
+  the new top bar icon, reachable with the controller). Steam-like banner
+  with the game art, a speed graph, network and peak speed, data and install
+  progress and the destination drive, then the queue with Download now and
+  Remove.
+- **Pause and resume on every store** — Epic, GOG and Amazon downloads that
+  stall restart by themselves; downloads interrupted by a shutdown or a Steam
+  restart resume, and a failed Xbox download keeps its files.
+- **Switch account** — next to Log out on Epic, GOG, Amazon, EA and Xbox:
+  keep several accounts signed in on the device and switch between them
+  without signing out. Downloads and games of that store must be closed
+  while switching.
+- **Installed games** — size on disk and Delete for every installed game
+  (Epic, GOG, Amazon, EA, Xbox, miHoYo, Discs & Installers).
+- **Libraries refresh themselves** in the background (every 30 minutes, and
+  when a store tab opens).
+- **Logos for every game** — from the Steam store page, or from SteamGridDB
+  with your own optional key in Settings.
+- **Free games** — notifications and a settings page for Epic, GOG, Steam,
+  Prime Gaming, Ubisoft, Battle.net, EA and itch.io.
+- **Steam collections** — installed SkullKey games are grouped in a
+  collection named after their store.
+- **Xbox: download size** shown before installing.
+- **Classics Reborn: 16 new recompilations**, among them Bloodborne (bbport),
+  Silent Hill: Downpour, Deadly Premonition, Dead Rising 2 Case Zero and Case
+  West, Crackdown, Mario Kart 64, Pokémon Snap, Eternal Darkness and
+  Dragon Quest VIII.
+
+### Fixed
+
+- **Download speed for every store** — measured for the stores that do not
+  report it, and averaged for stores that download in bursts (EA), instead of
+  dropping to 0 between bursts.
+- **Xbox: a just-released game no longer opens as "Unknown game"** when its
+  package had not been checked yet.
+- **Xbox: failed downloads tell why** — the error shows the engine's own
+  reason and keeps it in `logs/<game id>-download.log`.
+- **Xbox: first launch of a new game** — the game prefix is created where
+  Proton expects it.
+- **Epic** — uninstall removes the empty game folder and crash-report
+  leftovers; games known only to legendary can be measured and moved.
+
 ## 1.20.2 — 2026-10-22
 
 Replaces 1.20.1, which was withdrawn: opening an Xbox game page could take
