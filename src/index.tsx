@@ -17,6 +17,7 @@ import { portUpdateNotice } from "./portUpdateNotice";
 import { t } from "./i18n";
 import { DOWNLOADS_ROUTE, SkullKeyDownloadsPage, TopBarDownloads } from "./Components/DownloadsSection";
 import { startQueueRunner } from "./Utils/downloadQueue";
+import { syncCollections } from "./Utils/collections";
 
 // Store name shown in free-game notifications.
 const FREE_STORES: Record<string, string> = { epic: "Epic Games", gog: "GOG", steam: "Steam", ubisoft: "Ubisoft",
@@ -95,6 +96,8 @@ export default definePlugin((serverApi: ServerAPI) => {
   checkPortUpdates();
 
   const stopQueue = startQueueRunner(serverApi);
+  // Installed games into their store collection (artwork on the collection tiles).
+  const collectionsSync = setTimeout(() => syncCollections(serverApi), 20000);
 
   // SkullKey's own Downloads page.
   serverApi.routerHook.addRoute(DOWNLOADS_ROUTE, () => <SkullKeyDownloadsPage serverAPI={serverApi} />);
@@ -183,7 +186,7 @@ export default definePlugin((serverApi: ServerAPI) => {
     icon: <FaSkull />,
     onDismount() {
       disposed = true;
-      clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); serverApi.routerHook.removeGlobalComponent("SkullKeyTopBarDownloads"); stopQueue(); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
+      clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); serverApi.routerHook.removeGlobalComponent("SkullKeyTopBarDownloads"); stopQueue(); clearTimeout(collectionsSync); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
       clearClickableNotifications("skullkey");
       serverApi.routerHook.removeRoute("/skullkey-content/:initActionSet/:initAction/:category?");
       serverApi.routerHook.removeRoute("/about-skullkey");
