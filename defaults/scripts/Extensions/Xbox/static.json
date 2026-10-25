@@ -147,6 +147,12 @@
      "Command": "./scripts/xbox.py logout"
     },
     {
+      "Id": "Accounts",
+      "Title": "Switch account",
+      "Type": "Accounts",
+      "Command": "./scripts/xbox.py accounts"
+    },
+    {
      "Id": "GetSetting",
      "Title": "Get settings",
      "Type": "GetSettings",

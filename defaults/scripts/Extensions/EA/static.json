@@ -166,6 +166,12 @@
      "Command": "./scripts/skullkey.sh EA logout"
     },
     {
+      "Id": "Accounts",
+      "Title": "Switch account",
+      "Type": "Accounts",
+      "Command": "./scripts/skullkey.sh EA accounts"
+    },
+    {
      "Id": "GetSetting",
      "Title": "GetSetting",
      "Type": "GetSettings",

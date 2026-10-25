@@ -1,4 +1,4 @@
-import { ConfirmModal, DialogButton, DialogLabel, Navigation, ServerAPI, showModal } from "decky-frontend-lib";
+import { ConfirmModal, DialogButton, DialogLabel, Navigation, ServerAPI, showModal, Focusable } from "decky-frontend-lib";
 import { ReactElement, VFC, useEffect, useState } from "react";
 import {
     ActionSet, ContentError, ContentResult, ContentType,
@@ -9,8 +9,9 @@ import Logger from "../Utils/logger";
 import { executeAction } from "../Utils/executeAction";
 import { ErrorDisplay } from "./ErrorDisplay";
 import { gameIDFromAppID } from "../Utils/utils";
-import { ActionCard, storeTheme } from "./Styled";
+import { ActionCard, notify, storeTheme } from "./Styled";
 import { t } from "../i18n";
+import { SwitchAccountModal, accountName, callAccounts } from "./SwitchAccountModal";
 
 // ── Connexion dans le navigateur de Steam (SkullKey #4) ─────────────────────
 // SteamOS d'origine n'a pas GTK/WebKit pour Python : la fenêtre de connexion ne
@@ -65,6 +66,7 @@ const startBrowserLogin = async (serverAPI: ServerAPI, actionSet: string, route:
 };
 
 
+
 export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; initAction: string; }> = ({ serverAPI, initActionSet, initAction }) => {
     const logger = new Logger("LoginContent");
     const [content, setContent] = useState<ContentResult<ContentType>>({ Type: "Empty", Content: {} });
@@ -85,6 +87,26 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
         window.addEventListener("skullkey-login-done", onDone);
         return () => window.removeEventListener("skullkey-login-done", onDone);
     }, [actionSetName]);
+    // Magasins dont la session vit dans des fichiers : bouton « Changer de compte ».
+    const [canSwitch, setCanSwitch] = useState(false);
+    const loadCanSwitch = async () => {
+        const has = await serverAPI.callPluginMethod<{ actionSet: string; actionName: string }, boolean>(
+            "has_action", { actionSet: actionSetName, actionName: "Accounts" });
+        setCanSwitch(!!(has.success && has.result));
+    };
+    const openSwitch = async (username: string) => {
+        const current = accountName(username);
+        const r = await callAccounts(serverAPI, actionSetName, { action: "list" });
+        const saved: string[] = r?.Type === "Accounts" ? (r.Content?.Saved || []) : [];
+        showModal(<SwitchAccountModal serverAPI={serverAPI} actionSet={actionSetName} current={current} saved={saved}
+            onSwitched={(name) => {
+                setContent({ Type: "Empty", Content: {} });
+                updateLoginStatus();
+                window.dispatchEvent(new CustomEvent("skullkey-login-done"));
+                notify({ title: t("switch_account"), body: t("switch_done", { name }) });
+            }}
+            onAdd={() => { setContent({ Type: "Empty", Content: {} }); setLoggedIn("false"); login(); }} />);
+    };
     const loadRemoveInfo = async () => {
         // Seul Ubisoft a cette action : la demander ailleurs ouvrait une
         // fenêtre « Action not found » sur chaque magasin (régression 1.14.0).
@@ -120,6 +142,7 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
         setContent(result);
         logger.debug("Login status: ", result);
         loadRemoveInfo();
+        loadCanSwitch();
     };
     const onLoginExit = (id) => {
         Navigation.CloseSideMenus();
@@ -295,6 +318,13 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
                             {isLoggedIn ? t('logout') : t('login')}
                         </ActionCard>
                     </div>
+                    {isLoggedIn && canSwitch && (
+                        <div style={{ width: 150 }}>
+                            <ActionCard color={theme.color} onClick={() => openSwitch(status.Username)}>
+                                {t('switch_account')}
+                            </ActionCard>
+                        </div>
+                    )}
                     {removeInfo && (
                         <div style={{ width: 130 }}>
                             <ActionCard color="#c0392b" onClick={askRemoveClient}>
@@ -312,14 +342,15 @@ export const LoginContent: VFC<{ serverAPI: ServerAPI; initActionSet: string; in
             innerElement = <ErrorDisplay error={content.Content as ContentError} />;
     }
 
+    // Ligne horizontale pour la manette : Déconnexion ⇄ Changer de compte.
     return (
-        <div style={{
+        <Focusable flow-children="horizontal" style={{
             display: "flex", minHeight: '40px', alignItems: 'center', gap: 10,
             padding: '6px 10px', borderRadius: 6,
             background: 'rgba(255,255,255,0.04)',
             borderLeft: `3px solid ${theme.color}`,
         }}>
             {innerElement}
-        </div>
+        </Focusable>
     );
 };

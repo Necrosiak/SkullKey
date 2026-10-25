@@ -108,6 +108,12 @@
           "Command": "./scripts/skullkey.sh Epic logout"
         },
         {
+          "Id": "Accounts",
+          "Title": "Switch account",
+          "Type": "Accounts",
+          "Command": "./scripts/skullkey.sh Epic accounts"
+        },
+        {
           "Id": "GetContent",
           "Title": "Status",
           "Type": "Status",

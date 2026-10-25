@@ -15,6 +15,7 @@ import fcntl
 import json
 import os
 import pwd
+import re
 import shutil
 import signal
 import subprocess
@@ -477,7 +478,20 @@ def _entry(pid):
     g = load_state()["games"].get(pid)
     if g:
         return {"title": g.get("title", pid), "art": g.get("art") or {}}, xbox_access.classify(None, None, True, False)
-    return None, None
+    # Not in the grid's quick pass: an owned game whose package was never
+    # checked (just released, cache cold). Check this one now, a page can wait.
+    m, lang = market()
+    d = xbox_catalog.details([pid], m, lang).get(pid)
+    if not d or not d.get("game"):
+        return None, None
+    view = account_view(False) if signed_in() else {"profile": {}, "entitlements": []}
+    ent = next((e for e in view["entitlements"] if (e.get("productId") or "").upper() == pid.upper()), None)
+    st = None
+    if ent:
+        content = xbox_catalog.installable(pid, m, time.monotonic() + xbox_catalog.RESOLVE_BUDGET)
+        st = {"price": "paid", "installable": bool(content)}
+        d = dict(d, contentId=content or None)
+    return d, xbox_access.classify(ent, st, False, xbox_access.subscription_active(view["profile"]))
 
 
 def action_getgamedetails(pid):
@@ -552,6 +566,34 @@ def action_getgamesize(pid):
 
 
 # ── download ─────────────────────────────────────────────────────────────────
+
+_SECRET = re.compile(r"token|authorization|bearer|signature|cookie|xuid|password|xbl3\.0|eyJ", re.I)
+
+
+def _safe_engine_line(line):
+    """An engine message fit for a log the player may share: never a line
+    that looks like it carries a credential, long opaque strings masked."""
+    line = (line or "").strip()
+    if not line or len(line) > 2000 or _SECRET.search(line):
+        return ""
+    line = re.sub(r"[A-Za-z0-9_+/=-]{40,}", "[…]", line)
+    return re.sub(r"[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+", "[email]", line)[:300]
+
+
+def _save_download_log(pid, code, tail):
+    """Write the engine's last messages to logs/<id>-download.log and
+    return the most telling one for the error dialog."""
+    try:
+        logs = XBOX_DIR / "logs"
+        logs.mkdir(parents=True, exist_ok=True)
+        (logs / f"{pid}-download.log").write_text(f"exit code: {code}\n" + "\n".join(tail) + "\n")
+    except OSError:
+        pass
+    for line in reversed(tail):
+        if re.search(r"error|fail|denied|licen[cs]e|entitle|space|forbidden|not found|unavailable", line, re.I):
+            return line
+    return tail[-1] if tail else (f"Engine exit code {code}." if code else "")
+
 
 def action_download(pid):
     if pid in load_state()["games"]:
@@ -654,9 +696,14 @@ def worker(pid):
                 while not stop_ticker.wait(1):
                     write_progress(pid, 0, step_text("metadata", elapsed=time.time() - started), pid=os.getpid())
             threading.Thread(target=tick, daemon=True).start()
+            tail = []
             for line in proc.stdout:
                 p = xbox_cli.parse_progress(line)
                 if not p:
+                    # Engine messages explain a failure: keep the last few.
+                    clean = _safe_engine_line(line)
+                    if clean:
+                        tail = (tail + [clean])[-20:]
                     continue
                 last = p
                 pct = int(p["percent"] or 0)
@@ -668,7 +715,9 @@ def worker(pid):
             stop_ticker.set()
             code = proc.wait()
             if code != 0 or not last or last["phase"] != "complete":
-                raise RuntimeError("The download did not complete (licence, network or disk space).")
+                reason = _save_download_log(pid, code, tail)
+                raise RuntimeError("The download did not complete (licence, network or disk space)."
+                                   + (f"\n{reason}" if reason else ""))
         game = xbox_cli.inspect_game(root)
         give_to_user(root)
         with locked_state() as s:
@@ -1045,6 +1094,15 @@ def action_logout():
     emit("Success", {"Message": "Logged out"})
 
 
+def action_accounts(args):
+    import accounts
+    kind, content = accounts.main(["Xbox"] + list(args))
+    if kind == "Accounts" and (content.get("Switched") or content.get("Cleared")):
+        with locked_state() as st:
+            st.pop("account", None)
+        drop_grid_cache()
+
+
 def action_getsetting(name, *_):
     value = (load_state().get("settings") or {}).get(name, "")
     emit("Setting", {"name": name, "value": value})
@@ -1080,6 +1138,7 @@ ACTIONS = {
     "loginstatus": lambda a: action_loginstatus(),
     "login": lambda a: emit("Success", {"Message": "Use the Steam browser sign-in."}),
     "logout": lambda a: action_logout(),
+    "accounts": lambda a: action_accounts(a),
     "refresh": lambda a: action_refresh(),
     "move": lambda a: action_move(a[0], a[1] if len(a) > 1 else ""),
     "moveworker": lambda a: move_worker(a[0], a[1] if len(a) > 1 else ""),

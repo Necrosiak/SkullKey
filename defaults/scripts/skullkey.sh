@@ -10,7 +10,7 @@ PLATFORMS=()
 PLATFORM="${1}"
 
 # List of actions that can be performed by the skullkey.sh script
-ACTIONS=("init" "getgames" "getactions" "saveconfig" "getconfig" "download" \
+ACTIONS=("init" "accounts" "getgames" "getactions" "saveconfig" "getconfig" "download" \
 "install" "update" "verify" "repair" "import" "getjsonimages" "cancelinstall" \
 "uninstall" "protontricks" "enable-eos-overlay" "disable-eos-overlay" \
 "getgamedetails" "getbats" "savebats" "getprogress" "login" \
@@ -61,6 +61,21 @@ else
 fi
 
 
+
+# Switch store account without signing out: the session files are swapped by
+# accounts.py, then the login status and the library are read again.
+function accounts(){
+    local out
+    out=$(SK_ACCOUNT_DIR="${SK_ACCOUNT_DIR}" python3 "${DECKY_PLUGIN_DIR}/scripts/accounts.py" "${PLATFORM}" "$@")
+    if echo "$out" | grep -q '"Switched": true\|"Cleared": true'; then
+        rm -f "${DECKY_PLUGIN_RUNTIME_DIR}/library-refresh-${PLATFORM}.stamp"
+        "${PLATFORM}_loginstatus" --flush-cache >/dev/null 2>&1
+        if [[ "$(type -t ${PLATFORM}_refresh)" == "function" ]]; then
+            ( "${PLATFORM}_refresh" >/dev/null 2>&1 ) </dev/null >/dev/null 2>&1 &
+        fi
+    fi
+    echo "$out"
+}
 
 # Check if ACTION is one of the actions in the case statement
 ACTION=$1

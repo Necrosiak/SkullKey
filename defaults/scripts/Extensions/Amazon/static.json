@@ -62,6 +62,12 @@
           "Command": "./scripts/skullkey.sh Amazon logout"
         },
         {
+          "Id": "Accounts",
+          "Title": "Switch account",
+          "Type": "Accounts",
+          "Command": "./scripts/skullkey.sh Amazon accounts"
+        },
+        {
           "Id": "GetContent",
           "Title": "Status",
           "Type": "Status",
