@@ -61,6 +61,9 @@ def ensure_prefix(product_id):
     if not runtime:
         raise PrefixError("The Xbox runtime is not installed.")
     if not _prefix_ready(pfx):
+        # Proton opens <STEAM_COMPAT_DATA_PATH>/pfx.lock before creating pfx.
+        # A first launch therefore needs the parent, not a prebuilt prefix.
+        root.mkdir(parents=True, exist_ok=True)
         steam = steam_root(product_id)
         steam.mkdir(parents=True, exist_ok=True)
         env = {k: v for k, v in os.environ.items() if not k.startswith("LD_LIBRARY_PATH")}

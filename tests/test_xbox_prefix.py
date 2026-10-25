@@ -98,6 +98,36 @@ class PrefixTest(unittest.TestCase):
         with mock.patch.object(self.p.Path, "home", return_value=Path(self.tmp.name) / "nohome"):
             self.assertEqual(self.p.steam_root("9AAA"), self.p.prefix_dir("9AAA") / "steam")
 
+    def test_first_launch_creates_compat_parent_before_proton_lock(self):
+        root = self.p.prefix_dir("9NEW")
+        self.assertFalse(root.exists())
+
+        def run(cmd, env, **kw):
+            self.assertTrue(root.is_dir())
+            self.assertEqual(env["STEAM_COMPAT_DATA_PATH"], str(root))
+            # Match Proton's first operation; it cannot create the parent.
+            (root / "pfx.lock").touch()
+            system32 = root / "pfx/drive_c/windows/system32"
+            system32.mkdir(parents=True)
+            (system32 / "kernel32.dll").write_text("fixture")
+            (root / "pfx/system.reg").write_text("fixture")
+            return mock.Mock(returncode=0)
+
+        with mock.patch.object(self.p.subprocess, "run", side_effect=run):
+            self.assertEqual(self.p.ensure_prefix("9NEW"), root)
+        self.assertTrue((root / "pfx/dosdevices/y:").is_symlink())
+
+    def test_existing_prefix_parent_files_are_preserved(self):
+        root = self.p.prefix_dir("9AAA")
+        marker = root / "user-note.txt"
+        marker.write_text("keep")
+        (self.pfx / "system.reg").write_text("fixture")
+        (self.pfx / "drive_c/windows/system32/kernel32.dll").write_text("fixture")
+        with mock.patch.object(self.p.subprocess, "run") as run:
+            self.p.ensure_prefix("9AAA")
+        run.assert_not_called()
+        self.assertEqual(marker.read_text(), "keep")
+
     def test_stale_runtime_symlinks_rebased(self):
         old = Path(self.tmp.name) / "rt" / "runtime-old" / "files" / "lib" / "wine" / "x.dll"
         target = self.pfx / "drive_c" / "windows" / "system32" / "x.dll"
