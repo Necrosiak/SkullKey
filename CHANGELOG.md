@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.21.1 — 2026-10-28
+
+### New
+
+- **Clear error messages everywhere** — when something goes wrong in any
+  store or tool, SkullKey now says what happened and what to do, in your
+  language: not enough space, drive full, network problem, sign-in expired,
+  game not available for the account, damaged files, no permission to write
+  to the drive, or a store tool that didn't start. The tool's own message is
+  still shown underneath, and the error window no longer shows empty
+  "ActionSet / ActionName" lines.
+- **An error log for every error** — each one is saved in
+  `~/homebrew/logs/SkullKey/errors/` (sign-in data masked) and the error
+  window tells you where, so you can attach it to a report.
+- **No more downloads that can't fit** — before an install starts, SkullKey
+  checks that the chosen drive has room for the game (Epic, GOG, Amazon,
+  Xbox, Classics Reborn; a minimum for the others) and says how much is
+  needed and how much is free.
+
+### Changed
+
+- **Xbox: engine 0.2.12 and the new Xodus Nexus runtime** — the runtime now
+  comes from its new repository and runs on the C++ XGameRuntime, with the
+  fixes of Xodus Nexus 0.4.0 (Halo Infinite, Ori and the Will of the Wisps,
+  Like a Dragon: Infinite Wealth, faster Gears start-up). SkullKey's own
+  engine follows on its own, and a runtime that needs a newer engine is
+  never installed before it.
+- **Xbox: shader cache kept per game** between launches (4 GB limit), and
+  add-ons that only unlock content are now checked by the game.
+- **EA: first install** — while Maxima prepares Proton for EA games (about
+  3 GB, only once) the download shows that, instead of a 0 % that looked
+  stuck. Thanks to [zavaro](https://github.com/zavaro) for the diagnostics
+  ([#10](https://github.com/Necrosiak/SkullKey/issues/10)).
+
+### Fixed
+
+- **Games on a drive that moved** — when a drive comes back at another mount
+  point (on Bazzite, Steam's automount and the system's can mount the same
+  drive at two different places from one boot to the next), SkullKey finds
+  its games again instead of failing to start them.
+- **Epic (and Amazon) stuck on "checking status"** — when a system update
+  removed the Python their tool was built with, the tool failed silently and
+  reinstalling the dependencies didn't help. SkullKey now rebuilds it by
+  itself, and a store tool that fails shows its real error. Thanks to
+  [bastiHST90](https://github.com/bastiHST90) for the report
+  ([#12](https://github.com/Necrosiak/SkullKey/issues/12)).
+
 ## 1.21.0 — 2026-10-25
 
 ### New
