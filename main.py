@@ -189,6 +189,33 @@ async def _resume_downloads():
         decky_plugin.logger.error(f"[resume] error: {e}")
 
 
+async def _remount_watch():
+    """A drive can come back at another mount point (Steam's automount and
+    Bazzite's race at boot): move stored install folders to where it is now,
+    at start-up and whenever the mounted drives change."""
+    seen = None
+    while True:
+        try:
+            with open("/proc/mounts") as f:
+                current = sorted(l.split()[1] for l in f if l.split()[1].startswith(("/run/media/", "/media/", "/mnt/", "/var/mnt/")))
+            if current != seen:
+                seen = current
+                proc = await asyncio.create_subprocess_exec(
+                    "python3", "./scripts/remount.py",
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                    stdin=asyncio.subprocess.DEVNULL, cwd=Helper.working_directory,
+                    env=Helper.get_environment())
+                out, err = await proc.communicate()
+                moved = out.decode(errors="replace").strip()
+                if moved and moved != "{}":
+                    decky_plugin.logger.info(f"[remount] drive moved: {moved}")
+                elif proc.returncode:
+                    decky_plugin.logger.warning(f"[remount] {err.decode(errors='replace')[-300:]}")
+        except Exception as e:
+            decky_plugin.logger.warning(f"[remount] {e!r}")
+        await asyncio.sleep(20)
+
+
 async def _games_autoupdate():
     """Unattended game updates for every store, at most once a day, without
     the user ever opening the plugin UI. The orchestrator
@@ -951,6 +978,7 @@ class Plugin:
             _spawn(_ensure_deps())
             _spawn(_resume_downloads())
             _spawn(_games_autoupdate())
+            _spawn(_remount_watch())
 
         except Exception as e:
             decky_plugin.logger.error(f"Error in _main: {e}")
@@ -1459,6 +1487,10 @@ class Plugin:
                 Helper.active_install_root = Helper.pending_install_root
             Helper.pending_install_root = ""
             try:
+                if actionName == "Download":
+                    blocked = await self._space_check(actionSet, kwargs, args)
+                    if blocked:
+                        return blocked
                 result = await Helper.execute_action(
                     actionSet,
                     actionName,
@@ -1472,10 +1504,87 @@ class Plugin:
                 Helper.active_install_root = ""
             if Helper.verbose:
                 decky_plugin.logger.info(f"execute_action result: {result}")
-            return result
+            return self._clarify(actionSet, actionName, result, kwargs)
         except Exception as e:
             decky_plugin.logger.error(f"Error in execute_action: {e}")
+            return self._clarify(actionSet, actionName, {"Type": "Error", "Content": {
+                "Message": f"SkullKey could not run this action: {e}", "Data": ""}}, kwargs)
+
+    # ── clear errors for every store and tool (see scripts/clear_errors.py) ──
+
+    @staticmethod
+    def _shortname(kwargs, args):
+        name = (kwargs or {}).get("shortname")
+        if not name and args:
+            name = args[0]
+        return str(name or "")
+
+    async def _space_check(self, actionSet, kwargs, args):
+        """Refuse a download the chosen drive cannot hold, before it starts."""
+        import clear_errors
+        shortname = self._shortname(kwargs, args)
+        content = {}
+        try:
+            size = await asyncio.wait_for(Helper.execute_action(actionSet, "GetGameSize", shortname, "false"), 45)
+            if isinstance(size, dict) and isinstance(size.get("Content"), dict):
+                content = size["Content"]
+        except Exception as e:
+            decky_plugin.logger.info(f"[space] size of {actionSet}/{shortname} unknown: {e!r}")
+        need = clear_errors.needed_bytes(content)
+        extra = 0
+        if actionSet == "EAActions":
+            # Maxima's first install also sets up Proton and the Steam runtime.
+            import glob
+            runtime = decky_plugin.DECKY_PLUGIN_RUNTIME_DIR
+            if not glob.glob(os.path.join(runtime, "accounts", "*", "ea", "data", "maxima", "wine", "proton")):
+                extra = 3 << 30
+        target = Helper.active_install_root or decky_plugin.DECKY_USER_HOME
+        problem = clear_errors.space_problem(target, need, extra)
+        decky_plugin.logger.info(f"[space] {actionSet}/{shortname} need={need} extra={extra} "
+                                 f"target={target} → {'blocked' if problem else 'ok'}")
+        if not problem:
             return None
+        message = clear_errors.english("no_space", problem["Need"], problem["Free"], problem["Drive"])
+        content = {"Message": message, "Data": "", "ActionSet": actionSet, "ActionName": "Download", **problem}
+        content["LogPath"] = clear_errors.write_log(
+            decky_plugin.DECKY_PLUGIN_LOG_DIR, actionSet, "Download", "no_space", message,
+            context={"Game": shortname, "Needed": clear_errors.human(problem["Need"]),
+                     "Free": clear_errors.human(problem["Free"]), "Drive": problem["Drive"]})
+        return {"Type": "Error", "Content": content}
+
+    def _clarify(self, actionSet, actionName, result, kwargs):
+        """Give every error a cause code the panel can word, and a log file."""
+        import clear_errors
+        if not isinstance(result, dict):
+            return result
+        content = result.get("Content")
+        try:
+            if result.get("Type") == "Error":
+                if not isinstance(content, dict):
+                    content = {"Message": str(content or ""), "Data": ""}
+                    result["Content"] = content
+                text = f"{content.get('Message', '')}\n{content.get('Data', '')}"
+                code = content.get("Code") or clear_errors.classify(text)
+                content["Code"] = code
+                content.setdefault("ActionSet", actionSet)
+                content.setdefault("ActionName", actionName)
+                if not content.get("LogPath"):
+                    content["LogPath"] = clear_errors.write_log(
+                        decky_plugin.DECKY_PLUGIN_LOG_DIR, actionSet, actionName, code,
+                        content.get("Message", ""), content.get("Data", ""),
+                        context={"Game": self._shortname(kwargs, ())})
+            elif isinstance(content, dict) and isinstance(content.get("Error"), str) and content["Error"].strip():
+                # A failure reported while a game installs (every store's progress).
+                code = content.get("ErrorCode") or clear_errors.classify(content["Error"])
+                content["ErrorCode"] = code
+                content["LogPath"] = clear_errors.write_log(
+                    decky_plugin.DECKY_PLUGIN_LOG_DIR, actionSet, actionName, code,
+                    clear_errors.english(code), content["Error"],
+                    context={"Game": self._shortname(kwargs, ()),
+                             "Progress": f"{content.get('Percentage', '?')} %"})
+        except Exception as e:
+            decky_plugin.logger.warning(f"[errors] could not clarify {actionSet}/{actionName}: {e!r}")
+        return result
 
     async def download_custom_backend(self, url, backup: bool = False):
         try:
