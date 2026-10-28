@@ -156,6 +156,68 @@ class ToolsTest(unittest.TestCase):
             self.t.ensure(update=False, components=("backend",))
         official.assert_called_once_with("backend")
 
+    def runtime_release(self, tag, name, date):
+        return dict(release(tag, name + "-x86_64.tar.xz", name + "-x86_64.sha512sum"), published_at=date)
+
+    def test_runtime_from_new_repository_by_date(self):
+        new = [self.runtime_release("runtime-11.0-20261026-gbbb", "nexus-runtime-11.0-experimental-gbbb", "2026-10-26T10:00:00Z"),
+               self.runtime_release("runtime-11.0-20261024-gfff", "nexus-runtime-11.0-experimental-gfff", "2026-10-24T10:00:00Z"),
+               dict(release("runtime-11.0-20261027-gccc", "nexus-runtime-11.0-experimental-gccc-x86_64.tar.xz"),
+                    published_at="2026-10-27T10:00:00Z")]  # no checksum: skipped
+        fetch = lambda url: new if "nexus-runtime/" in url else RELEASES
+        r = self.t.latest_releases(fetch=fetch)
+        self.assertEqual(r["runtime"][0], "runtime-11.0-20261026-gbbb")
+        self.assertEqual(r["backend"][0], "backend-v0.2.10")
+
+    def test_runtime_falls_back_to_main_repository(self):
+        def fetch(url):
+            if "nexus-runtime/" in url:
+                raise OSError("404")
+            return RELEASES
+        self.assertEqual(self.t.latest_releases(fetch=fetch)["runtime"][0], "runtime-11.0-20261020-gabc")
+
+    def test_runtime_needing_newer_engine_keeps_previous(self):
+        own = self.t.XBOX_DIR / self.t.OWN_ENGINE
+        own.mkdir(parents=True)
+        (own / "xodus-cli").write_text("x")
+        (own / "BUILD-METADATA.json").write_text(json.dumps({"source_tag": "backend-v0.2.11"}))
+        name = "nexus-runtime-11.0-experimental-gbbb-x86_64.tar.xz"
+        arc = self.src / name
+        meta = json.dumps({"requiresBackendVersion": "0.2.12"}).encode()
+        digest = make_archive(arc, name[:-7], {"XODUS_NEXUS_PATCH.json": meta, "proton": b"x"})
+        rels = [self.runtime_release("runtime-11.0-20261026-gbbb", name[:-14], "2026-10-26T10:00:00Z")]
+        files = {name: arc.read_bytes(), name[:-7] + ".sha512sum": f"{digest}  {name}\n".encode()}
+        fetch = lambda url: rels if "nexus-runtime/" in url else []
+        with self.assertRaises(self.t.ToolsError):
+            self.t.install_component("runtime", fetch=fetch, download=self.serve(files))
+        self.assertIsNone(self.t.current("runtime"))
+        (own / "BUILD-METADATA.json").write_text(json.dumps({"source_tag": "backend-v0.2.12"}))
+        self.t.install_component("runtime", fetch=fetch, download=self.serve(files))
+        self.assertEqual(self.t.current("runtime")["version"], "runtime-11.0-20261026-gbbb")
+
+    def test_outdated_own_engine_replaced_once_per_6h_on_failure(self):
+        own = self.t.XBOX_DIR / self.t.OWN_ENGINE
+        own.mkdir(parents=True)
+        (own / "xodus-cli").write_text("x")
+        (own / "BUILD-METADATA.json").write_text(json.dumps({"source_tag": "backend-v0.2.10"}))
+        with mock.patch.object(self.t, "install_own_engine", side_effect=self.t.ToolsError("offline")) as inst, \
+             mock.patch.object(self.t, "latest_releases", return_value={}):
+            r = self.t.ensure(update=True, components=("backend",), present=lambda k: True)
+            self.t.ensure(update=True, components=("backend",), present=lambda k: True)
+        self.assertEqual(inst.call_count, 1)
+        self.assertEqual(r["errors"], ["offline"])
+
+    def test_current_own_engine_not_downloaded_again(self):
+        own = self.t.XBOX_DIR / self.t.OWN_ENGINE
+        own.mkdir(parents=True)
+        (own / "xodus-cli").write_text("x")
+        tag = "backend-v" + ".".join(map(str, self.t.OWN_ENGINE_VERSION))
+        (own / "BUILD-METADATA.json").write_text(json.dumps({"source_tag": tag}))
+        with mock.patch.object(self.t, "install_own_engine") as inst, \
+             mock.patch.object(self.t, "latest_releases", return_value={}):
+            self.t.ensure(update=True, components=("backend",), present=lambda k: True)
+        inst.assert_not_called()
+
     def test_dead_lock_pid_not_busy(self):
         locks = self.t.XBOX_DIR / "locks"
         locks.mkdir(parents=True)

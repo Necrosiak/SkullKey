@@ -69,6 +69,21 @@ class ContentTest(unittest.TestCase):
         self.c.mark_installed("9GAME", offer)
         self.assertEqual(self.c.roots_env("9GAME"), "Z:" + str(d).replace("/", "\\"))
 
+    def test_related_ids_only_for_a_runtime_that_reads_them(self):
+        import json
+        from unittest import mock
+        rt = Path(self.tmp.name) / "runtime"
+        rt.mkdir()
+        meta = rt / "XODUS_NEXUS_PATCH.json"
+        meta.write_text(json.dumps({"features": ["xstore-entitlements-v1"]}))
+        with mock.patch.object(self.c.xbox_tools, "runtime_root", return_value=rt):
+            self.assertEqual(self.c.related_env("9GAME", self.root), "")
+            meta.write_text(json.dumps({"features": list(self.c.DISCOVERY_FEATURES)}))
+            self.c.content_dir("9GAME", "9NEXTRA00001").mkdir(parents=True)
+            self.assertEqual(self.c.related_env("9GAME", self.root), "9PC4V8W0VCWT,9P2MSCGJPKJC,9NEXTRA00001")
+        with mock.patch.object(self.c.xbox_tools, "runtime_root", return_value=None):
+            self.assertEqual(self.c.related_env("9GAME", self.root), "")
+
     def test_store_down_means_no_content(self):
         def boom(url):
             raise OSError("offline")

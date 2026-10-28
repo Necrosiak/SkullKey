@@ -64,6 +64,15 @@ class PrefixTest(unittest.TestCase):
         self.assertIn("wineserver -w", text)
         self.assertEqual(runner.stat().st_mode & 0o777, 0o700)
 
+    def test_runner_keeps_shader_cache_per_game(self):
+        text = self.p.write_runner("9AAA").read_text()
+        cache = self.p.prefix_dir("9AAA") / "shadercache"
+        self.assertTrue((cache / "mesa").is_dir() and (cache / "vkd3d-proton").is_dir())
+        self.assertIn('if [ "${MESA_SHADER_CACHE_DIR+x}" != x ]; then', text)
+        self.assertIn(str(cache / "mesa"), text)
+        self.assertIn("MESA_SHADER_CACHE_MAX_SIZE=4G", text)
+        self.assertIn('if [ "${VKD3D_SHADER_CACHE_PATH+x}" != x ]; then export VKD3D_SHADER_CACHE_PATH=', text)
+
     def test_runtime_components_copied_after_checksum(self):
         self.p.write_runner("9AAA")
         self.assertEqual((self.pfx / "drive_c/windows/system32/windows.web.dll").read_bytes(), b"MZdll")

@@ -1,7 +1,8 @@
 """Xbox tab: install and update the Xodus engine (xodus-cli, xodus-service),
 the Xodus Proton runtime and, for the fallback sign-in only, the Xodus Nexus
-AppImage — always from the official domsvoboda/xodus-nexus releases, checked
-against their published SHA-512 sums.
+AppImage — always from the official domsvoboda/xodus-nexus and
+domsvoboda/nexus-runtime releases, checked against their published SHA-512
+sums.
 
 Updates happen on use (tab opened, game launched), at most every 6 hours, and
 never while an install or a game is running: a running game keeps the files
@@ -25,13 +26,16 @@ RUNTIME_DIR = Path(os.environ.get("DECKY_PLUGIN_RUNTIME_DIR",
                                   str(HOME / "homebrew/data/SkullKey")))
 XBOX_DIR = RUNTIME_DIR / "xbox"
 RELEASES_URL = "https://api.github.com/repos/domsvoboda/xodus-nexus/releases?per_page=100"
+# Since Nexus 0.4.0 the runtime has its own repository; the main one stays the
+# fallback until the new one has published something, as Nexus itself does.
+RUNTIME_RELEASES_URL = "https://api.github.com/repos/domsvoboda/nexus-runtime/releases?per_page=30"
 UPDATE_EVERY = 6 * 3600
 
 FAMILIES = {
     "backend": (re.compile(r"^backend-v\d+(\.\d+)*$"),
                 re.compile(r"^xodus-nexus-backend-[\d.]+-linux-x86_64\.tar\.xz$")),
     "runtime": (re.compile(r"^runtime-"),
-                re.compile(r"^xodus-nexus-runtime-.+-x86_64\.tar\.xz$")),
+                re.compile(r"^(xodus-)?nexus-runtime-.+-x86_64\.tar\.xz$")),
     "launcher": (re.compile(r"^v\d+(\.\d+)*$"),
                  re.compile(r"^Xodus-Nexus-[\d.]+-x86_64\.AppImage$")),
 }
@@ -61,15 +65,69 @@ def http_download(url, dest):
         shutil.copyfileobj(r, f, 1 << 20)
 
 
+def _newest_runtime(releases):
+    """Newest published runtime that has both its archive and its checksum.
+    Runtime tags end in a commit hash, so they are compared by date."""
+    best, best_date = None, ""
+    for rel in releases:
+        if rel.get("draft") or rel.get("prerelease"):
+            continue
+        if not FAMILIES["runtime"][0].match(rel.get("tag_name", "")):
+            continue
+        try:
+            pick_assets("runtime", rel.get("assets") or [])
+        except ToolsError:
+            continue
+        date = rel.get("published_at") or ""
+        if best is None or date > best_date:
+            best, best_date = (rel["tag_name"], rel.get("assets") or []), date
+    return best
+
+
 def latest_releases(fetch=http_json):
     out = {}
-    for rel in fetch(RELEASES_URL):
+    main = fetch(RELEASES_URL)
+    for rel in main:
         if rel.get("draft") or rel.get("prerelease"):
             continue
         for kind, (tag_re, _) in FAMILIES.items():
-            if kind not in out and tag_re.match(rel.get("tag_name", "")):
+            if kind != "runtime" and kind not in out and tag_re.match(rel.get("tag_name", "")):
                 out[kind] = (rel["tag_name"], rel.get("assets") or [])
+    try:
+        runtime = _newest_runtime(fetch(RUNTIME_RELEASES_URL))
+    except Exception:
+        runtime = None
+    runtime = runtime or _newest_runtime(main)
+    if runtime:
+        out["runtime"] = runtime
     return out
+
+
+def _version_tuple(text):
+    m = re.search(r"(\d+(?:\.\d+)+)", text or "")
+    return tuple(int(x) for x in m.group(1).split(".")) if m else None
+
+
+def engine_version():
+    """Version of the engine in use, e.g. (0, 2, 12), or None if unknown."""
+    if _own("xodus-cli"):
+        try:
+            meta = json.loads((XBOX_DIR / OWN_ENGINE / "BUILD-METADATA.json").read_text())
+            return _version_tuple(meta.get("source_tag"))
+        except (OSError, ValueError):
+            return None
+    return _version_tuple((current("backend") or {}).get("version"))
+
+
+def runtime_fits_engine(runtime_dir):
+    """A runtime may need a minimum engine (requiresBackendVersion)."""
+    try:
+        meta = json.loads((Path(runtime_dir) / "XODUS_NEXUS_PATCH.json").read_text())
+    except (OSError, ValueError):
+        return True
+    need = _version_tuple(meta.get("requiresBackendVersion"))
+    have = engine_version()
+    return not need or (have is not None and have >= need)
 
 
 def pick_assets(kind, assets):
@@ -148,9 +206,14 @@ def install_component(kind, fetch=http_json, download=http_download):
                     for item in inner.iterdir():
                         shutil.move(str(item), staging / item.name)
                     inner.rmdir()
+            if kind == "runtime" and not runtime_fits_engine(staging):
+                raise ToolsError("This Xbox runtime needs a newer Xbox engine.")
             if final.exists():
                 shutil.rmtree(final)
             staging.rename(final)
+        except ToolsError:
+            shutil.rmtree(staging, ignore_errors=True)
+            raise
         except Exception as e:
             shutil.rmtree(staging, ignore_errors=True)
             raise ToolsError(f"Could not unpack the {kind} download.") from e
@@ -176,13 +239,15 @@ def _path(kind, *parts):
 # (~/.xodus-keyring.ron, like other launchers) instead of KDE Wallet, so no
 # wallet prompt ever blocks Game Mode. Preferred over the official build.
 OWN_ENGINE = "engine-file-keychain"
-# Built from the official backend-v0.2.10 source with only the upstream
+# Built from the official backend source with only the upstream
 # `key-chain-file` feature switched on (see xodus-engine/BUILD.md), published
-# as a SkullKey release asset and pinned here by checksum.
-OWN_ENGINE_ASSET = "xodus-engine-skullkey-0.2.10-linux-x86_64.tar.xz"
-OWN_ENGINE_URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.20.0/" + OWN_ENGINE_ASSET
-OWN_ENGINE_SHA512 = ("0bb39dec68f8d7e222cd765b57d619f3647671be28b076d46f72420a0b9b003736a38c7f9ef6f2b468ce73efbf7de0e3"
-                     "98870c8d1eefa6004051230154f3f529")
+# as a SkullKey release asset and pinned here by checksum. A different pinned
+# version replaces the installed one when no install or game is running.
+OWN_ENGINE_VERSION = (0, 2, 12)
+OWN_ENGINE_ASSET = "xodus-engine-skullkey-0.2.12-linux-x86_64.tar.xz"
+OWN_ENGINE_URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.1/" + OWN_ENGINE_ASSET
+OWN_ENGINE_SHA512 = ("3684d0c780536e26b1f65c855c02e09d4fdc78adaf9be5b7e9a86c3d2cf9333f2788fb5a234c37d3718716654f0511c6"
+                     "8a09512420d0f15fd919e3af6556f092")
 
 
 def install_own_engine(download=None):
@@ -292,16 +357,35 @@ def present(kind):
     return {"backend": cli_path, "runtime": wine_path, "launcher": launcher_path}[kind]() is not None
 
 
+def _engine_attempt_due():
+    """A new pinned engine is fetched right away; a failed fetch of it is
+    retried at most every 6 h, so an offline launch is not held up."""
+    mark = XBOX_DIR / "cache" / "engine-attempt"
+    pinned = ".".join(map(str, OWN_ENGINE_VERSION))
+    try:
+        version, when = mark.read_text().split()
+        if version == pinned and time.time() - float(when) < UPDATE_EVERY:
+            return False
+    except (OSError, ValueError):
+        pass
+    mark.parent.mkdir(parents=True, exist_ok=True)
+    mark.write_text(f"{pinned} {time.time()}")
+    return True
+
+
 def ensure(update=True, components=("backend", "runtime"), present=present):
     """Install what is missing; refresh the rest at most every 6 h when idle.
     Returns {"installed": [...], "updated": [...], "errors": [...]}."""
     result = {"installed": [], "updated": [], "errors": []}
-    if "backend" in components and not _own("xodus-cli"):
-        try:
-            install_own_engine()
-            result["installed"].append("engine")
-        except ToolsError as e:
-            result["errors"].append(str(e))
+    if "backend" in components:
+        had = _own("xodus-cli") is not None
+        stale = had and engine_version() != OWN_ENGINE_VERSION
+        if not had or (update and stale and not busy() and _engine_attempt_due()):
+            try:
+                install_own_engine()
+                result["updated" if had else "installed"].append("engine")
+            except ToolsError as e:
+                result["errors"].append(str(e))
     missing = [k for k in components if not present(k)]
     for kind in missing:
         try:

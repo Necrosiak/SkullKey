@@ -562,7 +562,8 @@ def action_getgamesize(pid):
         m, _ = market()
         size = xbox_catalog.download_size(pid, (_entry(pid)[0] or {}).get("contentId"), m)
         label = words["size_download"]
-    emit("GameSize", {"Size": f"{label}{size / (1 << 30):.1f} GB" if size else ""})
+    emit("GameSize", {"Size": f"{label}{size / (1 << 30):.1f} GB" if size else "",
+                      **({} if root.is_dir() else {"DownloadBytes": size or 0, "DiskBytes": size or 0})})
 
 
 # ── download ─────────────────────────────────────────────────────────────────
@@ -889,9 +890,21 @@ def action_install(pid, steam_id=""):
 
 
 def action_run(pid):
+    try:
+        import remount
+        remount.heal()
+    except Exception:
+        pass
     g = load_state()["games"].get(pid)
     if not g:
         return error("This game is not installed.")
+    if not Path(g["root"]).is_dir():
+        msg = f"The game folder {g['root']} is missing. Is its drive connected?"
+        logs = XBOX_DIR / "logs"
+        logs.mkdir(parents=True, exist_ok=True)
+        (logs / f"{pid}.log").write_text("SkullKey: " + msg + "\n")
+        print(msg, file=sys.stderr)
+        return 5
     view = account_view()
     ents = {e["productId"].upper(): e for e in view["entitlements"] if e.get("productId")}
     access = xbox_access.classify(ents.get(pid), {"price": "free", "installable": True}, True,
@@ -915,6 +928,10 @@ def action_run(pid):
         roots = xbox_content.roots_env(pid)
         if roots:
             env["XODUS_CONTENT_ROOTS"] = roots
+        env.pop("NEXUS_RELATED_PRODUCT_IDS", None)
+        related = xbox_content.related_env(pid, g["root"])
+        if related:
+            env["NEXUS_RELATED_PRODUCT_IDS"] = related
         sync_prefix_locale(pid, runner, locale, env)
         # In-game Xbox sign-in, Store licence checks and cloud saves go
         # through the account service, reached over its loopback bridge.

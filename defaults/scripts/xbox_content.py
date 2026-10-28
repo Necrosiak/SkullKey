@@ -122,6 +122,31 @@ def roots(pid):
     return sorted(str(d) for d in base.iterdir() if d.is_dir() and installed(pid, d.name))
 
 
+DISCOVERY_FEATURES = ("xstore-related-discovery-v1", "xstore-durable-license-v1",
+                      "xstore-entitlements-v1", "xodus-tcp-bridge-v1")
+
+
+def related_env(pid, root):
+    """NEXUS_RELATED_PRODUCT_IDS value: the add-ons the game declares plus
+    the ones installed for it, so a runtime that supports it can check
+    licence-only add-ons. Public product IDs only; "" when unsupported."""
+    runtime = xbox_tools.runtime_root()
+    try:
+        features = json.loads((runtime / "XODUS_NEXUS_PATCH.json").read_text()).get("features") or []
+    except (OSError, TypeError, ValueError):
+        return ""
+    if not all(f in features for f in DISCOVERY_FEATURES):
+        return ""
+    base = base_manifest(root) or {"storeId": "", "related": []}
+    folder = xbox_tools.XBOX_DIR / "content" / pid
+    owned = sorted(d.name for d in folder.iterdir() if d.is_dir()) if folder.is_dir() else []
+    ids = []
+    for i in base["related"] + owned:
+        if PRODUCT_ID.match(i) and i != base["storeId"] and i not in ids:
+            ids.append(i)
+    return ",".join(ids[:256])
+
+
 def roots_env(pid):
     """XODUS_CONTENT_ROOTS value (Windows paths through Z:), or ""."""
     paths = ["Z:" + r.replace("/", "\\") for r in roots(pid)]

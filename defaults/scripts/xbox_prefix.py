@@ -18,6 +18,9 @@ from pathlib import Path
 
 import xbox_tools
 
+# Per-game Mesa shader cache limit, the same default as Xodus Nexus.
+SHADER_CACHE_MAX = "4G"
+
 
 class PrefixError(Exception):
     pass
@@ -150,6 +153,14 @@ def write_runner(product_id):
         overrides += ";d3d8=n"
     q = shlex.quote
     wine, server = files / "bin" / "wine", files / "bin" / "wineserver"
+    # Shader caches live with the game's prefix and survive launches and
+    # runtime updates. A value the user exported is never replaced.
+    cache = root / "shadercache"
+    for name in ("vkd3d-proton", "mesa"):
+        (cache / name).mkdir(parents=True, exist_ok=True, mode=0o700)
+
+    def default(name, value):
+        return f'if [ "${{{name}+x}}" != x ]; then export {name}={q(value)}; fi'
     lines = [
         "#!/bin/sh",
         f"export WINEPREFIX={q(str(pfx))}",
@@ -165,6 +176,11 @@ def write_runner(product_id):
         f"export PATH={q(str(files / 'bin'))}:\"$PATH\"",
         f"export WINEDLLOVERRIDES={q(overrides)}",
         "export WINE_LARGE_ADDRESS_AWARE='1'",
+        default("VKD3D_SHADER_CACHE_PATH", str(cache / "vkd3d-proton")),
+        'if [ "${MESA_SHADER_CACHE_DIR+x}" != x ]; then',
+        f"  export MESA_SHADER_CACHE_DIR={q(str(cache / 'mesa'))}",
+        "  " + default("MESA_SHADER_CACHE_MAX_SIZE", SHADER_CACHE_MAX),
+        "fi",
         'if [ "${1:-}" = "--skullkey-stop-prefix" ]; then',
         f"  exec {q(str(server))} -k",
         "fi",
