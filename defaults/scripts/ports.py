@@ -1633,15 +1633,17 @@ def action_getgamedetails(shortname):
 
 def action_getgamesize(shortname):
     size = ""
+    sizes = {}
     try:
         state = load_state()
         info = release_info(state, APPS[shortname])
         save_state(state)
         mb = info["size"] / (1 << 20)
         size = f"Download Size: {mb:.1f} MB"
+        sizes = {"DownloadBytes": info["size"], "DiskBytes": info["size"] * 2}
     except Exception:
         pass
-    print(json.dumps({"Type": "GameSize", "Content": {"Size": size}}))
+    print(json.dumps({"Type": "GameSize", "Content": {"Size": size, **sizes}}))
 
 
 # Jeu d'images Steam de chaque Classique (jaquette, bannière, héros, logo,

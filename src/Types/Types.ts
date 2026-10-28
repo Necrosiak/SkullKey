@@ -135,6 +135,8 @@ export interface ProgressUpdate extends ContentType {
   Percentage: number;
   Description: string;
   Error?: string;
+  ErrorCode?: string;
+  LogPath?: string;
 }
 export interface GameImages extends ContentType {
   Grid: string;
@@ -190,6 +192,13 @@ export interface ContentError extends ContentType {
   Data: string;
   ActionSet: string;
   ActionName: string;
+  /** Cause found by the backend (no_space, network, auth…), worded by the panel. */
+  Code?: string;
+  /** Error log written for this error, to attach to a report. */
+  LogPath?: string;
+  Need?: number;
+  Free?: number;
+  Drive?: string;
 }
 
 export interface StoreContent extends ContentType {

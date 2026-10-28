@@ -56,11 +56,23 @@ function uninstall() {
     rm -rf "${VENV}"
 }
 
+# A venv keeps a link to the Python it was built with. When a system or
+# Homebrew update removes that Python, every tool in it fails before printing
+# anything, while bin/pip still exists — so a plain "is it there" test never
+# rebuilt it, and reinstalling the dependencies changed nothing.
+venv_healthy() {
+    "${VENV}/bin/python" -c "import legendary" >/dev/null 2>&1
+}
+
 function install() {
     if flatpak_legendary_present; then
         echo "legendary flatpak déjà installé → gardé (prioritaire), pas de venv"
     else
         pick_python || return 1
+        if [ -d "${VENV}" ] && ! "${VENV}/bin/python" -c "import sys" >/dev/null 2>&1; then
+            echo "legendary venv is broken (its Python is gone) → rebuilding it"
+            rm -rf "${VENV}"
+        fi
         if [ ! -x "${VENV}/bin/pip" ]; then
             "${PY}" -m venv "${VENV}"
         fi
@@ -84,7 +96,7 @@ function install() {
 function check() {
     # Cheap, offline presence check used by the boot-time auto-provision.
     # Exit 0 = deps present, non-zero = missing (triggers install).
-    [ -x "${VENV}/bin/legendary" ] && return 0
+    [ -x "${VENV}/bin/legendary" ] && venv_healthy && return 0
     flatpak_legendary_present
 }
 

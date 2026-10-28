@@ -15,6 +15,12 @@ class CmdException(Exception):
     pass
 
 
+def stderr_tail(errors, limit=300):
+    """Last lines of a tool's error output, so a crash shows its real cause."""
+    text = errors.decode(errors="replace").strip() if errors else ""
+    return f"\n{text[-limit:]}" if text else ""
+
+
 class Amazon(GamesDb.GamesDb):
     def __init__(self, db_file, storeName, setNameConfig=None):
         super().__init__(db_file, storeName=storeName, setNameConfig=setNameConfig)
@@ -30,13 +36,15 @@ class Amazon(GamesDb.GamesDb):
         return os.path.join(base, 'nile')
 
     def execute_shell(self, cmd, expect_json=True):
-        result = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True).communicate()[0].decode()
+        output, errors = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                          stderr=subprocess.PIPE,
+                                          shell=True).communicate()
+        result = output.decode(errors="replace")
         if not expect_json:
             return result
         if result.strip() == "":
-            raise CmdException(f"Command produced no output (try installing dependencies from the About menu): {cmd}")
+            raise CmdException(f"Command produced no output (try installing dependencies from the About menu): {cmd}"
+                               + stderr_tail(errors))
         return json.loads(result)
 
     def get_list(self, offline):
@@ -190,6 +198,7 @@ class Amazon(GamesDb.GamesDb):
             })
 
     def get_game_size(self, game_id, installed):
+        sizes = {}
         if installed == 'true':
             conn = self.get_connection()
             c = conn.cursor()
@@ -209,10 +218,11 @@ class Amazon(GamesDb.GamesDb):
                 disk_str = f"Install Size: {self.convert_bytes(disk)}" if disk else ""
                 dl_str = f"Download Size: {self.convert_bytes(download)}" if download else ""
                 size = disk_str + (f" ({dl_str})" if dl_str and disk_str else dl_str)
+                sizes = {'DiskBytes': disk or 0, 'DownloadBytes': download or 0}
             except Exception as e:
                 print(f"nile info failed: {e}", file=sys.stderr)
                 size = ""
-        return json.dumps({'Type': 'GameSize', 'Content': {'Size': size}})
+        return json.dumps({'Type': 'GameSize', 'Content': {'Size': size, **sizes}})
 
     def update_game_details(self, game_id):
         path = self.get_install_path(game_id)

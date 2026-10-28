@@ -212,7 +212,7 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                     setProgress(progressUpdate);
                     logger.debug(progressUpdate.Percentage);
                     if (progressUpdate.Error != null) {
-                        showModal(<ErrorModal Error={{ ActionName: "GetProgress", ActionSet: initActionSet, Message: "Installation failed", Data: progressUpdate.Error ?? "" } as ContentError} />);
+                        showModal(<ErrorModal Error={{ ActionName: "GetProgress", ActionSet: initActionSet, Message: t("err_install_failed"), Data: progressUpdate.Error ?? "", Code: progressUpdate.ErrorCode, LogPath: progressUpdate.LogPath } as ContentError} />);
                         cancelInstall();
                         break;
 

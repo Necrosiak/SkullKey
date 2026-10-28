@@ -85,6 +85,58 @@ class Issue10Tests(unittest.TestCase):
     def test_old_cancel_marker_does_not_cancel_new_job(self):
         self.run_hanging_fixture(stale_cancel=True)
 
+    def test_first_install_proton_setup_and_cancel_keep_real_progress(self):
+        ea = self.module()
+        with tempfile.TemporaryDirectory(prefix='ea-issue10-proton-') as tmp, \
+                patch.dict(os.environ, {'SK_ACCOUNT_DIR': str(Path(tmp) / 'account')}):
+            root = ea.root()
+            auth = root / 'data/maxima/auth.toml'
+            auth.parent.mkdir(parents=True)
+            auth.write_text('fake fixture, no account')
+            ea.save({'validated': True, 'games': [{'slug': 'fixture', 'installed': False}]})
+            cli = root / 'fake-cli'
+            cli.write_text('#!/usr/bin/env python3\nimport time\n'
+                           'print("Setting up umu runtime", flush=True)\ntime.sleep(1)\n'
+                           'print("Progress: 42", flush=True)\n'
+                           'print("ERROR fixture-disk: No space left on device", flush=True)\n'
+                           'time.sleep(15)\n')
+            cli.chmod(0o700)
+            ea.write_job('fixture', {'token': 'current', 'active': True, 'Percentage': 0,
+                                    'Description': 'Starting', 'Error': None})
+            with patch.object(ea, 'client', return_value=cli), \
+                    patch.object(ea, 'env', return_value={'PATH': '/usr/bin:/bin'}):
+                thread = threading.Thread(target=ea.install_worker, args=('fixture', 'current'), daemon=True)
+                thread.start()
+                try:
+                    deadline = time.monotonic() + 3
+                    seen = None
+                    while time.monotonic() < deadline:
+                        seen = ea.read_job('fixture').get('Description')
+                        if seen == ea.PREPARING_PROTON:
+                            break
+                        time.sleep(.02)
+                    self.assertEqual(seen, ea.PREPARING_PROTON)
+                    deadline = time.monotonic() + 3
+                    while time.monotonic() < deadline and ea.read_job('fixture').get('Percentage') != 42:
+                        time.sleep(.02)
+                    time.sleep(.2)
+                finally:
+                    (root / 'cancel-fixture').write_text('current')
+                    thread.join(timeout=7)
+            diagnostic = json.loads((root / 'install-diagnostic-fixture.json').read_text())
+            self.assertEqual(diagnostic['stage'], 'cancelled')
+            self.assertEqual(diagnostic['progress'], 0)          # the job is reset on cancel
+            self.assertEqual(diagnostic['max_progress'], 42)     # but the real progress is kept
+            self.assertEqual(diagnostic['activity_hint'], 'proton-setup')
+            self.assertEqual(diagnostic['error_kind'], 'disk-space')
+            self.assertFalse(diagnostic['maxima_umu_present'])
+            self.assertNotIn('fixture-disk', json.dumps(diagnostic))
+
+    def test_error_kind_is_a_fixed_word(self):
+        ea = self.module()
+        self.assertEqual(ea.error_kind('ERROR request timed out after 30s'), 'network')
+        self.assertEqual(ea.error_kind('ERROR something odd happened'), 'other')
+
     def test_zero_byte_file_cannot_pass_installation_verification(self):
         ea = self.module()
         with tempfile.TemporaryDirectory() as tmp:

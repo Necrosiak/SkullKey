@@ -661,10 +661,25 @@ def installation_verified(slug, directory, output):
                                           for p in directory.rglob("*")))
 
 
+ERROR_KINDS = (("space", "disk-space"), ("no space", "disk-space"), ("permission", "permission"),
+               ("timed out", "network"), ("timeout", "network"), ("connection", "network"),
+               ("dns", "network"), ("certificate", "network"), ("hash", "checksum"),
+               ("checksum", "checksum"), ("umu", "runtime"), ("proton", "runtime"), ("wine", "runtime"),
+               ("steamrt", "runtime"), ("license", "license"), ("entitlement", "license"),
+               ("auth", "auth"), ("token", "auth"), ("touchup", "installer"), ("download", "download"))
+
+
+def error_kind(line):
+    """A fixed category for an EA CLI error line; the line itself is never kept."""
+    lower = line.lower()
+    return next((kind for marker, kind in ERROR_KINDS if marker in lower), "other")
+
+
 def install_diagnostic(slug, stage, started, **fields):
     """Allowlisted metadata only: never CLI output, paths, OAuth or job tokens."""
     allowed = {"progress", "cli_error_seen", "exit_code", "failure_category",
-               "activity_hint", "umu_available", "python_available", "display_available", "failed_stage"}
+               "activity_hint", "umu_available", "python_available", "display_available", "failed_stage",
+               "max_progress", "error_kind", "maxima_umu_present", "maxima_proton_present"}
     now = time.time()
     data = {"version": VERSION, "stage": stage, "updated_at": now,
             "elapsed_seconds": round(max(0, now - started), 1),
@@ -678,6 +693,9 @@ def install_diagnostic(slug, stage, started, **fields):
         pass  # A diagnostic write must not stop the user's installation.
 
 
+PREPARING_PROTON = "Preparing Proton for EA games (first install only, about 3 GB)…"
+
+
 def install_worker(slug, token):
     process = None
     job = read_job(slug)
@@ -689,15 +707,20 @@ def install_worker(slug, token):
     failed = False
     activity_hint = "unknown"
     tool_info = {}
+    max_progress = 0.0
+    first_error = None
 
     def report(stage, **fields):
         nonlocal phase, last_report
+        wine = root() / "data/maxima/wine"
         phase = stage
         last_report = time.time()
         job["Stage"] = stage
         install_diagnostic(slug, stage, started,
                            progress=job.get("Percentage", 0), cli_error_seen=failed,
-                           activity_hint=activity_hint, **tool_info, **fields)
+                           activity_hint=activity_hint, max_progress=max_progress,
+                           error_kind=first_error, maxima_umu_present=(wine / "umu/umu-run").is_file(),
+                           maxima_proton_present=(wine / "proton").is_dir(), **tool_info, **fields)
 
     report("starting")
     job.update(worker_pid=os.getpid(), worker_start=process_identity(os.getpid()))
@@ -750,13 +773,21 @@ def install_worker(slug, token):
                                 ("download complete", "download-complete")) if marker in text.lower()), None)
                             if hint and hint != activity_hint:
                                 activity_hint = hint
+                                if hint == "proton-setup" and max_progress < 1:
+                                    # Maxima prints no progress while it fetches
+                                    # Proton and the Steam runtime (~3 GB once).
+                                    job["Description"] = PREPARING_PROTON
+                                    write_job(slug, job)
                                 report(phase)
                             was_failed = failed
                             failed |= bool(re.search(r"\bERROR\b", text))
+                            if failed and first_error is None:
+                                first_error = error_kind(text)
                             if failed and not was_failed:
                                 report(phase)
                             progress = re.search(r"Progress:\s*(\d+(?:\.\d+)?)", text)
                             if progress:
+                                max_progress = max(max_progress, float(progress[1]))
                                 job.update(Percentage=min(99, float(progress[1])), Description="Downloading EA game…")
                                 if float(progress[1]) >= 99:
                                     job["Description"] = "Waiting for EA installation to finish…"

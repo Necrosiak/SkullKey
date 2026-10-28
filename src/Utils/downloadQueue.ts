@@ -3,6 +3,7 @@ import { executeAction } from "./executeAction";
 import { configureShortcut } from "./utils";
 import { notify } from "../Components/Styled";
 import { t } from "../i18n";
+import { errorText } from "../Components/ErrorDisplay";
 import Logger from "./logger";
 
 // One download at a time, whatever the store: games installed while another
@@ -213,7 +214,9 @@ async function tick() {
         if (state.current) {
             const p = (await executeAction<any, any>(api, state.current.set, "GetProgress", { shortname: state.current.shortname }))?.Content;
             if (p?.Error) {
-                notify({ title: "SkullKey", body: t("queue_failed", { game: state.current.name }) });
+                // Say why, not only that it failed; the full story is in the log.
+                const why = errorText(p.ErrorCode);
+                notify({ title: "SkullKey", body: t("queue_failed", { game: state.current.name }) + (why ? " " + why : "") });
                 state.current = null;
                 await save(state);
             } else if (p && p.Percentage < 100 && RESUMABLE.test(state.current.set)) {

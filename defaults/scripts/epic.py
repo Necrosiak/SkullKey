@@ -19,6 +19,12 @@ from datetime import datetime, timedelta
 class CmdException(Exception):
     pass
 
+
+def stderr_tail(errors, limit=300):
+    """Last lines of a tool's error output, so a crash shows its real cause."""
+    text = errors.decode(errors="replace").strip() if errors else ""
+    return f"\n{text[-limit:]}" if text else ""
+
 class Epic(GamesDb.GamesDb):
     def __init__(self, db_file, storeName, setNameConfig=None):
         super().__init__(db_file, storeName=storeName,  setNameConfig=setNameConfig)
@@ -28,15 +34,17 @@ class Epic(GamesDb.GamesDb):
 
     def execute_shell(self, cmd):
        
-        result = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                  stderr=subprocess.PIPE,
-                                  shell=True).communicate()[0].decode()
+        output, errors = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                          stderr=subprocess.PIPE,
+                                          shell=True).communicate()
+        result = output.decode(errors="replace")
 
         if "[cli] ERROR:" in result:
             raise CmdException(result)
         # print(f" result: {result}", file=sys.stderr)
         if result.strip() == "":
-            raise CmdException(f"Command produced no output (try installing dependencies from the About menu): {cmd}")
+            raise CmdException(f"Command produced no output (try installing dependencies from the About menu): {cmd}"
+                               + stderr_tail(errors))
         return json.loads(result)
 
     # sample json for game returned from legendary list --json
@@ -207,6 +215,7 @@ class Epic(GamesDb.GamesDb):
             raise e
     
     def get_game_size(self, game_id, installed):
+        sizes = {}
         if installed == 'true':
             conn = self.get_connection()
             c = conn.cursor()
@@ -223,12 +232,14 @@ class Epic(GamesDb.GamesDb):
             result = self.execute_shell(f"{self.legendary_cmd} info {game_id} --json")
             manifest = result.get('manifest')
             if manifest != None:
+                sizes = {'DiskBytes': manifest.get('disk_size') or 0,
+                         'DownloadBytes': manifest.get('download_size') or 0}
                 disk_size_str = f"Install Size: {self.convert_bytes(manifest['disk_size'])}" if bool(manifest.get('disk_size')) else ""
                 download_size_str = f"Download Size: {self.convert_bytes(manifest['download_size'])}" if bool(manifest.get('download_size')) else ""
                 size = disk_size_str + (f" ({download_size_str})" if download_size_str != "" else "") if disk_size_str != "" else download_size_str
             else:
                 size = ""
-        return json.dumps({'Type': 'GameSize', 'Content': {'Size': size }})
+        return json.dumps({'Type': 'GameSize', 'Content': {'Size': size, **sizes}})
 
     def has_updates(self, game_id, offline):
         offline_switch = "--offline" if offline else ""

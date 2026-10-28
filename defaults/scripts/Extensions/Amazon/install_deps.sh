@@ -37,6 +37,14 @@ function uninstall() {
     rm -rf "${VENV}"
 }
 
+# A venv keeps a link to the Python it was built with. When a system or
+# Homebrew update removes that Python, every tool in it fails before printing
+# anything, while bin/pip still exists — so a plain "is it there" test never
+# rebuilt it, and reinstalling the dependencies changed nothing.
+venv_healthy() {
+    "${VENV}/bin/python" -c "import nile" >/dev/null 2>&1
+}
+
 function install() {
     # nile est installé depuis un clone local (pyproject à patcher) → git requis.
     if ! command -v git >/dev/null 2>&1; then
@@ -44,6 +52,10 @@ function install() {
         return 1
     fi
     pick_python || return 1
+    if [ -d "${VENV}" ] && ! "${VENV}/bin/python" -c "import sys" >/dev/null 2>&1; then
+        echo "nile venv is broken (its Python is gone) → rebuilding it"
+        rm -rf "${VENV}"
+    fi
     if [ ! -x "${VENV}/bin/pip" ]; then
         "${PY}" -m venv "${VENV}"
     fi
@@ -60,7 +72,7 @@ function install() {
 function check() {
     # Cheap, offline presence check used by the boot-time auto-provision.
     # Exit 0 = deps present, non-zero = missing (triggers install).
-    [ -x "${VENV}/bin/nile" ]
+    [ -x "${VENV}/bin/nile" ] && venv_healthy
 }
 
 if [ "$1" == "uninstall" ]; then
