@@ -62,3 +62,7 @@ please say so on an [issue](https://github.com/Necrosiak/SkullKey/issues).
 - The EA request, pointing at Maxima and at the fork with the non-interactive
   install commands that made an in-Game-Mode EA store possible
   ([#6](https://github.com/Necrosiak/SkullKey/issues/6), added in v1.17.0)
+- The diagnostics that showed EA installs stopping at 99 %
+  ([#10](https://github.com/Necrosiak/SkullKey/issues/10), v1.21.1 and v1.21.2)
+- The fix for the menu that no longer opened in 1.21.1
+  ([#13](https://github.com/Necrosiak/SkullKey/pull/13), v1.21.2)

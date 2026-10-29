@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.21.2 — 2026-10-29
+
+### Fixed
+
+- **SkullKey opens again** — 1.21.1 left the menu on the loading spinner for
+  everyone. Thanks to [zavaro](https://github.com/zavaro), who found it and
+  sent the fix ([#13](https://github.com/Necrosiak/SkullKey/pull/13)).
+- **EA installs stuck at 99 %** — once the game was downloaded, a setup
+  program the game's installer left open (a DirectX or Visual C++ setup, a
+  window that had been answered) kept the install waiting forever. SkullKey
+  now closes what the installer left behind and finishes the install. It
+  never touches another program running at the same time, and if the
+  installer is really waiting for an answer, the download tells you to look
+  for its window ([#10](https://github.com/Necrosiak/SkullKey/issues/10)).
+
+### Changed
+
+- **Xbox: engine 0.2.13 and the matching Xodus Nexus runtime** — the fixes
+  of Xodus Nexus 0.4.1: Age of Empires IV starts, sign-in works again for
+  the Microsoft accounts that failed, and interrupted updates recover
+  better. SkullKey updates its engine first, then the runtime, on its own.
+
 ## 1.21.1 — 2026-10-28
 
 ### New
