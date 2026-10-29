@@ -1488,7 +1488,7 @@ class Plugin:
             Helper.pending_install_root = ""
             try:
                 if actionName == "Download":
-                    blocked = await self._space_check(actionSet, kwargs, args)
+                    blocked = await self._space_check(self, actionSet, kwargs, args)
                     if blocked:
                         return blocked
                 result = await Helper.execute_action(
@@ -1504,10 +1504,10 @@ class Plugin:
                 Helper.active_install_root = ""
             if Helper.verbose:
                 decky_plugin.logger.info(f"execute_action result: {result}")
-            return self._clarify(actionSet, actionName, result, kwargs)
+            return self._clarify(self, actionSet, actionName, result, kwargs)
         except Exception as e:
             decky_plugin.logger.error(f"Error in execute_action: {e}")
-            return self._clarify(actionSet, actionName, {"Type": "Error", "Content": {
+            return self._clarify(self, actionSet, actionName, {"Type": "Error", "Content": {
                 "Message": f"SkullKey could not run this action: {e}", "Data": ""}}, kwargs)
 
     # ── clear errors for every store and tool (see scripts/clear_errors.py) ──
