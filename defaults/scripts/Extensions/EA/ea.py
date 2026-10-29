@@ -674,13 +674,58 @@ def error_kind(line):
     lower = line.lower()
     return next((kind for marker, kind in ERROR_KINDS if marker in lower), "other")
 
+def installer_exit_code(slug):
+    if not (game(slug) or {}).get("installed"):
+        return None
+    code = state().get("installer_warnings", {}).get(slug)
+    if code is None:
+        try:
+            diagnostic = json.loads((root() / f"install-diagnostic-{slug}.json").read_text())
+            if diagnostic.get("stage") == "done":
+                code = diagnostic.get("touchup_exit")
+        except (OSError, ValueError):
+            pass
+    return code if isinstance(code, int) and not isinstance(code, bool) and code != 0 else None
+
+
+def launch_environment(slug):
+    environment = env()
+    if slug == "medal-of-honor-allied-assault":
+        # Mesa documents extension-string overflow crashes in old OpenGL
+        # games. Restrict this compatibility workaround to this game only.
+        environment.setdefault("MESA_EXTENSION_MAX_YEAR", "2002")
+    return environment
+
+
+def launch_diagnostic(slug, started, result):
+    """Fixed launch error categories only; never retain CLI text or CD keys."""
+    output = (result.stdout + "\n" + result.stderr).lower()
+    markers = {
+        "opengl": ("could not load opengl", "couldn't load opengl", "glw_startopengl", "failed to initialize opengl"),
+        "video-mode": ("couldn't set video mode", "could not set video mode", "failed to create window"),
+        "missing-game-data": ("couldn't load default.cfg", "could not load default.cfg", "couldn't load pak"),
+        "entitlement": ("not_entitled",),
+        "activation": ("activation failed", "invalid cd key", "invalid cd-key", "cd key required"),
+        "wine-exception": ("unhandled exception", "unhandled page fault"),
+    }
+    data = {"version": VERSION, "exit_code": result.returncode,
+            "elapsed_seconds": round(max(0, time.monotonic() - started), 1),
+            "categories": [kind for kind, words in markers.items() if any(word in output for word in words)]}
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", dir=root(), delete=False) as stream:
+            json.dump(data, stream)
+            temporary = Path(stream.name)
+        temporary.replace(root() / f"launch-diagnostic-{slug}.json")
+    except OSError:
+        pass
+
 
 def install_diagnostic(slug, stage, started, **fields):
     """Allowlisted metadata only: never CLI output, paths, OAuth or job tokens."""
     allowed = {"progress", "cli_error_seen", "exit_code", "failure_category",
                "activity_hint", "umu_available", "python_available", "display_available", "failed_stage",
                "max_progress", "error_kind", "maxima_umu_present", "maxima_proton_present",
-               "watchdog", "lingering"}
+               "watchdog", "lingering", "touchup_exit"}
     now = time.time()
     data = {"version": VERSION, "stage": stage, "updated_at": now,
             "elapsed_seconds": round(max(0, now - started), 1),
@@ -699,6 +744,7 @@ PREPARING_PROTON = "Preparing Proton for EA games (first install only, about 3 G
 
 INSTALLER_WAITING = "The game's installer may be waiting for an answer: look for its window."
 CLOSING_LEFTOVERS = "Closing what the game's installer left open…"
+FINISHING_INSTALL = "Finishing the EA installation…"
 WINE_INFRA = {"wineserver", "services.exe", "winedevice.exe", "plugplay.exe", "svchost.exe", "explorer.exe",
               "rpcss.exe", "tabtip.exe", "conhost.exe", "steam.exe", "start.exe", "wineboot.exe"}
 REDISTRIBUTABLES = ("dxsetup", "dxwebsetup", "vcredist", "vc_redist", "dotnetfx", "ndp4", "physx", "oalinst",
@@ -731,6 +777,49 @@ def prefix_processes(prefix):
             yield int(entry), name if name.endswith(".exe") else name + ".exe", command
 
 
+def installer_log(directory):
+    try:
+        installer = next((p for p in Path(directory).iterdir() if p.name.lower() == "__installer" and p.is_dir()), None)
+        return next((p for p in installer.iterdir() if p.name.lower() == "installlog.txt" and p.is_file()), None) if installer else None
+    except OSError:
+        return None
+
+
+def touchup_checkpoint(directory):
+    log = installer_log(directory)
+    try:
+        stat = log.stat() if log else None
+        return (stat.st_dev, stat.st_ino, stat.st_size) if stat else None
+    except OSError:
+        return None
+
+
+def touchup_exit(directory, since, checkpoint=None):
+    """Only new Touchup completions; bounded reads, never expose log text."""
+    log = installer_log(directory)
+    try:
+        if log is None:
+            return None
+        with log.open("rb") as stream:
+            stat = os.fstat(stream.fileno())
+            if stat.st_mtime < since:
+                return None
+            bom = stream.read(2)
+            encoding = "utf-16-le" if bom == b"\xff\xfe" else "utf-16-be" if bom == b"\xfe\xff" else "utf-8"
+            offset = 0
+            if checkpoint and (stat.st_dev, stat.st_ino) == checkpoint[:2] and stat.st_size >= checkpoint[2]:
+                offset = checkpoint[2]
+            offset = max(offset, stat.st_size - (4 << 20))
+            if encoding.startswith("utf-16"):
+                offset += offset % 2
+            stream.seek(offset)
+            data = stream.read(4 << 20)
+    except OSError:
+        return None
+    codes = re.findall(r"Installer finished with exit code: (-?\d+)", data.decode(encoding, "replace"))
+    return int(codes[-1]) if codes else None
+
+
 def sort_processes(processes, places):
     """Split prefix processes into Touchup, installer leftovers, Wine's own and anything else."""
     touchup, leftovers, infra, others = [], [], [], []
@@ -759,10 +848,16 @@ class InstallWatchdog:
         self.places = {"__installer"}
         for path in {str(directory), os.path.realpath(directory)}:
             self.places.add("z:" + path.replace("/", "\\").lower())
+        self.directory = directory
+        self.started = time.time()
+        self.touchup_log = touchup_checkpoint(directory)
         self.action = None
         self.names = []
         self.noted_waiting = False
         self.signalled = set()
+        self.idle_since = None
+        self.touchup_exit = None
+        self.stop_maxima = False
 
     def _stop(self, found):
         for pid, _ in found:
@@ -772,9 +867,26 @@ class InstallWatchdog:
                 pass
             self.signalled.add(pid)
 
-    def check(self, silent):
+    def check(self, silent, allow_cleanup=True):
         """A progress message when the watchdog stepped in, else None."""
         touchup, leftovers, infra, others = sort_processes(prefix_processes(self.prefix), self.places)
+        if not (touchup or leftovers or infra or others):
+            # Maxima treats any non-zero Touchup exit as an error, never
+            # counts its last byte, and prints 99.99 % forever with nothing
+            # left running (measured 29/10/2026: Battlefield 1942's Touchup
+            # ended with code 3 over a Game Explorer entry, #10). Once Touchup
+            # has logged its end and the prefix stays empty, Maxima is done.
+            code = touchup_exit(self.directory, self.started, self.touchup_log)
+            if code is None:
+                return None
+            self.idle_since = self.idle_since or time.monotonic()
+            if time.monotonic() - self.idle_since < 60:
+                return None
+            self.action, self.touchup_exit, self.stop_maxima = "stopped-maxima", code, True
+            return FINISHING_INSTALL
+        self.idle_since = None
+        if not allow_cleanup:
+            return None
         if touchup:
             if silent >= 180 and not self.noted_waiting:
                 self.noted_waiting, self.action = True, "installer-waiting"
@@ -809,6 +921,7 @@ def install_worker(slug, token):
     tool_info = {}
     max_progress = 0.0
     first_error = None
+    watchdog = None
 
     def report(stage, **fields):
         nonlocal phase, last_report
@@ -816,6 +929,9 @@ def install_worker(slug, token):
         phase = stage
         last_report = time.time()
         job["Stage"] = stage
+        if watchdog is not None:
+            fields = {"watchdog": watchdog.action, "lingering": watchdog.names,
+                      "touchup_exit": watchdog.touchup_exit, **fields}
         install_diagnostic(slug, stage, started,
                            progress=job.get("Percentage", 0), cli_error_seen=failed,
                            activity_hint=activity_hint, max_progress=max_progress,
@@ -836,7 +952,16 @@ def install_worker(slug, token):
                 umu_available=bool(shutil.which("umu-run", path=environment.get("PATH", ""))),
                 python_available=bool(shutil.which("python3", path=environment.get("PATH", ""))),
                 display_available=bool(environment.get("DISPLAY") or environment.get("WAYLAND_DISPLAY")))
+            # SkullKey hands Maxima one game at a time (its own download queue
+            # orders them). Maxima keeps a cancelled install as the "current"
+            # entry of download_queue.json and carries on with it after the
+            # requested game, inside the same `install` command: measured
+            # 29/10/2026, Battlefield 1942 went on with a Mass Effect install
+            # cancelled four days earlier, the CLI never exited and SkullKey
+            # showed the other game's progress at 93-99 % (#10).
+            (root() / "data/maxima/download_queue.json").unlink(missing_ok=True)
             report("starting-cli")
+            watchdog = InstallWatchdog(directory)
             process = subprocess.Popen([str(localized_client()), "install", slug, "--path", str(directory)],
                                        env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        start_new_session=True)
@@ -847,7 +972,6 @@ def install_worker(slug, token):
             pending = b""
             failed = False
             deadline = time.monotonic() + 12 * 3600
-            watchdog = InstallWatchdog(directory)
             last_output = time.monotonic()
             next_check = 0.0
             try:
@@ -859,14 +983,22 @@ def install_worker(slug, token):
                         raise TimeoutError("Installation timed out")
                     if time.time() - last_report >= 30:
                         report(phase)
-                    if max_progress >= 100 and time.monotonic() >= next_check:
+                    if max_progress >= 99 and time.monotonic() >= next_check:
                         next_check = time.monotonic() + 15
-                        note = watchdog.check(time.monotonic() - last_output)
+                        note = watchdog.check(time.monotonic() - last_output,
+                                              allow_cleanup=max_progress >= 100)
                         if note:
                             job["Description"] = note
                             write_job(slug, job)
                         if note or watchdog.names:
-                            report(phase, watchdog=watchdog.action, lingering=watchdog.names)
+                            report(phase, watchdog=watchdog.action, lingering=watchdog.names,
+                                   touchup_exit=watchdog.touchup_exit)
+                        if watchdog.stop_maxima and process.poll() is None:
+                            watchdog.stop_maxima = False
+                            try:
+                                os.killpg(process.pid, signal.SIGTERM)
+                            except ProcessLookupError:
+                                pass
                     for key, _ in selector.select(timeout=0.25):
                         chunk = os.read(key.fileobj.fileno(), 8192)
                         if not chunk:
@@ -916,7 +1048,8 @@ def install_worker(slug, token):
             report("cli-exited", exit_code=exit_code)
             # When the watchdog closed leftovers, Maxima's own verdict is not
             # reliable: the game-info check below decides.
-            if (exit_code or failed) and not watchdog.action:
+            if (exit_code or failed) and watchdog.action not in {
+                    "stopped-maxima", "closed-leftovers", "closed-wine-services"}:
                 raise RuntimeError("Maxima installation failed")
             report("verifying-installation")
             check = subprocess.run([str(client()), "game-info", slug], env=env(),
@@ -928,6 +1061,20 @@ def install_worker(slug, token):
             refresh()
             if not game(slug)["installed"]:
                 raise RuntimeError("Library installation state not confirmed")
+            # Keep an installer warning separate from installation failure.
+            code = watchdog.touchup_exit
+            if code is None:
+                code = touchup_exit(directory, watchdog.started, watchdog.touchup_log)
+                watchdog.touchup_exit = code
+            saved = state()
+            warnings = saved.setdefault("installer_warnings", {})
+            if isinstance(code, int) and code != 0:
+                warnings[slug] = code
+                job["InstallerExitCode"] = code
+            else:
+                warnings.pop(slug, None)
+                job.pop("InstallerExitCode", None)
+            save(saved)
             job.update(Percentage=100, Description="Done", Error=None)
             report("done", exit_code=0)
     except InterruptedError:
@@ -1114,7 +1261,11 @@ def dispatch(action, args):
         return {"Type": "Progress", "Content": {"Message": "Installing"}}
     if action == "getprogress":
         data = read_job(slug)
-        return {"Type": "ProgressUpdate", "Content": {k: data[k] for k in ("Percentage", "Description", "Error")}}
+        if data.get("Percentage", 0) >= 100 and not data.get("Error"):
+            code = installer_exit_code(slug)
+            if code is not None:
+                data["InstallerExitCode"] = code
+        return {"Type": "ProgressUpdate", "Content": {k: data[k] for k in ("Percentage", "Description", "Error", "InstallerExitCode") if k in data}}
     if action == "cancelinstall":
         with (root() / "jobs.lock").open("a") as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
@@ -1147,8 +1298,10 @@ def dispatch(action, args):
                 merge_case_duplicates(game_dir(slug))
                 set_registry_locale(game_locale())
                 apply_locale_filter(game_dir(slug), game_locale())
-                result = subprocess.run([str(localized_client()), "launch", slug], env=env(),
+                launch_started = time.monotonic()
+                result = subprocess.run([str(localized_client()), "launch", slug], env=launch_environment(slug),
                                         capture_output=True, text=True, errors="replace")
+                launch_diagnostic(slug, launch_started, result)
                 # Maxima exits 0 even when EA refuses the licence (e.g. a Game
                 # Pass / EA Play title that is no longer available): tell the
                 # player instead of silently returning to Steam.
@@ -1186,6 +1339,7 @@ def dispatch(action, args):
             raise RuntimeError("Unknown EA game.")
         return {"Type": "GameDetails", "Content": {"Name": g["name"], "ShortName": slug,
                 "Description": description(g),
+                "InstallerExitCode": installer_exit_code(slug),
                 "Images": [c] if (c := cover(g)) else [], "Editors": [],
                 "SteamClientID": state().get("shortcuts", {}).get(slug, "")}}
     if action == "getjsonimages":

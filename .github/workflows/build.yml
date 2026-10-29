@@ -29,7 +29,7 @@ jobs:
         run: pnpm install
 
       - name: Test frontend
-        run: node --test tests/test_browser_login_ui.cjs tests/test_xbox_ui.cjs tests/test_disks_flow_ui.cjs tests/test_disks_ui_safety.cjs
+        run: node --test tests/test_browser_login_ui.cjs tests/test_xbox_ui.cjs tests/test_disks_flow_ui.cjs tests/test_disks_ui_safety.cjs tests/test_ea_installer_warning.cjs tests/test_topbar_placement.cjs
 
       - name: Build plugin
         run: pnpm run build

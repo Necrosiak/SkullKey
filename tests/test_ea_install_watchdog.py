@@ -83,6 +83,90 @@ class CheckTest(unittest.TestCase):
         kill.assert_not_called()
 
 
+class TouchupExitTest(unittest.TestCase):
+    def write_log(self, folder, text):
+        installer = Path(folder, "__Installer")
+        installer.mkdir()
+        (installer / "InstallLog.txt").write_bytes(text.encode("utf-16"))
+
+    def test_reads_the_last_exit_code(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write_log(tmp, "10:45:18  Installer finished with exit code: 0\r\n"
+                                "10:50:01  Failed to install GDF\r\n"
+                                "10:50:01  Installer finished with exit code: 3\r\n")
+            self.assertEqual(ea.touchup_exit(tmp, 0), 3)
+
+    def test_ignores_a_log_from_before_this_install(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            self.write_log(tmp, "Installer finished with exit code: 0\r\n")
+            self.assertIsNone(ea.touchup_exit(tmp, 4102444800))  # 2100-01-01
+
+    def test_no_log_or_no_folder(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertIsNone(ea.touchup_exit(tmp, 0))
+            self.assertIsNone(ea.touchup_exit(os.path.join(tmp, "missing"), 0))
+
+
+class StuckMaximaTest(unittest.TestCase):
+    def test_empty_prefix_after_touchup_stops_maxima_after_a_minute(self):
+        dog = watchdog()
+        with mock.patch.object(ea, "prefix_processes", return_value=[]), \
+                mock.patch.object(ea, "touchup_exit", return_value=3), \
+                mock.patch.object(ea.time, "monotonic", side_effect=[1000, 1000, 1030, 1061]):
+            self.assertIsNone(dog.check(0))
+            self.assertIsNone(dog.check(0))
+            self.assertEqual(dog.check(0), ea.FINISHING_INSTALL)
+        self.assertTrue(dog.stop_maxima)
+        self.assertEqual((dog.action, dog.touchup_exit), ("stopped-maxima", 3))
+
+    def test_nothing_happens_before_touchup_has_finished(self):
+        dog = watchdog()
+        with mock.patch.object(ea, "prefix_processes", return_value=[]), \
+                mock.patch.object(ea, "touchup_exit", return_value=None):
+            for _ in range(5):
+                self.assertIsNone(dog.check(900))
+        self.assertFalse(dog.stop_maxima)
+
+    def test_a_process_coming_back_restarts_the_wait(self):
+        dog = watchdog()
+        with mock.patch.object(ea, "touchup_exit", return_value=0), \
+                mock.patch.object(ea.time, "monotonic", side_effect=[1000, 1000, 1070, 1070]), \
+                mock.patch.object(ea.os, "kill"):
+            with mock.patch.object(ea, "prefix_processes", return_value=[]):
+                self.assertIsNone(dog.check(0))
+            with mock.patch.object(ea, "prefix_processes", return_value=INFRA):
+                self.assertIsNone(dog.check(0))
+            with mock.patch.object(ea, "prefix_processes", return_value=[]):
+                self.assertIsNone(dog.check(0))
+        self.assertFalse(dog.stop_maxima)
+
+
+class EarlyProgressSafetyTest(unittest.TestCase):
+    def test_before_100_only_empty_prefix_can_be_finalized(self):
+        for processes in (INFRA, [(20, "touchup.exe", "")],
+                          [(21, "dxsetup.exe", "dxsetup.exe /silent")],
+                          [(22, "game.exe", "z:\\games\\game.exe")]):
+            with self.subTest(processes=processes):
+                dog = watchdog()
+                with mock.patch.object(ea, "prefix_processes", return_value=processes), \
+                        mock.patch.object(ea.os, "kill") as kill:
+                    self.assertIsNone(dog.check(900, allow_cleanup=False))
+                    kill.assert_not_called()
+                    self.assertFalse(dog.stop_maxima)
+
+    def test_before_100_no_touchup_log_never_stops_maxima(self):
+        dog = watchdog()
+        with mock.patch.object(ea, "prefix_processes", return_value=[]), \
+                mock.patch.object(ea, "touchup_exit", return_value=None), \
+                mock.patch.object(ea.os, "kill") as kill:
+            self.assertIsNone(dog.check(900, allow_cleanup=False))
+            self.assertFalse(dog.stop_maxima)
+            kill.assert_not_called()
+
+
 class ProcTest(unittest.TestCase):
     def test_reads_real_processes_without_error(self):
         # This test's own process has no WINEPREFIX of that name.

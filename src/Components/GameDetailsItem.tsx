@@ -16,6 +16,7 @@ import { ErrorModal } from "../ErrorModal";
 import { notify } from "./Styled";
 
 import { t } from "../i18n";
+import { installerWarning } from "../Utils/installerWarning";
 import { pickInstallDrive } from "./DrivePicker";
 
 const shortcutCreation = new Map<string, Promise<number>>();
@@ -646,9 +647,9 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                             serverApi={serverAPI}
                             name={(gameData.Content as GameDetails).Name}
                             shortName={(gameData.Content as GameDetails).ShortName}
-                            description={compatNote && !(gameData.Content as GameDetails).Description?.includes("⚠️")
-                                ? `${compatNote}<br><br>${(gameData.Content as GameDetails).Description ?? ""}`
-                                : (gameData.Content as GameDetails).Description}
+                            description={[installerWarning(gameData.Content as GameDetails),
+                                compatNote && !(gameData.Content as GameDetails).Description?.includes("⚠️") ? compatNote : "",
+                                (gameData.Content as GameDetails).Description ?? ""].filter(Boolean).join("<br><br>")}
                             images={(gameData.Content as GameDetails).Images}
                             steamClientID={steamClientID}
                             closeModal={closeModal}

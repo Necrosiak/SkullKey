@@ -3,6 +3,7 @@ import { executeAction } from "./executeAction";
 import { configureShortcut } from "./utils";
 import { notify } from "../Components/Styled";
 import { t } from "../i18n";
+import { installerWarning } from "./installerWarning";
 import { errorText } from "../Components/ErrorDisplay";
 import Logger from "./logger";
 
@@ -247,7 +248,7 @@ async function tick() {
                 await save(state);
                 const id = await finishInstall(api, done.set, done.shortname, done.name);
                 notify({
-                    title: "SkullKey", body: t("queue_done", { game: done.name }), clickKey: `queue-done:${done.set}:${done.shortname}`,
+                    title: "SkullKey", body: [t("queue_done", { game: done.name }), installerWarning(p)].filter(Boolean).join("\n"), clickKey: `queue-done:${done.set}:${done.shortname}`,
                     onClick: () => { Navigation.CloseSideMenus(); Navigation.Navigate(`/library/app/${id}`); },
                 });
             }
