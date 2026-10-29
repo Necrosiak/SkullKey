@@ -1081,8 +1081,16 @@ def install_worker(slug, token):
             report("cli-exited", exit_code=exit_code)
             # When the watchdog closed leftovers, Maxima's own verdict is not
             # reliable: the game-info check below decides.
+            # Newer Maxima exits on a Touchup error instead of hanging. Permit
+            # the same independent verification only with a fresh, nonzero
+            # installer completion; unrelated CLI errors must still fail.
+            completed = touchup_exit(directory, watchdog.started, watchdog.touchup_log)
+            explicit_installer_error = (exit_code != 0 and watchdog.action is None
+                                        and completed is not None and completed != 0)
+            if completed is not None:
+                watchdog.touchup_exit = completed
             if (exit_code or failed) and watchdog.action not in {
-                    "stopped-maxima", "closed-leftovers", "closed-wine-services"}:
+                    "stopped-maxima", "closed-leftovers", "closed-wine-services"} and not explicit_installer_error:
                 raise RuntimeError("Maxima installation failed")
             report("verifying-installation")
             check = subprocess.run([str(client()), "game-info", slug], env=env(),

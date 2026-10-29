@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 
 class WorkerWatchdogTests(unittest.TestCase):
-    def run_fixture(self, verified=True, waiting=False, touchup_code=3, heartbeat=False, touchup_running=False):
+    def run_fixture(self, verified=True, waiting=False, touchup_code=3, heartbeat=False, touchup_running=False, terminal_error=False):
         path = Path(__file__).resolve().parents[1] / 'defaults/scripts/Extensions/EA/ea.py'
         spec = importlib.util.spec_from_file_location('ea_worker_fixture', path)
         ea = importlib.util.module_from_spec(spec)
@@ -31,8 +31,9 @@ class WorkerWatchdogTests(unittest.TestCase):
                 ' p=pathlib.Path(sys.argv[-1]); (p/"game.exe").write_bytes(b"fixture")\n'
                 ' d=p/"__Installer"; d.mkdir()\n'
                 ' (d/"InstallLog.txt").write_bytes("Installer finished with exit code: ' + str(touchup_code) + '\\n".encode("utf-16"))\n'
-                ' print("Progress: ' + ('100' if waiting or heartbeat else '99.99') + '",flush=True)\n' +
-                (' print("ERROR fixture failure",flush=True); time.sleep(.5); sys.exit(3)\n' if waiting else
+                ' print("Progress: ' + ('100' if waiting or heartbeat or terminal_error else '99.99') + '",flush=True)\n' +
+                (' print("ERROR fixture terminal installer failure",flush=True); sys.exit(3)\n' if terminal_error else
+                 ' print("ERROR fixture failure",flush=True); time.sleep(.5); sys.exit(3)\n' if waiting else
                  ' for _ in range(100): print("Progress: 100.00",end="\\r",flush=True); time.sleep(.01)\n sys.exit(3)\n' if heartbeat else
                  ' while True: time.sleep(.1)\n') +
                 'else: print(\'{"slug":"fixture","installed":' + ('true' if verified else 'false') + '}\')\n')
@@ -60,6 +61,9 @@ class WorkerWatchdogTests(unittest.TestCase):
                 if waiting:
                     with patch.object(ea.InstallWatchdog, 'check',
                          lambda dog,*a,**kw: setattr(dog,'action','installer-waiting')):
+                        ea.install_worker('fixture','test')
+                elif terminal_error:
+                    with patch.object(ea.InstallWatchdog,'check',return_value=None):
                         ea.install_worker('fixture','test')
                 else:
                     ea.install_worker('fixture','test')
@@ -113,6 +117,26 @@ class WorkerWatchdogTests(unittest.TestCase):
         spec=importlib.util.spec_from_file_location('ea_worker_constants',path)
         module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
         return module
+
+    def test_explicit_nonzero_installer_exit_is_verified_and_warned_without_watchdog(self):
+        job,diag,calls=self.run_fixture(terminal_error=True)
+        self.assertEqual(job['Percentage'],100)
+        self.assertEqual(job['InstallerExitCode'],3)
+        self.assertIsNone(diag['watchdog'])
+        self.assertEqual(calls,1)
+
+    def test_explicit_installer_exit_still_requires_independent_installed_metadata(self):
+        job,diag,calls=self.run_fixture(terminal_error=True,verified=False)
+        self.assertIsNotNone(job['Error']);self.assertEqual(diag['stage'],'failed')
+        self.assertEqual(calls,0)
+
+    def test_cli_error_after_zero_installer_exit_is_not_silently_accepted(self):
+        job,diag,calls=self.run_fixture(terminal_error=True,touchup_code=0)
+        self.assertIsNotNone(job['Error']);self.assertEqual(calls,0)
+
+    def test_cli_error_without_fresh_numeric_installer_exit_is_not_silently_accepted(self):
+        job,diag,calls=self.run_fixture(terminal_error=True,touchup_code=None)
+        self.assertIsNotNone(job['Error']);self.assertEqual(calls,0)
 
     def test_watchdog_does_not_bypass_installation_verification(self):
         job, diag, calls = self.run_fixture(verified=False)

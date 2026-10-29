@@ -1,0 +1,1566 @@
+--- a/maxima-lib/src/content/manager.rs
++++ b/maxima-lib/src/content/manager.rs
+@@ -1,7 +1,7 @@
+ use std::{
+     path::PathBuf,
+     sync::{
+-        atomic::{AtomicUsize, Ordering},
++        atomic::{AtomicU8, AtomicUsize, Ordering},
+         Arc,
+     },
+ };
+@@ -9,7 +9,7 @@
+ use derive_builder::Builder;
+ use derive_getters::Getters;
+ use futures::StreamExt;
+-use log::{debug, error, info};
++use log::{debug, info};
+ use reqwest::StatusCode;
+ use serde::{Deserialize, Serialize};
+ use thiserror::Error;
+@@ -62,10 +62,14 @@
+ 
+     #[error("download in progress, you must cancel it before starting a new one")]
+     DownloadInProgress,
++    #[error("installation failed ({0})")]
++    InstallationFailed(InstallFailureKind),
+ }
+ 
+ #[derive(Error, Debug)]
+ pub enum DownloaderError {
++    #[error("installation cancelled")]
++    Cancelled,
+     #[error(transparent)]
+     ServiceLayer(#[from] ServiceLayerError),
+     #[error(transparent)]
+@@ -92,6 +96,12 @@
+ }
+ 
+ impl DownloadQueue {
++    fn discard_pending(&mut self) {
++        self.current = None;
++        self.paused = false;
++        self.queued.clear();
++    }
++
+     pub(crate) async fn load() -> Result<DownloadQueue, ContentManagerError> {
+         let file = maxima_dir()?.join(QUEUE_FILE);
+         if !file.exists() {
+@@ -122,8 +132,52 @@
+     }
+ }
+ 
++#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
++pub enum InstallFailureKind {
++    #[error("download")]
++    Download,
++    #[error("installer")]
++    Installer,
++    #[error("cancelled")]
++    Cancelled,
++}
++
++#[derive(Default)]
++struct DownloadOutcome {
++    // 0: running, 1: success, 2: download failure, 3: installer failure, 4: cancelled.
++    state: AtomicU8,
++    notify: Arc<Notify>,
++}
++
++impl DownloadOutcome {
++    fn finish(&self, result: Result<(), DownloaderError>) {
++        let state = match result {
++            Ok(()) => 1,
++            Err(DownloaderError::Manifest(_)) => 3,
++            Err(DownloaderError::Cancelled) => 4,
++            Err(_) => 2,
++        };
++        self.state.store(state, Ordering::Release);
++        self.notify.notify_one();
++    }
++
++    fn is_done(&self) -> bool {
++        self.state.load(Ordering::Acquire) != 0
++    }
++
++    fn failure(&self) -> Option<InstallFailureKind> {
++        match self.state.load(Ordering::Acquire) {
++            2 => Some(InstallFailureKind::Download),
++            3 => Some(InstallFailureKind::Installer),
++            4 => Some(InstallFailureKind::Cancelled),
++            _ => None,
++        }
++    }
++}
++
+ pub struct GameDownloader {
+     offer_id: String,
++    legacy_client: crate::core::service_layer::ServiceLayerClient,
+ 
+     downloader: Arc<ZipDownloader>,
+     entries: Vec<ZipFileEntry>,
+@@ -132,7 +186,7 @@
+     completed_bytes: Arc<AtomicUsize>,
+     total_count: usize,
+     total_bytes: usize,
+-    notify: Arc<Notify>,
++    outcome: Arc<DownloadOutcome>,
+ }
+ 
+ impl GameDownloader {
+@@ -163,6 +217,7 @@
+ 
+         Ok(GameDownloader {
+             offer_id: game.offer_id.to_owned(),
++            legacy_client: content_service.service_layer.clone(),
+ 
+             downloader: Arc::new(downloader),
+             entries,
+@@ -170,7 +225,7 @@
+             completed_bytes: Arc::new(AtomicUsize::new(0)),
+             total_count,
+             total_bytes,
+-            notify: Arc::new(Notify::new()),
++            outcome: Arc::new(DownloadOutcome::default()),
+         })
+     }
+ 
+@@ -178,6 +233,9 @@
+         let (downloader_arc, entries, cancel_token, completed_bytes, notify) =
+             self.prepare_download_vars();
+         let total_count = self.total_count;
++        let outcome = self.outcome.clone();
++        let legacy_client = self.legacy_client.clone();
++        let offer_id = self.offer_id.clone();
+         tokio::spawn(async move {
+             let dl = GameDownloader::start_downloads(
+                 total_count,
+@@ -186,11 +244,13 @@
+                 cancel_token,
+                 completed_bytes,
+                 notify,
++                legacy_client,
++                offer_id,
+             )
+             .await;
+-            if let Err(err) = dl {
+-                error!("Error when downloading!: `{:?}", err)
+-            }
++            // A terminal failure must also wake waiters and end progress polling.
++            // Expose a fixed category, never URLs or account data from error text.
++            outcome.finish(dl);
+         });
+     }
+ 
+@@ -208,7 +268,7 @@
+             self.entries.clone(),
+             self.cancel_token.clone(),
+             self.completed_bytes.clone(),
+-            self.notify.clone(),
++            self.outcome.notify.clone(),
+         )
+     }
+ 
+@@ -218,7 +278,9 @@
+         entries: Vec<ZipFileEntry>,
+         cancel_token: CancellationToken,
+         completed_bytes: Arc<AtomicUsize>,
+-        notify: Arc<Notify>,
++        _notify: Arc<Notify>,
++        legacy_client: crate::core::service_layer::ServiceLayerClient,
++        offer_id: String,
+     ) -> Result<(), DownloaderError> {
+         let mut handles = Vec::with_capacity(total_count);
+ 
+@@ -238,33 +300,50 @@
+                     result = downloader.download_single_file(&ele, Some(Box::new(move |bytes| {
+                         completed_bytes.fetch_add(bytes, Ordering::SeqCst);
+                     }))) => {
+-                        if let Err(err) = result {
+-                            error!("File download failed: {}", err);
+-                        }
++                        result?;
++                        Ok::<(), DownloaderError>(())
+                     },
+                     _ = cancel_token.cancelled() => {
+-                        info!("Download of {} cancelled", ele.name());
++                        Err(DownloaderError::Cancelled)
+                     },
+                 }
+             });
+         }
+ 
+-        let _results = futures::stream::iter(handles)
++        let results = futures::stream::iter(handles)
+             .buffer_unordered(16)
+             .collect::<Vec<_>>()
+             .await;
++        for result in results {
++            result?;
++        }
++        if cancel_token.is_cancelled() {
++            return Err(DownloaderError::Cancelled);
++        }
+ 
+         let path = downloader_arc.path();
+ 
+         info!("Files downloaded, running touchup...");
+         let manifest = manifest::read(path.join(MANIFEST_RELATIVE_PATH)).await?;
+ 
+-        manifest.run_touchup(path).await?;
++        manifest::install_with_legacy_key(
++            manifest.as_ref(),
++            path,
++            || crate::core::legacy_keys::resolve_for_offer(&legacy_client, &offer_id),
++            || cancel_token.is_cancelled(),
++        )
++        .await
++        .map_err(|error| {
++            if matches!(error, ManifestError::Cancelled) {
++                DownloaderError::Cancelled
++            } else {
++                DownloaderError::Manifest(error)
++            }
++        })?;
+         info!("Installation finished!");
+ 
+         completed_bytes.fetch_add(1, Ordering::SeqCst);
+ 
+-        notify.notify_one();
+         Ok(())
+     }
+ 
+@@ -274,11 +353,16 @@
+     }
+ 
+     pub async fn wait(&self) {
+-        self.notify.notified().await;
++        self.outcome.notify.notified().await;
+     }
+ 
+     pub fn is_done(&self) -> bool {
+-        self.completed_bytes.load(Ordering::SeqCst) == self.total_bytes
++        self.outcome.is_done()
++    }
++
++    /// A completed task may have failed; progress alone is not success.
++    pub fn failure(&self) -> Option<InstallFailureKind> {
++        self.outcome.failure()
+     }
+ 
+     pub fn percentage_done(&self) -> f64 {
+@@ -310,7 +394,7 @@
+     pub async fn new(auth: LockedAuthStorage, resume: bool) -> Result<Self, ContentManagerError> {
+         let mut queue = DownloadQueue::load().await?;
+         if !resume {
+-            queue.queued.clear();
++            queue.discard_pending();
+             queue.save().await?;
+         }
+         Ok(Self {
+@@ -369,12 +453,21 @@
+ 
+         if let Some(current) = &self.current {
+             if current.is_done() {
+-                event = Some(MaximaEvent::InstallFinished(current.offer_id.to_owned()));
++                let failure = current.failure();
++                event = Some(match failure {
++                    Some(kind) => MaximaEvent::InstallFailed(current.offer_id.to_owned(), kind),
++                    None => MaximaEvent::InstallFinished(current.offer_id.to_owned()),
++                });
+                 self.current = None;
+                 self.queue.current = None;
+ 
+-                if let Some(game) = self.queue.queued.pop() {
+-                    self.install_now(game).await?;
++                // A failed install must not silently start another queued game.
++                if failure.is_none() {
++                    if let Some(game) = self.queue.queued.pop() {
++                        self.install_now(game).await?;
++                    }
++                } else {
++                    self.queue.paused = true;
+                 }
+ 
+                 self.queue.save().await?;
+@@ -384,3 +477,71 @@
+         Ok(event)
+     }
+ }
++
++#[cfg(test)]
++mod ea_install_regression {
++    use super::*;
++    use std::time::Duration;
++
++    #[test]
++    fn failed_touchup_is_terminal_and_not_success() {
++        let outcome = DownloadOutcome::default();
++        assert!(!outcome.is_done());
++        outcome.finish(Err(DownloaderError::Manifest(ManifestError::Io(
++            std::io::Error::new(std::io::ErrorKind::Other, "fixture")
++        ))));
++        assert!(outcome.is_done());
++        assert_eq!(outcome.failure(), Some(InstallFailureKind::Installer));
++    }
++
++    #[test]
++    fn download_failure_is_terminal() {
++        let outcome = DownloadOutcome::default();
++        outcome.finish(Err(DownloaderError::Io(std::io::Error::new(
++            std::io::ErrorKind::Other, "fixture"
++        ))));
++        assert!(outcome.is_done());
++        assert_eq!(outcome.failure(), Some(InstallFailureKind::Download));
++    }
++
++    #[test]
++    fn cancellation_is_terminal_and_distinct() {
++        let outcome = DownloadOutcome::default();
++        outcome.finish(Err(DownloaderError::Cancelled));
++        assert!(outcome.is_done());
++        assert_eq!(outcome.failure(), Some(InstallFailureKind::Cancelled));
++    }
++
++    #[tokio::test]
++    async fn waiter_after_failure_gets_the_saved_notification() {
++        let outcome = DownloadOutcome::default();
++        outcome.finish(Err(DownloaderError::Cancelled));
++        tokio::time::timeout(Duration::from_secs(1), outcome.notify.notified()).await.unwrap();
++    }
++
++    #[tokio::test]
++    async fn existing_waiter_is_woken_and_success_is_terminal() {
++        let outcome = Arc::new(DownloadOutcome::default());
++        let waiter_outcome = outcome.clone();
++        let waiter = tokio::spawn(async move {
++            waiter_outcome.notify.notified().await;
++            assert!(waiter_outcome.is_done());
++        });
++        tokio::task::yield_now().await;
++        outcome.finish(Ok(()));
++        tokio::time::timeout(Duration::from_secs(1), waiter).await.unwrap().unwrap();
++        assert_eq!(outcome.failure(), None);
++    }
++
++    #[test]
++    fn nonresuming_queue_drops_current_but_keeps_completed_history() {
++        let game = QueuedGame { offer_id: "fixture".into(), build_id: "1".into(), path: "/fixture".into() };
++        let mut queue = DownloadQueue { current: Some(game.clone()), paused: true,
++            queued: vec![game.clone()], completed: vec![game.clone()] };
++        queue.discard_pending();
++        assert!(queue.current.is_none());
++        assert!(queue.queued.is_empty());
++        assert!(!queue.paused);
++        assert!(queue.completed == vec![game]);
++    }
++}
+--- /dev/null
++++ b/maxima-lib/src/core/legacy_keys.rs
+@@ -0,0 +1,280 @@
++//! Account-owned legacy keys. Values never implement Serialize or plaintext Debug.
++use super::{
++    locale::Locale,
++    service_layer::{
++        ServiceLayerClient, SERVICE_REQUEST_GETLEGACYCATALOGDEFS,
++        SERVICE_REQUEST_GETLEGACYENTITLEMENTS,
++    },
++};
++use chrono::{DateTime, Utc};
++use serde::{Deserialize, Serialize};
++use std::{
++    collections::{BTreeSet, HashSet},
++    fmt,
++};
++
++pub struct LegacyCdKey(String);
++impl fmt::Debug for LegacyCdKey {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.write_str("LegacyCdKey([REDACTED])")
++    }
++}
++impl LegacyCdKey {
++    #[cfg(test)]
++    pub(crate) fn fixture() -> Self {
++        Self("FIXTURE-KEY".into())
++    }
++
++    // Only the installer integration may consume the value. No public export API.
++    #[allow(dead_code)]
++    pub(crate) fn as_secret_str(&self) -> &str {
++        &self.0
++    }
++}
++
++#[derive(Debug, thiserror::Error, PartialEq)]
++pub enum LegacyKeyError {
++    #[error("legacy key request unavailable")]
++    Unavailable,
++    #[error("legacy key pagination invalid")]
++    Pagination,
++    #[error("multiple distinct legacy keys match this game")]
++    Ambiguous,
++    #[error("legacy key data invalid")]
++    Invalid,
++}
++#[derive(Serialize)]
++#[serde(rename_all = "camelCase")]
++struct CatalogVariables {
++    offer_ids: Vec<String>,
++    locale: Locale,
++}
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase")]
++struct Catalog {
++    offer_id: String,
++    content_id: String,
++}
++#[derive(Serialize)]
++#[serde(rename_all = "camelCase")]
++struct Variables {
++    limit: u32,
++    next: Option<String>,
++    store_fronts: Vec<&'static str>,
++}
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase")]
++struct Entry {
++    product_id: String,
++    status: String,
++    #[serde(default)]
++    cd_key: Option<String>,
++    #[serde(default)]
++    is_subscription_expired: bool,
++    #[serde(default)]
++    termination_date: Option<String>,
++}
++#[derive(Deserialize)]
++struct Page {
++    next: Option<String>,
++    items: Vec<Entry>,
++}
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase")]
++struct Me {
++    legacy_entitlements: Page,
++}
++
++fn consider(
++    keys: &mut BTreeSet<String>,
++    entry: Entry,
++    ids: &HashSet<String>,
++    now: DateTime<Utc>,
++) -> Result<(), LegacyKeyError> {
++    if !ids.contains(&entry.product_id) || entry.status != "ACTIVE" || entry.is_subscription_expired
++    {
++        return Ok(());
++    }
++    if let Some(date) = entry.termination_date.filter(|s| !s.is_empty()) {
++        let expiry = DateTime::parse_from_rfc3339(&date).map_err(|_| LegacyKeyError::Invalid)?;
++        if expiry <= now {
++            return Ok(());
++        }
++    }
++    if let Some(key) = entry.cd_key.filter(|s| !s.trim().is_empty()) {
++        // Reject control characters and oversized payloads before installer use.
++        // Preserve original punctuation; each game's installer defines its format.
++        if key.len() > 256
++            || !key
++                .bytes()
++                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b' '))
++        {
++            return Err(LegacyKeyError::Invalid);
++        }
++        keys.insert(key);
++    }
++    Ok(())
++}
++fn finish(mut keys: BTreeSet<String>) -> Result<Option<LegacyCdKey>, LegacyKeyError> {
++    if keys.len() > 1 {
++        return Err(LegacyKeyError::Ambiguous);
++    }
++    Ok(keys.pop_first().map(LegacyCdKey))
++}
++
++/// Match only this offer and its catalog content ID. Never pick an arbitrary
++/// key from an edition, DLC, similarly named game, or another account.
++pub async fn resolve_for_offer(
++    client: &ServiceLayerClient,
++    offer: &str,
++) -> Result<Option<LegacyCdKey>, LegacyKeyError> {
++    if offer.trim().is_empty() {
++        return Err(LegacyKeyError::Invalid);
++    }
++    let catalog: Vec<Catalog> = client
++        .request(
++            SERVICE_REQUEST_GETLEGACYCATALOGDEFS,
++            CatalogVariables {
++                offer_ids: vec![offer.to_owned()],
++                locale: Locale::EnUs,
++            },
++        )
++        .await
++        .map_err(|_| LegacyKeyError::Unavailable)?;
++    let mut ids = HashSet::from([offer.to_owned()]);
++    for record in catalog {
++        if record.offer_id == offer && !record.content_id.is_empty() {
++            ids.insert(record.content_id);
++        }
++    }
++    let mut keys = BTreeSet::new();
++    let mut next = None;
++    let mut seen = HashSet::new();
++    let now = Utc::now();
++    for _ in 0..50 {
++        let response: Me = client
++            .request(
++                SERVICE_REQUEST_GETLEGACYENTITLEMENTS,
++                Variables {
++                    limit: 100,
++                    next: next.clone(),
++                    store_fronts: vec!["EA"],
++                },
++            )
++            .await
++            .map_err(|_| LegacyKeyError::Unavailable)?;
++        for entry in response.legacy_entitlements.items {
++            consider(&mut keys, entry, &ids, now)?;
++        }
++        next = response.legacy_entitlements.next.filter(|s| !s.is_empty());
++        match &next {
++            None => return finish(keys),
++            Some(cursor) if !seen.insert(cursor.clone()) => return Err(LegacyKeyError::Pagination),
++            _ => {}
++        }
++    }
++    Err(LegacyKeyError::Pagination)
++}
++
++#[cfg(test)]
++mod legacy_key_regression {
++    use super::*;
++    fn entry(product: &str, key: &str) -> Entry {
++        Entry {
++            product_id: product.into(),
++            status: "ACTIVE".into(),
++            cd_key: Some(key.into()),
++            is_subscription_expired: false,
++            termination_date: None,
++        }
++    }
++    fn ids() -> HashSet<String> {
++        HashSet::from(["owned-offer".into(), "content-id".into()])
++    }
++    #[test]
++    fn exact_mapping_ignores_unrelated_games() {
++        let mut keys = BTreeSet::new();
++        consider(
++            &mut keys,
++            entry("other-game", "TEST-OTHER"),
++            &ids(),
++            Utc::now(),
++        )
++        .unwrap();
++        assert!(finish(keys).unwrap().is_none());
++    }
++    #[test]
++    fn identical_entitlement_keys_are_deduplicated() {
++        let mut keys = BTreeSet::new();
++        for product in ["owned-offer", "content-id"] {
++            consider(&mut keys, entry(product, "TEST-KEY-A"), &ids(), Utc::now()).unwrap();
++        }
++        assert_eq!(finish(keys).unwrap().unwrap().as_secret_str(), "TEST-KEY-A");
++    }
++    #[test]
++    fn distinct_keys_are_not_guessed() {
++        let mut keys = BTreeSet::new();
++        for key in ["TEST-KEY-A", "TEST-KEY-B"] {
++            consider(&mut keys, entry("owned-offer", key), &ids(), Utc::now()).unwrap();
++        }
++        assert_eq!(finish(keys).unwrap_err(), LegacyKeyError::Ambiguous);
++    }
++    #[test]
++    fn revoked_expired_and_subscription_expired_are_ignored() {
++        let mut keys = BTreeSet::new();
++        for kind in 0..3 {
++            let mut e = entry("owned-offer", "TEST-EXPIRED");
++            if kind == 0 {
++                e.status = "DELETED".into();
++            }
++            if kind == 1 {
++                e.termination_date = Some("2000-01-01T00:00:00Z".into());
++            }
++            if kind == 2 {
++                e.is_subscription_expired = true;
++            }
++            consider(&mut keys, e, &ids(), Utc::now()).unwrap();
++        }
++        assert!(finish(keys).unwrap().is_none());
++    }
++    #[test]
++    fn missing_empty_key_is_not_a_failure() {
++        let mut keys = BTreeSet::new();
++        consider(&mut keys, entry("owned-offer", "  "), &ids(), Utc::now()).unwrap();
++        assert!(finish(keys).unwrap().is_none());
++    }
++    #[test]
++    fn malformed_key_and_expiry_are_rejected() {
++        let mut keys = BTreeSet::new();
++        assert_eq!(
++            consider(
++                &mut keys,
++                entry("owned-offer", "TEST\nKEY"),
++                &ids(),
++                Utc::now()
++            ),
++            Err(LegacyKeyError::Invalid)
++        );
++        let mut e = entry("owned-offer", "TEST-KEY-A");
++        e.termination_date = Some("invalid".into());
++        assert_eq!(
++            consider(&mut keys, e, &ids(), Utc::now()),
++            Err(LegacyKeyError::Invalid)
++        );
++    }
++    #[test]
++    fn shell_metacharacters_in_api_keys_are_rejected() {
++        for key in ["TEST&COMMAND", "TEST;COMMAND", "TEST\"KEY", "TEST%PATH%"] {
++            let mut keys = BTreeSet::new();
++            assert_eq!(
++                consider(&mut keys, entry("owned-offer", key), &ids(), Utc::now()),
++                Err(LegacyKeyError::Invalid)
++            );
++        }
++    }
++    #[test]
++    fn debug_never_exposes_value() {
++        let key = LegacyCdKey("TEST-SECRET-VALUE".into());
++        assert_eq!(format!("{:?}", key), "LegacyCdKey([REDACTED])");
++    }
++}
+--- a/maxima-lib/src/core/manifest/dip.rs
++++ b/maxima-lib/src/core/manifest/dip.rs
+@@ -2,7 +2,8 @@
+ 
+ use std::path::PathBuf;
+ 
+-use crate::{core::manifest::ManifestError, util::native::platform_path};
++use super::installer_args::{self, PreparedInstallerArgs};
++use crate::core::{legacy_keys::LegacyCdKey, manifest::ManifestError};
+ use derive_getters::Getters;
+ use serde::Deserialize;
+ 
+@@ -124,10 +125,6 @@
+     path.strip_suffix('/').unwrap_or(path)
+ }
+ 
+-fn remove_trailing_backslash(path: &str) -> &str {
+-    path.strip_suffix('\\').unwrap_or(path)
+-}
+-
+ impl DiPTouchup {
+     pub fn path(&self) -> &str {
+         remove_leading_slash(&self.file_path)
+@@ -191,7 +188,11 @@
+     }
+ 
+     #[cfg(unix)]
+-    pub async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
++    pub async fn run_touchup(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<(), ManifestError> {
+         use crate::{
+             core::launch::mx_linux_setup,
+             unix::{
+@@ -205,25 +206,44 @@
+         let install_path = PathBuf::from(remove_trailing_slash(
+             install_path.to_str().ok_or(ManifestError::Decode)?,
+         ));
+-        let args = self.collect_touchup_args(&install_path)?;
++        let args = self.collect_touchup_args(&install_path, key)?;
+         let path = install_path.join(&self.touchup.path());
+         let path = case_insensitive_path(path);
+-        run_wine_command(path, Some(args), None, true, CommandType::Run).await?;
++        if args.sensitive {
++            crate::unix::wine::run_sensitive_wine_command(
++                path,
++                Some(args.values),
++                None,
++                CommandType::Run,
++            )
++            .await?;
++        } else {
++            run_wine_command(path, Some(args.values), None, true, CommandType::Run).await?;
++        }
+ 
+         invalidate_mx_wine_registry().await;
+         Ok(())
+     }
+ 
+     #[cfg(windows)]
+-    pub async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
++    pub async fn run_touchup(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<(), ManifestError> {
+         use crate::util::native::NativeError;
+         use tokio::process::Command;
+ 
+-        let args = self.collect_touchup_args(install_path)?;
++        let args = self.collect_touchup_args(install_path, key)?;
+         let path = install_path.join(&self.touchup.path());
+ 
+         let mut binding = Command::new(path);
+-        let child = binding.args(args);
++        let child = binding.args(args.values);
++        if args.sensitive {
++            child
++                .stdout(std::process::Stdio::null())
++                .stderr(std::process::Stdio::null());
++        }
+ 
+         let status = child.spawn()?.wait().await?;
+         if !status.success() {
+@@ -235,21 +255,11 @@
+         Ok(())
+     }
+ 
+-    fn collect_touchup_args(&self, install_path: &PathBuf) -> Result<Vec<PathBuf>, ManifestError> {
+-        let mut args = Vec::new();
+-        for arg in self.touchup.parameters.split(" ") {
+-            let arg = arg.replace("{locale}", "en_US").replace(
+-                "\"{installLocation}\"",
+-                platform_path(
+-                    remove_trailing_backslash(install_path.to_str().ok_or(ManifestError::Decode)?)
+-                        .replace("/", "\\"),
+-                )
+-                .to_str()
+-                .ok_or(ManifestError::Decode)?,
+-            );
+-
+-            args.push(PathBuf::from(arg));
+-        }
+-        Ok(args)
+-    }
+-}
++    fn collect_touchup_args(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<PreparedInstallerArgs, ManifestError> {
++        installer_args::prepare(&self.touchup.parameters, install_path, key)
++    }
++}
+--- /dev/null
++++ b/maxima-lib/src/core/manifest/installer_args.rs
+@@ -0,0 +1,194 @@
++//! Installer arguments: preserve Windows quoting and keep key values out of Debug.
++use super::ManifestError;
++use crate::core::legacy_keys::LegacyCdKey;
++use crate::util::native::platform_path;
++use std::{
++    fmt,
++    path::{Path, PathBuf},
++};
++
++pub(crate) fn requires_key(parameters: &str) -> bool {
++    let lower = parameters.to_ascii_lowercase();
++    lower.contains("{cdkey}") || lower.contains("%cdkey%")
++}
++
++pub(crate) struct PreparedInstallerArgs {
++    pub(crate) values: Vec<PathBuf>,
++    pub(crate) sensitive: bool,
++}
++impl fmt::Debug for PreparedInstallerArgs {
++    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
++        f.debug_struct("PreparedInstallerArgs")
++            .field("count", &self.values.len())
++            .field("sensitive", &self.sensitive)
++            .finish()
++    }
++}
++
++// Windows CRT quote/backslash rules for balanced input, not POSIX parsing.
++// Deliberately reject malformed input before substituting a private value.
++// https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
++fn split_windows(parameters: &str) -> Result<Vec<String>, ManifestError> {
++    let mut out = Vec::new();
++    let mut word = String::new();
++    let mut quoted = false;
++    let mut started = false;
++    let mut chars = parameters.chars().peekable();
++    while let Some(c) = chars.next() {
++        match c {
++            ' ' | '\t' if !quoted => {
++                if started {
++                    out.push(std::mem::take(&mut word));
++                    started = false;
++                }
++            }
++            '\\' => {
++                started = true;
++                let mut count = 1;
++                while chars.peek() == Some(&'\\') {
++                    chars.next();
++                    count += 1;
++                }
++                if chars.peek() == Some(&'"') {
++                    chars.next();
++                    word.extend(std::iter::repeat('\\').take(count / 2));
++                    if count % 2 == 1 {
++                        word.push('"');
++                    } else if quoted && chars.peek() == Some(&'"') {
++                        chars.next();
++                        word.push('"');
++                    } else {
++                        quoted = !quoted;
++                    }
++                } else {
++                    word.extend(std::iter::repeat('\\').take(count));
++                }
++            }
++            '"' => {
++                started = true;
++                if quoted && chars.peek() == Some(&'"') {
++                    chars.next();
++                    word.push('"');
++                } else {
++                    quoted = !quoted;
++                }
++            }
++            '\r' | '\n' | '\0' => return Err(ManifestError::InvalidInstallerParameters),
++            _ => {
++                started = true;
++                word.push(c);
++            }
++        }
++    }
++    if quoted {
++        return Err(ManifestError::InvalidInstallerParameters);
++    }
++    if started {
++        out.push(word);
++    }
++    Ok(out)
++}
++
++pub(crate) fn prepare(
++    parameters: &str,
++    install_path: &Path,
++    key: Option<&LegacyCdKey>,
++) -> Result<PreparedInstallerArgs, ManifestError> {
++    let sensitive = requires_key(parameters);
++    if sensitive && key.is_none() {
++        return Err(ManifestError::MissingLegacyKey);
++    }
++    let windows = platform_path(
++        install_path
++            .to_str()
++            .ok_or(ManifestError::Decode)?
++            .trim_end_matches(['/', '\\'])
++            .replace('/', "\\"),
++    );
++    let location = windows.to_str().ok_or(ManifestError::Decode)?;
++    let token = regex::Regex::new(r"(?i)\{cdkey\}|%cdkey%").expect("fixed installer key pattern");
++    let mut values = Vec::new();
++    for argument in split_windows(parameters)? {
++        let argument = argument
++            .replace("{locale}", "en_US")
++            .replace("{installLocation}", location);
++        let argument = if sensitive {
++            token
++                .replace_all(
++                    &argument,
++                    regex::NoExpand(key.expect("key checked").as_secret_str()),
++                )
++                .into_owned()
++        } else {
++            argument
++        };
++        values.push(PathBuf::from(argument));
++    }
++    Ok(PreparedInstallerArgs { values, sensitive })
++}
++
++#[cfg(test)]
++mod installer_key_regression {
++    use super::*;
++    #[test]
++    fn quoted_install_location_is_one_argument() {
++        let a = prepare(
++            r#"install -locale {locale} -installPath "{installLocation}""#,
++            Path::new("/tmp/A Game"),
++            None,
++        )
++        .unwrap();
++        assert_eq!(a.values.len(), 5);
++        assert!(a.values[4].to_string_lossy().ends_with("tmp\\A Game"));
++        assert!(!a.sensitive);
++    }
++    #[test]
++    fn key_is_replaced_inside_one_argument_and_debug_is_redacted() {
++        let key = LegacyCdKey::fixture();
++        let a = prepare(
++            r#"install "CDKEY={CDKEY}""#,
++            Path::new("/tmp/Game"),
++            Some(&key),
++        )
++        .unwrap();
++        assert_eq!(a.values[1], PathBuf::from("CDKEY=FIXTURE-KEY"));
++        assert!(a.sensitive);
++        assert!(!format!("{:?}", a).contains("FIXTURE-KEY"));
++        let a = prepare("%CDKEY%", Path::new("/tmp/Game"), Some(&key)).unwrap();
++        assert_eq!(a.values[0], PathBuf::from("FIXTURE-KEY"));
++    }
++    #[test]
++    fn absent_key_blocks_required_installer() {
++        assert!(matches!(
++            prepare("{cdkey}", Path::new("/tmp/Game"), None),
++            Err(ManifestError::MissingLegacyKey)
++        ));
++    }
++    #[test]
++    fn malformed_quoting_and_control_characters_are_rejected() {
++        for input in ["install \"unterminated", "install\nmore", "install\0more"] {
++            assert!(matches!(
++                prepare(input, Path::new("/tmp/Game"), None),
++                Err(ManifestError::InvalidInstallerParameters)
++            ));
++        }
++    }
++    #[test]
++    fn quoted_windows_examples_preserve_backslashes_and_embedded_quotes() {
++        assert_eq!(
++            split_windows(r#""a b c" d e"#).unwrap(),
++            vec!["a b c", "d", "e"]
++        );
++        assert_eq!(
++            split_windows(r#"a\\\b d"e f"g h"#).unwrap(),
++            vec![r"a\\\b", "de fg", "h"]
++        );
++    }
++    #[test]
++    fn windows_backslashes_and_empty_arguments_are_preserved() {
++        assert_eq!(
++            split_windows(r#""" C:\Games\Test "A B""#).unwrap(),
++            vec!["", "C:\\Games\\Test", "A B"]
++        );
++    }
++}
+--- a/maxima-lib/src/core/manifest/mod.rs
++++ b/maxima-lib/src/core/manifest/mod.rs
+@@ -1,5 +1,7 @@
+ pub mod dip;
+ pub mod pre_dip;
++pub(crate) mod installer_args;
++use super::legacy_keys::{LegacyCdKey, LegacyKeyError};
+ 
+ use dip::DiPManifest;
+ use pre_dip::PreDiPManifest;
+@@ -9,6 +11,15 @@
+ 
+ #[derive(Error, Debug)]
+ pub enum ManifestError {
++    #[error(transparent)]
++    LegacyKey(#[from] LegacyKeyError),
++    #[error("this installer requires a legacy EA key, but none is available")]
++    MissingLegacyKey,
++    #[error("invalid installer argument quoting or control characters")]
++    InvalidInstallerParameters,
++    #[error("installation cancelled before starting installer")]
++    Cancelled,
++
+     #[error(transparent)]
+     Io(#[from] std::io::Error),
+     #[error(transparent)]
+@@ -32,16 +43,19 @@
+ pub const MANIFEST_RELATIVE_PATH: &str = "__Installer/installerdata.xml";
+ 
+ #[async_trait::async_trait]
+-pub trait GameManifest: Send + std::fmt::Debug {
+-    async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError>;
++pub trait GameManifest: Send + Sync + std::fmt::Debug {
++    async fn run_touchup(&self, install_path: &PathBuf, key: Option<&LegacyCdKey>) -> Result<(), ManifestError>;
++    fn requires_legacy_key(&self) -> bool;
+     fn execute_path(&self, trial: bool) -> Option<String>;
+     fn version(&self) -> Option<String>;
+ }
+ #[async_trait::async_trait]
+ impl GameManifest for DiPManifest {
+-    async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
+-        self.run_touchup(install_path).await
+-    }
++    async fn run_touchup(&self, install_path: &PathBuf, key: Option<&LegacyCdKey>) -> Result<(), ManifestError> {
++        self.run_touchup(install_path, key).await
++    }
++
++    fn requires_legacy_key(&self) -> bool { installer_args::requires_key(&self.touchup.parameters) }
+ 
+     fn execute_path(&self, trial: bool) -> Option<String> {
+         self.execute_path(trial)
+@@ -54,9 +68,11 @@
+ 
+ #[async_trait::async_trait]
+ impl GameManifest for PreDiPManifest {
+-    async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
+-        self.run_touchup(install_path).await
+-    }
++    async fn run_touchup(&self, install_path: &PathBuf, key: Option<&LegacyCdKey>) -> Result<(), ManifestError> {
++        self.run_touchup(install_path, key).await
++    }
++
++    fn requires_legacy_key(&self) -> bool { installer_args::requires_key(&self.executable.parameters) }
+ 
+     fn execute_path(&self, _: bool) -> Option<String> {
+         None // pre-dip games don't have an exe field, most if not all just use info in the offer
+@@ -82,3 +98,220 @@
+         pre_dip_attempt: pre_dip_attempt.unwrap_err().into(),
+     })
+ }
++
++/// Resolve only when the installer declares a key input. Unknown registry paths
++/// and unrelated games are never guessed. No resolved value is logged or saved.
++pub async fn install_with_legacy_key<R, F, C>(
++    manifest: &dyn GameManifest,
++    path: &PathBuf,
++    resolver: R,
++    cancelled: C,
++) -> Result<(), ManifestError>
++where
++    R: FnOnce() -> F,
++    F: std::future::Future<Output = Result<Option<LegacyCdKey>, LegacyKeyError>>,
++    C: Fn() -> bool,
++{
++    if cancelled() {
++        return Err(ManifestError::Cancelled);
++    }
++    let key = if manifest.requires_legacy_key() {
++        Some(resolver().await?.ok_or(ManifestError::MissingLegacyKey)?)
++    } else {
++        None
++    };
++    if cancelled() {
++        return Err(ManifestError::Cancelled);
++    }
++    manifest.run_touchup(path, key.as_ref()).await
++}
++
++#[cfg(test)]
++mod installer_flow_regression {
++    use super::*;
++    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
++    #[derive(Debug)]
++    struct Installer {
++        required: bool,
++        runs: AtomicUsize,
++    }
++    #[async_trait::async_trait]
++    impl GameManifest for Installer {
++        async fn run_touchup(
++            &self,
++            path: &PathBuf,
++            key: Option<&LegacyCdKey>,
++        ) -> Result<(), ManifestError> {
++            let args = installer_args::prepare(
++                if self.required {
++                    "setup {cdkey}"
++                } else {
++                    "setup"
++                },
++                path,
++                key,
++            )?;
++            if self.required {
++                assert_eq!(args.values[1], PathBuf::from("FIXTURE-KEY"));
++                assert!(args.sensitive);
++            } else {
++                assert!(key.is_none());
++                assert!(!args.sensitive);
++            }
++            self.runs.fetch_add(1, Ordering::SeqCst);
++            Ok(())
++        }
++        fn requires_legacy_key(&self) -> bool {
++            self.required
++        }
++        fn execute_path(&self, _: bool) -> Option<String> {
++            None
++        }
++        fn version(&self) -> Option<String> {
++            None
++        }
++    }
++    fn installer(required: bool) -> Installer {
++        Installer {
++            required,
++            runs: AtomicUsize::new(0),
++        }
++    }
++    #[tokio::test]
++    async fn ordinary_installers_never_request_legacy_keys() {
++        let m = installer(false);
++        let requests = AtomicUsize::new(0);
++        install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/fixture"),
++            || async {
++                requests.fetch_add(1, Ordering::SeqCst);
++                Err(LegacyKeyError::Unavailable)
++            },
++            || false,
++        )
++        .await
++        .unwrap();
++        assert_eq!(requests.load(Ordering::SeqCst), 0);
++        assert_eq!(m.runs.load(Ordering::SeqCst), 1);
++    }
++    #[tokio::test]
++    async fn required_key_reaches_installer_after_resolution() {
++        let m = installer(true);
++        let requests = AtomicUsize::new(0);
++        install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/A Game"),
++            || async {
++                requests.fetch_add(1, Ordering::SeqCst);
++                Ok(Some(LegacyCdKey::fixture()))
++            },
++            || false,
++        )
++        .await
++        .unwrap();
++        assert_eq!(requests.load(Ordering::SeqCst), 1);
++        assert_eq!(m.runs.load(Ordering::SeqCst), 1);
++    }
++    #[tokio::test]
++    async fn missing_or_ambiguous_key_never_starts_installer() {
++        let m = installer(true);
++        let e = install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/fixture"),
++            || async { Ok(None) },
++            || false,
++        )
++        .await
++        .unwrap_err();
++        assert!(matches!(e, ManifestError::MissingLegacyKey));
++        let e = install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/fixture"),
++            || async { Err(LegacyKeyError::Ambiguous) },
++            || false,
++        )
++        .await
++        .unwrap_err();
++        assert!(matches!(
++            e,
++            ManifestError::LegacyKey(LegacyKeyError::Ambiguous)
++        ));
++        assert_eq!(m.runs.load(Ordering::SeqCst), 0);
++    }
++    #[tokio::test]
++    async fn cancellation_before_resolution_does_not_request_key() {
++        let m = installer(true);
++        let requests = AtomicUsize::new(0);
++        let e = install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/fixture"),
++            || async {
++                requests.fetch_add(1, Ordering::SeqCst);
++                Ok(Some(LegacyCdKey::fixture()))
++            },
++            || true,
++        )
++        .await
++        .unwrap_err();
++        assert!(matches!(e, ManifestError::Cancelled));
++        assert_eq!(requests.load(Ordering::SeqCst), 0);
++        assert_eq!(m.runs.load(Ordering::SeqCst), 0);
++    }
++    #[tokio::test]
++    async fn cancellation_during_resolution_prevents_installer_start() {
++        let m = installer(true);
++        let cancelled = AtomicBool::new(false);
++        let e = install_with_legacy_key(
++            &m,
++            &PathBuf::from("/tmp/fixture"),
++            || async {
++                cancelled.store(true, Ordering::SeqCst);
++                Ok(Some(LegacyCdKey::fixture()))
++            },
++            || cancelled.load(Ordering::SeqCst),
++        )
++        .await
++        .unwrap_err();
++        assert!(matches!(e, ManifestError::Cancelled));
++        assert_eq!(m.runs.load(Ordering::SeqCst), 0);
++    }
++}
++
++#[cfg(all(test, unix))]
++mod native_installer_key_smoke {
++    use super::*;
++    #[tokio::test]
++    #[ignore = "requires an isolated Wine prefix, fixture installer, and private UMU proxy"]
++    async fn key_reaches_windows_fixture_without_forwarding_its_output() {
++        let path = PathBuf::from(
++            std::env::var("SK_EA_NATIVE_KEY_SMOKE_DIR")
++                .expect("explicit isolated fixture directory"),
++        );
++        assert!(path.join("fixture-install.cmd").is_file());
++        assert!(!path.join("result.txt").exists());
++        let key = LegacyCdKey::fixture();
++        let args = installer_args::prepare(
++            r"/c {installLocation}\fixture-install.cmd {CDKEY}",
++            &path,
++            Some(&key),
++        )
++        .unwrap();
++        assert!(args.sensitive);
++        crate::unix::wine::run_sensitive_wine_command(
++            path.join("cmd.exe"),
++            Some(args.values),
++            None,
++            crate::unix::wine::CommandType::Run,
++        )
++        .await
++        .unwrap();
++        assert_eq!(
++            tokio::fs::read_to_string(path.join("result.txt"))
++                .await
++                .unwrap()
++                .trim(),
++            "OK"
++        );
++    }
++}
+--- a/maxima-lib/src/core/manifest/pre_dip.rs
++++ b/maxima-lib/src/core/manifest/pre_dip.rs
+@@ -1,6 +1,7 @@
+ #![allow(non_snake_case)]
+ 
+-use crate::{core::manifest::ManifestError, util::native::platform_path};
++use super::installer_args::{self, PreparedInstallerArgs};
++use crate::core::{legacy_keys::LegacyCdKey, manifest::ManifestError};
+ use derive_getters::Getters;
+ use serde::Deserialize;
+ use std::path::PathBuf;
+@@ -59,10 +60,6 @@
+     path.strip_suffix('/').unwrap_or(path)
+ }
+ 
+-fn remove_trailing_backslash(path: &str) -> &str {
+-    path.strip_suffix('\\').unwrap_or(path)
+-}
+-
+ predip_type!(
+     Manifest;
+     attr {
+@@ -106,7 +103,11 @@
+     }
+ 
+     #[cfg(unix)]
+-    pub async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
++    pub async fn run_touchup(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<(), ManifestError> {
+         use crate::{
+             core::launch::mx_linux_setup,
+             unix::{
+@@ -120,26 +121,45 @@
+         let install_path = PathBuf::from(remove_trailing_slash(
+             install_path.to_str().ok_or(ManifestError::Decode)?,
+         ));
+-        let args = self.collect_touchup_args(&install_path)?;
++        let args = self.collect_touchup_args(&install_path, key)?;
+ 
+         let path = install_path.join(remove_leading_slash(&self.executable.file_path));
+         let path = case_insensitive_path(path);
+-        run_wine_command(path, Some(args), None, true, CommandType::Run).await?;
++        if args.sensitive {
++            crate::unix::wine::run_sensitive_wine_command(
++                path,
++                Some(args.values),
++                None,
++                CommandType::Run,
++            )
++            .await?;
++        } else {
++            run_wine_command(path, Some(args.values), None, true, CommandType::Run).await?;
++        }
+ 
+         invalidate_mx_wine_registry().await;
+         Ok(())
+     }
+ 
+     #[cfg(windows)]
+-    pub async fn run_touchup(&self, install_path: &PathBuf) -> Result<(), ManifestError> {
++    pub async fn run_touchup(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<(), ManifestError> {
+         use crate::util::native::NativeError;
+         use tokio::process::Command;
+ 
+-        let args = self.collect_touchup_args(install_path)?;
++        let args = self.collect_touchup_args(install_path, key)?;
+         let path = install_path.join(&self.executable.file_path);
+ 
+         let mut binding = Command::new(path);
+-        let child = binding.args(args);
++        let child = binding.args(args.values);
++        if args.sensitive {
++            child
++                .stdout(std::process::Stdio::null())
++                .stderr(std::process::Stdio::null());
++        }
+ 
+         let status = child.spawn()?.wait().await?;
+         if !status.success() {
+@@ -151,21 +171,11 @@
+         Ok(())
+     }
+ 
+-    fn collect_touchup_args(&self, install_path: &PathBuf) -> Result<Vec<PathBuf>, ManifestError> {
+-        let mut args = Vec::new();
+-        for arg in self.executable.parameters.split(" ") {
+-            let arg = arg.replace("{locale}", "en_US").replace(
+-                "\"{installLocation}\"",
+-                platform_path(
+-                    remove_trailing_backslash(install_path.to_str().ok_or(ManifestError::Decode)?)
+-                        .replace("/", "\\"),
+-                )
+-                .to_str()
+-                .ok_or(ManifestError::Decode)?,
+-            );
+-
+-            args.push(PathBuf::from(arg));
+-        }
+-        Ok(args)
++    fn collect_touchup_args(
++        &self,
++        install_path: &PathBuf,
++        key: Option<&LegacyCdKey>,
++    ) -> Result<PreparedInstallerArgs, ManifestError> {
++        installer_args::prepare(&self.executable.parameters, install_path, key)
+     }
+ }
+--- a/maxima-lib/src/core/mod.rs
++++ b/maxima-lib/src/core/mod.rs
+@@ -11,6 +11,7 @@
+ pub mod locale;
+ pub mod manifest;
+ pub mod service_layer;
++pub mod legacy_keys;
+ pub mod settings;
+ 
+ #[cfg(target_os = "windows")]
+@@ -75,6 +76,7 @@
+     ReceivedLSXRequest(u32, LSXRequestType),
+     /// Offer ID. Use `maxima.mut_library().title_by_base_offer(id)` for details
+     InstallFinished(String),
++    InstallFailed(String, crate::content::manager::InstallFailureKind),
+ }
+ 
+ pub type MaximaLSXEventCallback = extern "C" fn(*const c_char);
+--- a/maxima-lib/src/core/service_layer.rs
++++ b/maxima-lib/src/core/service_layer.rs
+@@ -229,8 +229,8 @@
+         }
+ 
+         debug!(
+-            "Service layer response for {}: {}",
+-            operation.operation, text
++            "Service layer response for {} ({} bytes)",
++            operation.operation, text.len()
+         );
+ 
+         let result = serde_json::from_str::<Value>(text.as_str())?;
+--- a/maxima-lib/src/unix/wine.rs
++++ b/maxima-lib/src/unix/wine.rs
+@@ -248,6 +248,48 @@
+     want_output: bool,
+     command_type: CommandType,
+ ) -> Result<String, NativeError> {
++    run_wine_command_inner(arg, args, cwd, want_output, command_type, false).await
++}
++
++/// Installer keys may be echoed by an external program. Drain both streams
++/// without forwarding, retaining, or wrapping their contents in an error.
++pub async fn run_sensitive_wine_command<I: IntoIterator<Item = T>, T: AsRef<OsStr>>(
++    arg: T,
++    args: Option<I>,
++    cwd: Option<PathBuf>,
++    command_type: CommandType,
++) -> Result<(), NativeError> {
++    run_wine_command_inner(arg, args, cwd, false, command_type, true)
++        .await
++        .map(|_| ())
++}
++
++async fn wait_private_command(command: &mut Command) -> Result<ExitStatus, std::io::Error> {
++    let mut process = command
++        .kill_on_drop(true)
++        .stdout(Stdio::piped())
++        .stderr(Stdio::piped())
++        .spawn()?;
++    let mut stdout = process.stdout.take().expect("piped stdout");
++    let mut stderr = process.stderr.take().expect("piped stderr");
++    let mut sink_out = tokio::io::sink();
++    let mut sink_err = tokio::io::sink();
++    let (status, _, _) = tokio::try_join!(
++        process.wait(),
++        tokio::io::copy(&mut stdout, &mut sink_out),
++        tokio::io::copy(&mut stderr, &mut sink_err)
++    )?;
++    Ok(status)
++}
++
++async fn run_wine_command_inner<I: IntoIterator<Item = T>, T: AsRef<OsStr>>(
++    arg: T,
++    args: Option<I>,
++    cwd: Option<PathBuf>,
++    want_output: bool,
++    command_type: CommandType,
++    sensitive: bool,
++) -> Result<String, NativeError> {
+     let proton_path = proton_dir()?;
+     let proton_prefix_path = wine_prefix_dir()?;
+     let eac_path = eac_dir()?;
+@@ -286,10 +328,19 @@
+         child.current_dir(cwd);
+     }
+ 
++    if sensitive {
++        child = child
++            .env("WINEDEBUG", "-all")
++            .env_remove("PROTON_LOG")
++            .env_remove("PROTON_LOG_DIR")
++            .env_remove("PROTON_DUMP_DEBUG_COMMANDS");
++    }
+     let status: ExitStatus;
+     let mut output_str = String::new();
+ 
+-    if want_output {
++    if sensitive {
++        status=wait_private_command(child).await?;
++    } else if want_output {
+         let output = child
+             .stdout(Stdio::piped())
+             .spawn()?
+@@ -524,3 +575,28 @@
+ 
+     Ok(value.map(|x| x.replace("Z:", "").replace("\\", "/")))
+ }
++
++#[cfg(test)]
++mod sensitive_installer_regression {
++    use super::*;
++    #[tokio::test]
++    async fn drains_large_private_stdout_and_stderr_without_returning_their_contents() {
++        let mut command = Command::new("/usr/bin/python3");
++        command.args(["-c","import sys; sys.stdout.write('FIXTURE-PRIVATE-KEY'*100000); sys.stderr.write('FIXTURE-PRIVATE-KEY'*100000)"]);
++        let status = tokio::time::timeout(
++            std::time::Duration::from_secs(10),
++            wait_private_command(&mut command),
++        )
++        .await
++        .unwrap()
++        .unwrap();
++        assert!(status.success());
++    }
++    #[tokio::test]
++    async fn nonzero_private_installer_status_is_not_reported_as_success() {
++        let mut command = Command::new("/usr/bin/python3");
++        command.args(["-c","import sys; print('FIXTURE-PRIVATE-KEY'); print('FIXTURE-PRIVATE-KEY',file=sys.stderr); sys.exit(7)"]);
++        let status = wait_private_command(&mut command).await.unwrap();
++        assert_eq!(status.code(), Some(7));
++    }
++}
+--- a/maxima-cli/src/main.rs
++++ b/maxima-cli/src/main.rs
+@@ -153,7 +153,7 @@
+ }
+ 
+ #[tokio::main]
+-async fn main() {
++async fn main() -> std::process::ExitCode {
+     let result = startup().await;
+ 
+     if let Some(e) = result.err() {
+@@ -161,7 +161,9 @@
+             Ok(_) => error!("{}:\n{}", e, e.backtrace().to_string()),
+             Err(_) => error!("{}: {}", e, e.root_cause()),
+         }
+-    }
++        return std::process::ExitCode::FAILURE;
++    }
++    std::process::ExitCode::SUCCESS
+ }
+ 
+ #[cfg(windows)]
+@@ -558,17 +560,20 @@
+     loop {
+         let mut maxima = maxima_arc.lock().await;
+ 
++        maxima.update().await;
++
+         for event in maxima.consume_pending_events() {
+             match event {
+                 MaximaEvent::ReceivedLSXRequest(_pid, _request) => (),
++                MaximaEvent::InstallFailed(_, kind) => {
++                    bail!("Installation failed ({}); downloaded files kept", kind);
++                }
+                 MaximaEvent::InstallFinished(ref _oid) => {
+                     info!("Download Complete");
+                 }
+                 _ => {}
+             }
+         }
+-
+-        maxima.update().await;
+ 
+         if let Some(downloader) = maxima.content_manager().current() {
+             let percent = downloader.percentage_done();
+@@ -1023,7 +1028,9 @@
+ async fn locate_game(maxima_arc: LockedMaxima, path: &str) -> Result<()> {
+     let path = PathBuf::from(path);
+     let manifest = manifest::read(path.join(MANIFEST_RELATIVE_PATH)).await?;
+-    manifest.run_touchup(&path).await?;
++    // A path-only locate operation has no owned-offer identity. Required key
++    // placeholders fail explicitly rather than borrowing another game's key.
++    manifest.run_touchup(&path, None).await?;
+     info!("Installed!");
+     Ok(())
+ }
+--- a/maxima-ui/src/bridge_thread.rs
++++ b/maxima-ui/src/bridge_thread.rs
+@@ -401,6 +401,12 @@
+                 for ev in maxima.consume_pending_events() {
+                     match ev {
+                         maxima::core::MaximaEvent::ReceivedLSXRequest(_, _) => {}
++                        maxima::core::MaximaEvent::InstallFailed(_, kind) => {
++                            backend_responder.send(MaximaLibResponse::NonFatalError(Box::new(
++                                BackendError::ContentManager(ContentManagerError::InstallationFailed(kind))
++                            )))?;
++                            Self::update_queue(maxima.content_manager(), backend_responder.clone());
++                        }
+                         maxima::core::MaximaEvent::InstallFinished(offer_id) => {
+                             backend_responder
+                                 .send(MaximaLibResponse::DownloadFinished(offer_id))?;
+@@ -451,7 +457,7 @@
+                     let path = PathBuf::from(path);
+                     let manifest = manifest::read(path.join(MANIFEST_RELATIVE_PATH)).await;
+                     if let Ok(manifest) = manifest {
+-                        let guh = manifest.run_touchup(&path).await;
++                        let guh = manifest.run_touchup(&path, None).await;
+                         if let Err(err) = guh {
+                             let _ = backend_responder.send(MaximaLibResponse::LocateGameResponse(
+                                 InteractThreadLocateGameResponse::Error(
