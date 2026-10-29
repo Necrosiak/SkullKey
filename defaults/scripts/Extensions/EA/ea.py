@@ -679,7 +679,8 @@ def install_diagnostic(slug, stage, started, **fields):
     """Allowlisted metadata only: never CLI output, paths, OAuth or job tokens."""
     allowed = {"progress", "cli_error_seen", "exit_code", "failure_category",
                "activity_hint", "umu_available", "python_available", "display_available", "failed_stage",
-               "max_progress", "error_kind", "maxima_umu_present", "maxima_proton_present"}
+               "max_progress", "error_kind", "maxima_umu_present", "maxima_proton_present",
+               "watchdog", "lingering"}
     now = time.time()
     data = {"version": VERSION, "stage": stage, "updated_at": now,
             "elapsed_seconds": round(max(0, now - started), 1),
@@ -694,6 +695,105 @@ def install_diagnostic(slug, stage, started, **fields):
 
 
 PREPARING_PROTON = "Preparing Proton for EA games (first install only, about 3 GB)…"
+
+
+INSTALLER_WAITING = "The game's installer may be waiting for an answer: look for its window."
+CLOSING_LEFTOVERS = "Closing what the game's installer left open…"
+WINE_INFRA = {"wineserver", "services.exe", "winedevice.exe", "plugplay.exe", "svchost.exe", "explorer.exe",
+              "rpcss.exe", "tabtip.exe", "conhost.exe", "steam.exe", "start.exe", "wineboot.exe"}
+REDISTRIBUTABLES = ("dxsetup", "dxwebsetup", "vcredist", "vc_redist", "dotnetfx", "ndp4", "physx", "oalinst",
+                    "msiexec", "directx", "eareporter")
+
+
+def prefix_processes(prefix):
+    """(pid, exe name, lower-case command line) of the Wine processes in `prefix`."""
+    real = os.path.realpath(prefix)
+    for entry in os.listdir("/proc"):
+        if not entry.isdigit():
+            continue
+        try:
+            environ = Path("/proc", entry, "environ").read_bytes().split(b"\0")
+            value = next((v[11:] for v in environ if v.startswith(b"WINEPREFIX=")), None)
+            if value is None:
+                continue
+            path = os.path.realpath(value.decode("utf-8", "replace"))
+            if path != real and not path.startswith(real + os.sep):
+                continue
+            binary = os.path.basename(os.readlink(f"/proc/{entry}/exe"))
+            args = Path("/proc", entry, "cmdline").read_bytes().split(b"\0")
+        except (OSError, ValueError):
+            continue
+        if binary == "wineserver":
+            yield int(entry), "wineserver", ""
+        elif binary.startswith("wine"):
+            command = " ".join(a.decode("utf-8", "replace") for a in args if a).lower()
+            name = re.split(r"[\\/]", command.split(" ", 1)[0])[-1] if command else ""
+            yield int(entry), name if name.endswith(".exe") else name + ".exe", command
+
+
+def sort_processes(processes, places):
+    """Split prefix processes into Touchup, installer leftovers, Wine's own and anything else."""
+    touchup, leftovers, infra, others = [], [], [], []
+    for pid, name, command in processes:
+        if name in WINE_INFRA:
+            infra.append((pid, name))
+        elif "touchup" in name:
+            touchup.append((pid, name))
+        elif any(place in command for place in places) or any(r in name for r in REDISTRIBUTABLES):
+            leftovers.append((pid, name))
+        else:
+            others.append((pid, name))
+    return touchup, leftovers, infra, others
+
+
+class InstallWatchdog:
+    """Maxima waits until every process in its Wine prefix has exited: umu-run's
+    runtime reaps the whole tree (measured 29/10/2026, a background process kept
+    umu-run alive 43 s instead of 5 s). A redistributable or helper left open
+    after Touchup (an error box answered, a DirectX setup that failed) kept EA
+    installs at 99 % forever (#10). Only what belongs to this installation is
+    closed, and nothing while another program runs in the prefix."""
+
+    def __init__(self, directory):
+        self.prefix = root() / "data/maxima/wine/prefix"
+        self.places = {"__installer"}
+        for path in {str(directory), os.path.realpath(directory)}:
+            self.places.add("z:" + path.replace("/", "\\").lower())
+        self.action = None
+        self.names = []
+        self.noted_waiting = False
+        self.signalled = set()
+
+    def _stop(self, found):
+        for pid, _ in found:
+            try:
+                os.kill(pid, signal.SIGKILL if pid in self.signalled else signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            self.signalled.add(pid)
+
+    def check(self, silent):
+        """A progress message when the watchdog stepped in, else None."""
+        touchup, leftovers, infra, others = sort_processes(prefix_processes(self.prefix), self.places)
+        if touchup:
+            if silent >= 180 and not self.noted_waiting:
+                self.noted_waiting, self.action = True, "installer-waiting"
+                return INSTALLER_WAITING
+            return None
+        if others:
+            if silent >= 300:
+                self.names = sorted({name for _, name in others})[:5]
+            return None
+        if leftovers and silent >= 60:
+            self.names = sorted({name for _, name in leftovers})[:5]
+            self.action = "closed-leftovers"
+            self._stop(leftovers)
+            return CLOSING_LEFTOVERS
+        if not leftovers and infra and silent >= 120:
+            self.action = "closed-wine-services"
+            self._stop(infra)
+            return CLOSING_LEFTOVERS
+        return None
 
 
 def install_worker(slug, token):
@@ -747,6 +847,9 @@ def install_worker(slug, token):
             pending = b""
             failed = False
             deadline = time.monotonic() + 12 * 3600
+            watchdog = InstallWatchdog(directory)
+            last_output = time.monotonic()
+            next_check = 0.0
             try:
                 while selector.get_map() or process.poll() is None:
                     current = read_job(slug)
@@ -756,12 +859,21 @@ def install_worker(slug, token):
                         raise TimeoutError("Installation timed out")
                     if time.time() - last_report >= 30:
                         report(phase)
+                    if max_progress >= 100 and time.monotonic() >= next_check:
+                        next_check = time.monotonic() + 15
+                        note = watchdog.check(time.monotonic() - last_output)
+                        if note:
+                            job["Description"] = note
+                            write_job(slug, job)
+                        if note or watchdog.names:
+                            report(phase, watchdog=watchdog.action, lingering=watchdog.names)
                     for key, _ in selector.select(timeout=0.25):
                         chunk = os.read(key.fileobj.fileno(), 8192)
                         if not chunk:
                             selector.unregister(key.fileobj)
                             continue
                         pending += chunk
+                        last_output = time.monotonic()
                         while b"\n" in pending or len(pending) > 16384:
                             if b"\n" in pending:
                                 line, pending = pending.split(b"\n", 1)
@@ -802,7 +914,9 @@ def install_worker(slug, token):
                 process.stdout.close()
             exit_code = process.wait()
             report("cli-exited", exit_code=exit_code)
-            if exit_code or failed:
+            # When the watchdog closed leftovers, Maxima's own verdict is not
+            # reliable: the game-info check below decides.
+            if (exit_code or failed) and not watchdog.action:
                 raise RuntimeError("Maxima installation failed")
             report("verifying-installation")
             check = subprocess.run([str(client()), "game-info", slug], env=env(),
