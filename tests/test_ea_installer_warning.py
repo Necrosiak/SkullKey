@@ -21,7 +21,12 @@ class InstallerWarningTests(unittest.TestCase):
             ea.save({'games':[{'slug':'fixture','name':'Fixture','installed':True}]})
             (ea.root()/'install-diagnostic-fixture.json').write_text(json.dumps({'stage':'done','touchup_exit':3}))
             self.assertEqual(ea.installer_exit_code('fixture'),3)
-            self.assertEqual(ea.dispatch('getgamedetails',['fixture'])['Content']['InstallerExitCode'],3)
+            details=ea.dispatch('getgamedetails',['fixture'])['Content']
+            self.assertEqual(details['InstallerExitCode'],3)
+            self.assertTrue(details['FilesInstalled'])
+            self.assertEqual(details['SteamClientID'],'')
+            ea.save({'games':[{'slug':'fixture','name':'Fixture','installed':False}]})
+            self.assertFalse(ea.dispatch('getgamedetails',['fixture'])['Content']['FilesInstalled'])
 
     def test_failed_attempt_does_not_become_installed_warning(self):
         ea=self.module()

@@ -654,7 +654,9 @@ export const GameDetailsItem: VFC<GameDetailsItemProperties> = ({ serverAPI, sho
                             steamClientID={steamClientID}
                             closeModal={closeModal}
                             installing={installing}
-                            installer={() => download(false)}
+                            installer={() => (gameData.Content as GameDetails).FilesInstalled
+                                ? install()
+                                : download(false)}
                             progress={progress}
                             cancelInstall={cancelInstall}
                             uninstaller={uninstall}

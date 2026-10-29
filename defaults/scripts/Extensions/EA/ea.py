@@ -1340,6 +1340,7 @@ def dispatch(action, args):
         return {"Type": "GameDetails", "Content": {"Name": g["name"], "ShortName": slug,
                 "Description": description(g),
                 "InstallerExitCode": installer_exit_code(slug),
+                "FilesInstalled": bool(g["installed"]),
                 "Images": [c] if (c := cover(g)) else [], "Editors": [],
                 "SteamClientID": state().get("shortcuts", {}).get(slug, "")}}
     if action == "getjsonimages":

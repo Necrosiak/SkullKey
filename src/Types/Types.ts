@@ -69,6 +69,7 @@ export interface GameDetails extends ContentType {
   Editors: EditorAction[];
   UpdateAvailable?: string;
   InstallBlocked?: boolean;
+  FilesInstalled?: boolean;
   InstallerExitCode?: number;
 }
 export interface EditorAction {
