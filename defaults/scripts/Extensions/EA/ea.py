@@ -835,6 +835,35 @@ def sort_processes(processes, places):
     return touchup, leftovers, infra, others
 
 
+class InstallActivity:
+    """Repeated CLI progress is a heartbeat, not evidence of installer work."""
+
+    def __init__(self):
+        self.last_activity = time.monotonic()
+        self.progress = -1.0
+        self.signatures = []
+
+    def observe(self, text):
+        progress = re.findall(r"Progress:\s*(\d+(?:\.\d+)?)", text)
+        if progress:
+            value = max(float(value) for value in progress)
+            if value <= self.progress:
+                return
+            self.progress = value
+        else:
+            # Log timestamps change even when the same status is repeated.
+            stable = re.sub(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?", "<time>", text)
+            stable = " ".join(stable.split())
+            if not stable:
+                return
+            signature = hashlib.sha256(stable.encode()).digest()
+            if signature in self.signatures:
+                return
+            self.signatures.append(signature)
+            del self.signatures[:-128]
+        self.last_activity = time.monotonic()
+
+
 class InstallWatchdog:
     """Maxima waits until every process in its Wine prefix has exited: umu-run's
     runtime reaps the whole tree (measured 29/10/2026, a background process kept
@@ -972,7 +1001,7 @@ def install_worker(slug, token):
             pending = b""
             failed = False
             deadline = time.monotonic() + 12 * 3600
-            last_output = time.monotonic()
+            activity = InstallActivity()
             next_check = 0.0
             try:
                 while selector.get_map() or process.poll() is None:
@@ -983,35 +1012,20 @@ def install_worker(slug, token):
                         raise TimeoutError("Installation timed out")
                     if time.time() - last_report >= 30:
                         report(phase)
-                    if max_progress >= 99 and time.monotonic() >= next_check:
-                        next_check = time.monotonic() + 15
-                        note = watchdog.check(time.monotonic() - last_output,
-                                              allow_cleanup=max_progress >= 100)
-                        if note:
-                            job["Description"] = note
-                            write_job(slug, job)
-                        if note or watchdog.names:
-                            report(phase, watchdog=watchdog.action, lingering=watchdog.names,
-                                   touchup_exit=watchdog.touchup_exit)
-                        if watchdog.stop_maxima and process.poll() is None:
-                            watchdog.stop_maxima = False
-                            try:
-                                os.killpg(process.pid, signal.SIGTERM)
-                            except ProcessLookupError:
-                                pass
                     for key, _ in selector.select(timeout=0.25):
                         chunk = os.read(key.fileobj.fileno(), 8192)
                         if not chunk:
                             selector.unregister(key.fileobj)
                             continue
                         pending += chunk
-                        last_output = time.monotonic()
-                        while b"\n" in pending or len(pending) > 16384:
-                            if b"\n" in pending:
-                                line, pending = pending.split(b"\n", 1)
+                        while b"\n" in pending or b"\r" in pending or len(pending) > 16384:
+                            if b"\n" in pending or b"\r" in pending:
+                                boundary = min(i for i in (pending.find(b"\n"), pending.find(b"\r")) if i >= 0)
+                                line, pending = pending[:boundary], pending[boundary + 1:]
                             else:
                                 line, pending = pending[:8192], pending[8192:]
                             text = re.sub(r"\x1b\[[0-9;]*m", "", line.decode("utf-8", "replace"))
+                            activity.observe(text)
                             hint = next((label for marker, label in (
                                 ("touchup", "touchup"), ("umu", "proton-setup"),
                                 ("download complete", "download-complete")) if marker in text.lower()), None)
@@ -1032,14 +1046,33 @@ def install_worker(slug, token):
                             progress = re.search(r"Progress:\s*(\d+(?:\.\d+)?)", text)
                             if progress:
                                 max_progress = max(max_progress, float(progress[1]))
-                                job.update(Percentage=min(99, float(progress[1])), Description="Downloading EA game…")
+                                job["Percentage"] = min(99, float(progress[1]))
                                 if float(progress[1]) >= 99:
-                                    job["Description"] = "Waiting for EA installation to finish…"
+                                    if watchdog.action not in {"installer-waiting", "closed-leftovers", "closed-wine-services", "stopped-maxima"}:
+                                        job["Description"] = "Waiting for EA installation to finish…"
                                     report("waiting-for-cli-exit")
+                                else:
+                                    job["Description"] = "Downloading EA game…"
                                 # Keep any cancellation request written during this read.
                                 if cancelled(slug, token):
                                     raise InterruptedError("Cancelled")
                                 write_job(slug, job)
+                    if max_progress >= 99 and time.monotonic() >= next_check:
+                        next_check = time.monotonic() + 15
+                        note = watchdog.check(time.monotonic() - activity.last_activity,
+                                              allow_cleanup=max_progress >= 100)
+                        if note:
+                            job["Description"] = note
+                            write_job(slug, job)
+                        if note or watchdog.names:
+                            report(phase, watchdog=watchdog.action, lingering=watchdog.names,
+                                   touchup_exit=watchdog.touchup_exit)
+                        if watchdog.stop_maxima and process.poll() is None:
+                            watchdog.stop_maxima = False
+                            try:
+                                os.killpg(process.pid, signal.SIGTERM)
+                            except ProcessLookupError:
+                                pass
                 failed |= bool(re.search(rb"\bERROR\b", pending))
             finally:
                 selector.close()

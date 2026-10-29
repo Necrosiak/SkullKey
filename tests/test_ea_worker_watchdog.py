@@ -12,7 +12,7 @@ from unittest.mock import patch
 
 
 class WorkerWatchdogTests(unittest.TestCase):
-    def run_fixture(self, verified=True, waiting=False, touchup_code=3):
+    def run_fixture(self, verified=True, waiting=False, touchup_code=3, heartbeat=False, touchup_running=False):
         path = Path(__file__).resolve().parents[1] / 'defaults/scripts/Extensions/EA/ea.py'
         spec = importlib.util.spec_from_file_location('ea_worker_fixture', path)
         ea = importlib.util.module_from_spec(spec)
@@ -31,8 +31,9 @@ class WorkerWatchdogTests(unittest.TestCase):
                 ' p=pathlib.Path(sys.argv[-1]); (p/"game.exe").write_bytes(b"fixture")\n'
                 ' d=p/"__Installer"; d.mkdir()\n'
                 ' (d/"InstallLog.txt").write_bytes("Installer finished with exit code: ' + str(touchup_code) + '\\n".encode("utf-16"))\n'
-                ' print("Progress: ' + ('100' if waiting else '99.99') + '",flush=True)\n' +
+                ' print("Progress: ' + ('100' if waiting or heartbeat else '99.99') + '",flush=True)\n' +
                 (' print("ERROR fixture failure",flush=True); time.sleep(.5); sys.exit(3)\n' if waiting else
+                 ' for _ in range(100): print("Progress: 100.00",end="\\r",flush=True); time.sleep(.01)\n sys.exit(3)\n' if heartbeat else
                  ' while True: time.sleep(.1)\n') +
                 'else: print(\'{"slug":"fixture","installed":' + ('true' if verified else 'false') + '}\')\n')
             cli.chmod(0o700)
@@ -40,11 +41,20 @@ class WorkerWatchdogTests(unittest.TestCase):
             ticks = itertools.count(1000, 20)
             def refresh():
                 state = ea.state(); state['games'][0]['installed'] = True; ea.save(state)
-            with patch.object(ea, 'client', return_value=cli), \
+            found=[(912345,'touchup.exe' if touchup_running else 'services.exe','')] if heartbeat else []
+            descriptions=[]
+            real_write=ea.write_job
+            def observed_write(slug,job):
+                if job.get('active') and not job.get('Error') and job.get('Description'):
+                    descriptions.append(job['Description'])
+                real_write(slug,job)
+            with patch.object(ea,'write_job',side_effect=observed_write), \
+                 patch.object(ea, 'client', return_value=cli), \
                  patch.object(ea, 'localized_client', return_value=cli), \
                  patch.object(ea, 'env', return_value={'PATH':'/usr/bin:/bin'}), \
                  patch.object(ea, 'refresh', side_effect=refresh) as refreshed, \
-                 patch.object(ea, 'prefix_processes', return_value=[]), \
+                 patch.object(ea, 'prefix_processes', side_effect=lambda _:list(found)), \
+                 patch.object(ea.InstallWatchdog, '_stop', side_effect=lambda _:found.clear()), \
                  patch.object(ea, 'apply_locale_filter'), \
                  patch.object(ea, 'time', types.SimpleNamespace(time=time.time, monotonic=lambda:next(ticks))):
                 if waiting:
@@ -59,7 +69,7 @@ class WorkerWatchdogTests(unittest.TestCase):
             self.assertTrue((ea.game_dir('fixture')/'game.exe').exists())
             self.assertFalse(result['active'])
             self.assertNotIn('synthetic fixture', json.dumps(diagnostic))
-            if verified and not waiting:
+            if verified and not waiting and not result.get('Error'):
                 exposed = ea.dispatch('getprogress', ['fixture'])['Content']
                 if touchup_code:
                     self.assertEqual(result.get('InstallerExitCode'),touchup_code)
@@ -69,6 +79,7 @@ class WorkerWatchdogTests(unittest.TestCase):
                     self.assertNotIn('InstallerExitCode',result)
                     self.assertNotIn('InstallerExitCode',exposed)
                     self.assertNotIn('fixture',ea.state()['installer_warnings'])
+            result['_fixture_descriptions']=descriptions
             return result, diagnostic, refreshed.call_count
 
     def test_9999_stops_empty_prefix_after_touchup_and_preserves_final_evidence(self):
@@ -79,6 +90,29 @@ class WorkerWatchdogTests(unittest.TestCase):
         self.assertEqual(diag['touchup_exit'],3)
         self.assertEqual(diag['max_progress'],99.99)
         self.assertEqual(calls,1)
+
+    def test_constant_carriage_return_heartbeats_do_not_keep_wine_helpers_alive(self):
+        job,diag,calls=self.run_fixture(heartbeat=True)
+        self.assertEqual(job['Percentage'],100)
+        self.assertEqual(diag['stage'],'done')
+        self.assertEqual(diag['watchdog'],'stopped-maxima')
+        self.assertEqual(diag['touchup_exit'],3)
+        self.assertEqual(calls,1)
+
+    def test_waiting_for_installer_hint_survives_further_progress_heartbeats(self):
+        job,diag,_=self.run_fixture(heartbeat=True,touchup_running=True)
+        self.assertIsNotNone(job['Error'])
+        self.assertEqual(diag['watchdog'],'installer-waiting')
+        ea=self.module_for_constants()
+        descriptions=job['_fixture_descriptions']
+        first=descriptions.index(ea.INSTALLER_WAITING)
+        self.assertTrue(all(text==ea.INSTALLER_WAITING for text in descriptions[first:]))
+
+    def module_for_constants(self):
+        path=Path(__file__).resolve().parents[1]/'defaults/scripts/Extensions/EA/ea.py'
+        spec=importlib.util.spec_from_file_location('ea_worker_constants',path)
+        module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+        return module
 
     def test_watchdog_does_not_bypass_installation_verification(self):
         job, diag, calls = self.run_fixture(verified=False)
