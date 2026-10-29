@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.21.3 — 2026-10-29
+
+### Fixed
+
+- **EA installs stuck at 99 %** — Maxima kept printing the same progress
+  forever once the game's installer ended with an error, so SkullKey never
+  saw the install go quiet. SkullKey now reads the installer's own log,
+  finishes the install once nothing is left running, and ignores what an
+  earlier installation left in that log. Battlefield 1942 was tested through
+  installation and launch; Syndicate, SimCity and Battlefield 2142 still need
+  confirmation ([#10](https://github.com/Necrosiak/SkullKey/issues/10)).
+- **Cancelled EA downloads starting again** — Maxima resumed a cancelled
+  install on its own after the next game (measured with a Mass Effect
+  download cancelled days earlier). SkullKey clears Maxima's pending queue
+  before every install. Downloaded game files are kept.
+- **EA games installed without a Steam shortcut** — when EA confirms the
+  files are already there, SkullKey adds the missing shortcut instead of
+  downloading the game again.
+- **Medal of Honor: Allied Assault closing at startup** — a Mesa
+  compatibility setting is applied to this game only. Tested on a BC-250
+  with Bazzite; other machines and the expansions still need testing.
+
+### Changed
+
+- **EA installer warnings stay visible** — if the game's installer reports
+  an error but the game is confirmed installed, its page and the completion
+  notification show the installer's code: the game may still fail to start.
+- **Updated EA client** — installation failures now reach the command's
+  result, and the client passes the account's legacy CD key to installers
+  that explicitly ask for one. Battlefield 2142's own installer has not been
+  validated yet.
+
 ## 1.21.2 — 2026-10-29
 
 ### Fixed
