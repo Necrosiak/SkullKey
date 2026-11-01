@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.21.5 — 2026-11-01
+
+### Fixes
+
+- **EA: older installers get their install folder again.** Some older EA games (Battlefield 2142, for example) received an empty install folder because the quotes around it were mangled on the way to the installer. The EA client is updated automatically to fix this. Battlefield 2142 may still stop on its own registration step; that part is still being investigated.
+
+### Improved
+
+- **GOG: gogdl 1.4.0.** Lighter downloads, and cached download pieces are no longer removed before the files that need them are finished. Updated automatically.
+
+### Thanks
+
+- **zavaro** for the detailed Windows and Linux installer logs that pinned this down (#10).
+
+**Full changelog:** [v1.21.4...v1.21.5](https://github.com/Necrosiak/SkullKey/compare/v1.21.4...v1.21.5)
+
 ## 1.21.4 — 2026-11-01
 
 ### New

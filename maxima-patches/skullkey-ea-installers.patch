@@ -756,7 +756,7 @@
 +}
 --- /dev/null
 +++ b/maxima-lib/src/core/manifest/installer_args.rs
-@@ -0,0 +1,194 @@
+@@ -0,0 +1,212 @@
 +//! Installer arguments: preserve Windows quoting and keep key values out of Debug.
 +use super::ManifestError;
 +use crate::core::legacy_keys::LegacyCdKey;
@@ -868,8 +868,12 @@
 +    let token = regex::Regex::new(r"(?i)\{cdkey\}|%cdkey%").expect("fixed installer key pattern");
 +    let mut values = Vec::new();
 +    for argument in split_windows(parameters)? {
++        let argument = argument.replace("{locale}", "en_US");
++        // `"NAME=""{installLocation}"""` leaves literal quotes around the path. Wine
++        // re-escapes them as `\"` when it rebuilds the command line, and old EASetup
++        // then reads `INSTALLLOCATION=\`. Drop them and end with `\` as the EA app does.
 +        let argument = argument
-+            .replace("{locale}", "en_US")
++            .replace("\"{installLocation}\"", &format!("{location}\\"))
 +            .replace("{installLocation}", location);
 +        let argument = if sensitive {
 +            token
@@ -900,6 +904,20 @@
 +        assert_eq!(a.values.len(), 5);
 +        assert!(a.values[4].to_string_lossy().ends_with("tmp\\A Game"));
 +        assert!(!a.sensitive);
++    }
++    #[test]
++    fn embedded_quotes_around_install_location_are_dropped() {
++        let a = prepare(
++            r#"-silent "INSTALLLOCATION=""{installLocation}""" -locale {locale} -autologging"#,
++            Path::new("/tmp/Game"),
++            None,
++        )
++        .unwrap();
++        assert_eq!(a.values.len(), 5);
++        let value = a.values[1].to_string_lossy();
++        assert!(value.starts_with("INSTALLLOCATION="), "{value}");
++        assert!(value.ends_with("Game\\"), "{value}");
++        assert!(!value.contains('"'), "{value}");
 +    }
 +    #[test]
 +    fn key_is_replaced_inside_one_argument_and_debug_is_redacted() {

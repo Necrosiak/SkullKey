@@ -5,7 +5,7 @@
 # The upstream zipapp contains the same code and stable-ABI extension, avoiding
 # compiler, Python headers and virtualenv compatibility entirely.
 VENV="${HOME}/.local/share/skullkey-gogdl"
-GOGDL_VERSION="1.3.1"
+GOGDL_VERSION="1.4.0"
 
 function uninstall() {
     echo "Removing gogdl venv"
@@ -18,11 +18,11 @@ function install() {
     case "${arch}" in
         x86_64|amd64)
             asset="gogdl_linux_x86_64"
-            checksum="7a6f22da4943bdb4c00baf6250fcee7085c1104ba2ac401479e70ec96e722b59"
+            checksum="2aa2b59c83d3bfbe7b60ead91c6297b263b5d1e6c233a04b7409bafe26738f02"
             ;;
         aarch64|arm64)
             asset="gogdl_linux_arm64"
-            checksum="9c70af33f5ca74d08236b4d50ca5f54262d9b4712d4a34c479e4263792fe55fc"
+            checksum="3df71cb07603b5d17fd914c96d17e4b381fad5a5705dc7dd3e3ff7a3856c6cc3"
             ;;
         *)
             echo "ERROR: unsupported architecture for gogdl: ${arch}"
