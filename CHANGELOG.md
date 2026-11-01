@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.21.6 — 2026-11-01
+
+### Fixes
+
+- **EA: older DirectX setups no longer stop the install.** Some older EA games (Syndicate, for example) install Managed DirectX, which needs .NET. When .NET (wine-mono) was missing from the EA Wine prefix, DirectX setup failed and the game's installer quit. SkullKey now checks for it before each EA install and adds it from the bundled Proton if needed.
+- **EA: install folders on drives with spaces in their name.** The install folder is now passed with its drive letter (`F:\SkullKey\…`) instead of the full Linux path, so older installers no longer misread folders like `Samsung SSD 870`. The EA client is updated automatically.
+
+### Known issue
+
+- Battlefield 2142 still stops at its own registration step; that part is still being investigated (#10).
+
+### Thanks
+
+- **zavaro** for testing every build and sending the logs that found both problems (#10).
+
+**Full changelog:** [v1.21.5...v1.21.6](https://github.com/Necrosiak/SkullKey/compare/v1.21.5...v1.21.6)
+
 ## 1.21.5 — 2026-11-01
 
 ### Fixes

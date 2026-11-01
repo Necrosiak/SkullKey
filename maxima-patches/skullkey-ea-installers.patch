@@ -756,7 +756,7 @@
 +}
 --- /dev/null
 +++ b/maxima-lib/src/core/manifest/installer_args.rs
-@@ -0,0 +1,212 @@
+@@ -0,0 +1,297 @@
 +//! Installer arguments: preserve Windows quoting and keep key values out of Debug.
 +use super::ManifestError;
 +use crate::core::legacy_keys::LegacyCdKey;
@@ -848,14 +848,53 @@
 +    Ok(out)
 +}
 +
-+pub(crate) fn prepare(
-+    parameters: &str,
-+    install_path: &Path,
-+    key: Option<&LegacyCdKey>,
-+) -> Result<PreparedInstallerArgs, ManifestError> {
-+    let sensitive = requires_key(parameters);
-+    if sensitive && key.is_none() {
-+        return Err(ManifestError::MissingLegacyKey);
++// Drive letters mapped in Maxima's Wine prefix (`f:` -> Linux directory).
++#[cfg(unix)]
++fn mapped_drives() -> Vec<(char, PathBuf)> {
++    let Ok(prefix) = crate::unix::wine::wine_prefix_dir() else {
++        return Vec::new();
++    };
++    let Some(dir) = [prefix.join("pfx/dosdevices"), prefix.join("dosdevices")]
++        .into_iter()
++        .find(|d| d.is_dir())
++    else {
++        return Vec::new();
++    };
++    let Ok(entries) = std::fs::read_dir(dir) else {
++        return Vec::new();
++    };
++    entries
++        .flatten()
++        .filter_map(|entry| {
++            let name = entry.file_name().into_string().ok()?;
++            let mut chars = name.chars();
++            let letter = chars.next().filter(|c| c.is_ascii_alphabetic())?;
++            if chars.as_str() != ":" {
++                return None;
++            }
++            Some((letter.to_ascii_uppercase(), std::fs::canonicalize(entry.path()).ok()?))
++        })
++        .collect()
++}
++
++#[cfg(not(unix))]
++fn mapped_drives() -> Vec<(char, PathBuf)> {
++    Vec::new()
++}
++
++// Use the most specific drive letter Wine maps for the folder, as Wine does for the
++// installer's own path. `Z:\run\media\…\Samsung SSD 870\…` gets re-quoted by Wine and
++// old EASetup misreads it; `F:\SkullKey\…` has no spaces left to quote.
++fn windows_location(install_path: &Path, drives: &[(char, PathBuf)]) -> Result<String, ManifestError> {
++    let real = std::fs::canonicalize(install_path).unwrap_or_else(|_| install_path.to_path_buf());
++    let best = drives
++        .iter()
++        .filter(|(_, target)| real.starts_with(target))
++        .max_by_key(|(_, target)| target.components().count());
++    if let Some((letter, target)) = best {
++        let rest = real.strip_prefix(target).map_err(|_| ManifestError::Decode)?;
++        let rest = rest.to_str().ok_or(ManifestError::Decode)?.replace('/', "\\");
++        return Ok(format!("{letter}:\\{rest}").trim_end_matches('\\').to_owned());
 +    }
 +    let windows = platform_path(
 +        install_path
@@ -864,7 +903,29 @@
 +            .trim_end_matches(['/', '\\'])
 +            .replace('/', "\\"),
 +    );
-+    let location = windows.to_str().ok_or(ManifestError::Decode)?;
++    Ok(windows.to_str().ok_or(ManifestError::Decode)?.to_owned())
++}
++
++pub(crate) fn prepare(
++    parameters: &str,
++    install_path: &Path,
++    key: Option<&LegacyCdKey>,
++) -> Result<PreparedInstallerArgs, ManifestError> {
++    prepare_with(parameters, install_path, key, &mapped_drives())
++}
++
++fn prepare_with(
++    parameters: &str,
++    install_path: &Path,
++    key: Option<&LegacyCdKey>,
++    drives: &[(char, PathBuf)],
++) -> Result<PreparedInstallerArgs, ManifestError> {
++    let sensitive = requires_key(parameters);
++    if sensitive && key.is_none() {
++        return Err(ManifestError::MissingLegacyKey);
++    }
++    let location = windows_location(install_path, drives)?;
++    let location = location.as_str();
 +    let token = regex::Regex::new(r"(?i)\{cdkey\}|%cdkey%").expect("fixed installer key pattern");
 +    let mut values = Vec::new();
 +    for argument in split_windows(parameters)? {
@@ -918,6 +979,30 @@
 +        assert!(value.starts_with("INSTALLLOCATION="), "{value}");
 +        assert!(value.ends_with("Game\\"), "{value}");
 +        assert!(!value.contains('"'), "{value}");
++    }
++    #[test]
++    fn install_location_uses_the_most_specific_mapped_drive() {
++        let drives = vec![
++            ('Z', PathBuf::from("/")),
++            ('V', PathBuf::from("/run/media")),
++            ('F', PathBuf::from("/run/media/deck/Samsung SSD 870")),
++        ];
++        let path = Path::new("/run/media/deck/Samsung SSD 870/SkullKey/ea/battlefield-2142");
++        assert_eq!(
++            windows_location(path, &drives).unwrap(),
++            r"F:\SkullKey\ea\battlefield-2142"
++        );
++        let a = prepare_with(r#"-silent "INSTALLLOCATION=""{installLocation}""""#, path, None, &drives)
++            .unwrap();
++        assert_eq!(
++            a.values[1],
++            PathBuf::from(r"INSTALLLOCATION=F:\SkullKey\ea\battlefield-2142\")
++        );
++        assert_eq!(
++            windows_location(Path::new("/opt/Game"), &drives).unwrap(),
++            r"Z:\opt\Game"
++        );
++        assert_eq!(windows_location(Path::new("/opt/Game"), &[]).unwrap(), r"Z:\opt\Game");
 +    }
 +    #[test]
 +    fn key_is_replaced_inside_one_argument_and_debug_is_redacted() {

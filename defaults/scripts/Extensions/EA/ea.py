@@ -24,9 +24,9 @@ import urllib.request
 # maxima-patches/: game language over LSX via MAXIMA_LOCALE, and the 32-bit
 # Origin registry key games need to reach LSX at all. The binary is attached
 # to the SkullKey release that introduced it and pinned by digest.
-VERSION = "v0.14.3-skullkey3"
-SHA256 = "250be27a53a9bf3f5333cb55cbfa7072cf1ea514f5b3a216c0a5a994dcd32855"
-URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.5/maxima-cli-skullkey-linux-x86_64"
+VERSION = "v0.14.3-skullkey4"
+SHA256 = "44be94c6d66b9d9dfadc624244b6a7a414d241a16d5c11231251ea6f5dc027fd"
+URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.6/maxima-cli-skullkey-linux-x86_64"
 # maxima-cli pads slug/name/offer to 35/35/25 columns as a MINIMUM: a slug or
 # title of 35+ characters is followed by a single space. Parse from the right
 # instead (slug has no spaces, offer has none, the title may contain " - ").
@@ -725,7 +725,7 @@ def install_diagnostic(slug, stage, started, **fields):
     allowed = {"progress", "cli_error_seen", "exit_code", "failure_category",
                "activity_hint", "umu_available", "python_available", "display_available", "failed_stage",
                "max_progress", "error_kind", "maxima_umu_present", "maxima_proton_present",
-               "watchdog", "lingering", "touchup_exit"}
+               "watchdog", "lingering", "touchup_exit", "wine_mono"}
     now = time.time()
     data = {"version": VERSION, "stage": stage, "updated_at": now,
             "elapsed_seconds": round(max(0, now - started), 1),
@@ -749,6 +749,41 @@ WINE_INFRA = {"wineserver", "services.exe", "winedevice.exe", "plugplay.exe", "s
               "rpcss.exe", "tabtip.exe", "conhost.exe", "steam.exe", "start.exe", "wineboot.exe"}
 REDISTRIBUTABLES = ("dxsetup", "dxwebsetup", "vcredist", "vc_redist", "dotnetfx", "ndp4", "physx", "oalinst",
                     "msiexec", "directx", "eareporter")
+
+
+def wine_mono_msi(proton):
+    """wine-mono's .NET support package shipped with Maxima's Proton (versioned folder first)."""
+    mono = proton / "files/share/wine/mono"
+    found = sorted(mono.glob("wine-mono-*/support/winemono-support.msi"), reverse=True)
+    found += sorted(mono.glob("wine-mono/support/winemono-support.msi"))
+    return found[0] if found else None
+
+
+def ensure_wine_mono(environment):
+    """Old DirectX setups (Syndicate) install Managed DirectX, which needs .NET. Without
+    wine-mono in Maxima's prefix, dxsetup stops with LoadLibraryShim 0x80070006 / -9 and
+    the game's installer quits. Measured 01/11/2026 with BF1942's identical redist: -9 in
+    a prefix without Microsoft.NET, success once winemono-support.msi is installed (#10).
+    Returns a diagnostic word; never raises, an install should still be tried."""
+    wine = root() / "data/maxima/wine"
+    windows = wine / "prefix/pfx/drive_c/windows"
+    if not windows.is_dir():
+        return "no-prefix"  # Proton sets wine-mono up itself when it creates the prefix.
+    framework = windows / "Microsoft.NET/Framework/v4.0.30319"
+    if framework.is_dir():
+        return "present"
+    umu, msi = wine / "umu/umu-run", wine_mono_msi(wine / "proton")
+    if not umu.is_file() or msi is None:
+        return "no-package"
+    run = dict(environment, WINEPREFIX=str(wine / "prefix"), GAMEID="umu-0",
+               PROTONPATH=str(wine / "proton"), STORE="ea", UMU_ZENITY="1")
+    try:
+        subprocess.run([str(umu), "msiexec", "/i", "Z:" + str(msi).replace("/", "\\"), "/qn"],
+                       env=run, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                       timeout=600, check=False)
+    except (OSError, subprocess.SubprocessError):
+        return "failed"
+    return "installed" if framework.is_dir() else "failed"
 
 
 def prefix_processes(prefix):
@@ -989,6 +1024,8 @@ def install_worker(slug, token):
             # cancelled four days earlier, the CLI never exited and SkullKey
             # showed the other game's progress at 93-99 % (#10).
             (root() / "data/maxima/download_queue.json").unlink(missing_ok=True)
+            report("checking-wine-mono")
+            tool_info["wine_mono"] = ensure_wine_mono(environment)
             report("starting-cli")
             watchdog = InstallWatchdog(directory)
             process = subprocess.Popen([str(localized_client()), "install", slug, "--path", str(directory)],
