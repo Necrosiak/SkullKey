@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.21.4 — 2026-11-01
+
+### New
+
+- **An expanded SkullKey view.** Open it from the Steam menu or the Quick Access panel to browse your stores, game pages, downloads and settings with more room.
+
+### Improved
+
+- The Quick Access panel and expanded view use the same store and download controls.
+- The sidebar and content scroll separately, with the close button kept in view on smaller screens.
+- Interface labels and guides are available in all nine supported languages.
+
+### Fixes
+
+- SkullKey, Steamcord and BoneCast keep separate Steam menu entries without adding duplicates when a plugin reloads.
+
+**Full changelog:** [v1.21.3...v1.21.4](https://github.com/Necrosiak/SkullKey/compare/v1.21.3...v1.21.4)
+
+
 ## 1.21.3 — 2026-10-29
 
 ### Fixed
