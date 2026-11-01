@@ -1,5 +1,9 @@
 # 🗝️ SkullKey
 
+<!-- expanded-navigation -->
+**Expanded view** — Open SkullKey from the Steam main menu or choose **Open expanded view** in its Quick Access panel. The sidebar gives you access to the same features as the panel.
+
+
 - 🔔 **Clickable notifications** — select a launch-options notice to open that game's Steam library page, or an update-failure notice to open SkullKey's About/update page.
 
 > 🌐 [EN](README.md) · [FR](docs/README.fr.md) · [DE](docs/README.de.md) · [ES](docs/README.es.md) · [IT](docs/README.it.md) · [PT](docs/README.pt.md) · [NL](docs/README.nl.md) · [PL](docs/README.pl.md) · [RU](docs/README.ru.md)

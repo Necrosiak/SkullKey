@@ -1,5 +1,9 @@
 # 🗝️ SkullKey
 
+<!-- expanded-navigation -->
+**Große Ansicht** — Öffne SkullKey über das Steam-Hauptmenü oder wähle **Große Ansicht öffnen** im Schnellzugriff. Die Seitenleiste bietet dieselben Funktionen wie das Panel.
+
+
 **Neu in v1.15.1:** Benachrichtigungen zu Startoptionen öffnen die Steam-Bibliotheksseite des Spiels; Updatefehler öffnen die Info-/Update-Seite von SkullKey.
 
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)

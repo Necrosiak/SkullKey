@@ -1,5 +1,9 @@
 # 🗝️ SkullKey
 
+<!-- expanded-navigation -->
+**Расширенный вид** — Откройте SkullKey из главного меню Steam или выберите **Открыть расширенный вид** на панели быстрого доступа. Боковая панель предоставляет те же функции.
+
+
 **Новое в v1.15.1:** уведомления о параметрах запуска открывают страницу игры в библиотеке Steam; ошибки обновления открывают страницу «О программе / Обновления» SkullKey.
 
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)

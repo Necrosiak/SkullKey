@@ -218,7 +218,7 @@ const QueueRow: VFC<{ serverAPI: ServerAPI; q: QueueItem; i: number; progress?: 
 const lastKnown: Record<string, Dl> = {};
 
 // SkullKey downloads: the game downloading now and the games waiting.
-export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean }> = ({ serverAPI, showEmpty }) => {
+export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean; embedded?: boolean }> = ({ serverAPI, showEmpty, embedded }) => {
     const [active, setActive] = useState<Dl[]>([]);
     const [pending, setPending] = useState<QueueItem[]>([]);
     const [current, setCurrent] = useState<QueueItem | null>(null);
@@ -241,7 +241,7 @@ export const SkullKeyDownloads: VFC<{ serverAPI: ServerAPI; showEmpty?: boolean 
         return () => { alive = false; clearInterval(timer); off(); };
     }, []);
     const accent = storeTheme("classics").color;
-    const header = (
+    const header = embedded ? null : (
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 24px 12px" }}>
             <FaSkull size={24} color={accent} />
             <span style={{ fontSize: 22, fontWeight: 700 }}>SkullKey</span>

@@ -6,6 +6,9 @@ import {
   staticClasses,
   useParams
 } from "decky-frontend-lib";
+import { EXPANDED_EVENT } from "./expandedAccess";
+import { registerSteamMenu } from "./steamMenu";
+import { SkullKeyRoute, openSkullKeyExpanded, closeSkullKeyExpanded } from "./SkullKeyExpanded";
 import { FaSkull } from "react-icons/fa";
 
 import { notify } from "./Components/Styled";
@@ -66,6 +69,11 @@ async function reportFailedUpdate(serverApi: ServerAPI) {
 
 //@ts-ignore
 export default definePlugin((serverApi: ServerAPI) => {
+  serverApi.routerHook.addRoute("/skullkey", () => <SkullKeyRoute serverAPI={serverApi} />);
+  const openExpanded = () => openSkullKeyExpanded(serverApi);
+  window.addEventListener(EXPANDED_EVENT, openExpanded);
+  const SkullMenuIcon = FaSkull as any;
+  const removeMenu = registerSteamMenu({ id: "skullkey", label: "SkullKey", route: "/skullkey", icon: <SkullMenuIcon />, order: 20 });
 
   reportFailedUpdate(serverApi);
   let checkingPorts = false;
@@ -185,6 +193,10 @@ export default definePlugin((serverApi: ServerAPI) => {
     content: <Content serverAPI={serverApi} initActionSet="init" initAction="InitActions" />,
     icon: <FaSkull />,
     onDismount() {
+      window.removeEventListener(EXPANDED_EVENT, openExpanded);
+      removeMenu();
+      serverApi.routerHook.removeRoute("/skullkey");
+      closeSkullKeyExpanded();
       disposed = true;
       clearInterval(portsTimer); serverApi.routerHook.removeRoute(DOWNLOADS_ROUTE); serverApi.routerHook.removeGlobalComponent("SkullKeyTopBarDownloads"); stopQueue(); clearTimeout(collectionsSync); clearInterval(freeGamesTimer); clearTimeout(freeGamesFirst);
       clearClickableNotifications("skullkey");

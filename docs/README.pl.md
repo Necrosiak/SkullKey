@@ -1,5 +1,9 @@
 # 🗝️ SkullKey
 
+<!-- expanded-navigation -->
+**Widok rozszerzony** — Otwórz SkullKey z głównego menu Steam lub wybierz **Otwórz widok rozszerzony** w panelu szybkiego dostępu. Pasek boczny udostępnia te same funkcje co panel.
+
+
 **Nowość w v1.15.1:** powiadomienia o opcjach uruchamiania otwierają stronę gry w bibliotece Steam; błędy aktualizacji otwierają stronę Informacje/Aktualizacje SkullKey.
 
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)

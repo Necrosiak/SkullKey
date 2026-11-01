@@ -1,5 +1,9 @@
 # 🗝️ SkullKey
 
+<!-- expanded-navigation -->
+**Uitgebreide weergave** — Open SkullKey via het Steam-hoofdmenu of kies **Uitgebreide weergave openen** in het sneltoegangspaneel. De zijbalk biedt dezelfde functies als het paneel.
+
+
 **Nieuw in v1.15.1:** meldingen over startopties openen de Steam-bibliotheekpagina van het spel; updatefouten openen de Info-/Updatepagina van SkullKey.
 
 > 🌐 [EN](../README.md) · [FR](README.fr.md) · [DE](README.de.md) · [ES](README.es.md) · [IT](README.it.md) · [PT](README.pt.md) · [NL](README.nl.md) · [PL](README.pl.md) · [RU](README.ru.md)

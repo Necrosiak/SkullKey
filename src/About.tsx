@@ -495,7 +495,17 @@ export const About: VFC<{ serverAPI: ServerAPI; }> = ({ serverAPI }) => {
     return (
         <DialogBody>
             <DialogControlsSection style={{ height: "calc(100%)" }}>
-                <SidebarNavigation key="1" pages={[
+                <SidebarNavigation key="1" pages={aboutPages(serverAPI, isDeveloperMode)}
+                    showTitle
+                />
+            </DialogControlsSection >
+        </DialogBody >
+    );
+};
+
+// Shared by the existing settings page and the expanded view.
+export function aboutPages(serverAPI: ServerAPI, isDeveloperMode: boolean) {
+    return [
                     {
                         title: t("tab_settings"),
                         content: <SettingsTab serverAPI={serverAPI} />
@@ -537,10 +547,6 @@ export const About: VFC<{ serverAPI: ServerAPI; }> = ({ serverAPI }) => {
                             </Section>
                         </div>
                     }
-                ]}
-                    showTitle
-                />
-            </DialogControlsSection >
-        </DialogBody >
-    );
-};
+
+    ];
+}

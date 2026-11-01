@@ -5,6 +5,7 @@ import QRCode from "react-qr-code";
 import { StoreContent, ContentType, StoreTabsContent, ExecuteArgs, ActionSet } from "./Types/Types";
 import { executeAction } from "./Utils/executeAction";
 import { ActionCard, storeTheme, ACCENT } from "./Components/Styled";
+import { requestSkullKeyExpanded } from "./expandedAccess";
 import { t, tabLabel } from "./i18n";
 
 export const showQrModal = (url: string) => {
@@ -100,6 +101,9 @@ export const MainMenu: VFC<{ serverApi: ServerAPI; content: StoreContent; initAc
 
     return (
         <>
+            <PanelSection><PanelSectionRow>
+                <ActionCard color={ACCENT} onClick={() => { closeModal?.(); requestSkullKeyExpanded(); }}>{t("view_expanded")}</ActionCard>
+            </PanelSectionRow></PanelSection>
             {storeTabs.length === 0 && (
                 <PanelSection title={t("stores")}>
                     <PanelSectionRow>

@@ -34,6 +34,7 @@ let _locale: Locale | null = null;
 
 const T: Record<Locale, Dict> = {
   en: {
+    view_expanded: "Open expanded view", view_close: "Close",
     ea_installer_warning: "EA's installer reported a problem (code {code}). The game is marked as installed, but may not start.",
     sec_proton: "Proton", proton_valve_desc: "Valve's Proton is installed by Steam.", proton_community_desc: "Community builds: latest release, checked before install. Restart Steam afterwards to see them in the compatibility list.", proton_downloading: "Downloading", proton_verifying: "Checking the download…", proton_extracting: "Installing…", proton_done: "{tag} installed — restart Steam to use it.",
     prefix_custom: "Custom prefix location", prefix_custom_desc: "Games installed from now on get their Proton prefix in this folder instead of Steam's compatdata. Games already installed keep theirs (their saves live inside).", prefix_folder: "Prefix folder",
@@ -96,6 +97,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} available",
   },
   fr: {
+    view_expanded: "Ouvrir la vue étendue", view_close: "Fermer",
     ea_installer_warning: "L’installeur EA a signalé un problème (code {code}). Le jeu est reconnu comme installé, mais peut ne pas démarrer.",
     sec_proton: "Proton", proton_valve_desc: "Le Proton de Valve est installé par Steam.", proton_community_desc: "Versions communautaires : dernière release, vérifiée avant installation. Redémarre Steam ensuite pour les voir dans la liste de compatibilité.", proton_downloading: "Téléchargement", proton_verifying: "Vérification du téléchargement…", proton_extracting: "Installation…", proton_done: "{tag} installé — redémarre Steam pour l'utiliser.",
     prefix_custom: "Emplacement de préfixe personnalisé", prefix_custom_desc: "Les jeux installés à partir de maintenant ont leur préfixe Proton dans ce dossier au lieu du compatdata de Steam. Les jeux déjà installés gardent le leur (leurs sauvegardes sont dedans).", prefix_folder: "Dossier des préfixes",
@@ -148,6 +150,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Mise à jour {version} disponible",
   },
   de: {
+    view_expanded: "Große Ansicht öffnen", view_close: "Schließen",
     ea_installer_warning: "Das EA-Installationsprogramm hat ein Problem gemeldet (Code {code}). Das Spiel wird als installiert erkannt, startet aber möglicherweise nicht.",
     sec_proton: "Proton", proton_valve_desc: "Valves Proton wird von Steam installiert.", proton_community_desc: "Community-Versionen: neueste Version, vor der Installation geprüft. Starte Steam danach neu, um sie in der Kompatibilitätsliste zu sehen.", proton_downloading: "Herunterladen", proton_verifying: "Download wird geprüft…", proton_extracting: "Wird installiert…", proton_done: "{tag} installiert — Steam neu starten, um es zu nutzen.",
     prefix_custom: "Eigener Präfix-Speicherort", prefix_custom_desc: "Ab jetzt installierte Spiele bekommen ihr Proton-Präfix in diesem Ordner statt in Steams compatdata. Bereits installierte Spiele behalten ihres (die Spielstände liegen darin).", prefix_folder: "Präfix-Ordner",
@@ -200,6 +203,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} verfügbar",
   },
   es: {
+    view_expanded: "Abrir vista ampliada", view_close: "Cerrar",
     ea_installer_warning: "El instalador de EA indicó un problema (código {code}). El juego figura como instalado, pero es posible que no se inicie.",
     sec_proton: "Proton", proton_valve_desc: "El Proton de Valve lo instala Steam.", proton_community_desc: "Versiones de la comunidad: última versión, comprobada antes de instalar. Reinicia Steam después para verlas en la lista de compatibilidad.", proton_downloading: "Descargando", proton_verifying: "Comprobando la descarga…", proton_extracting: "Instalando…", proton_done: "{tag} instalado — reinicia Steam para usarlo.",
     prefix_custom: "Ubicación de prefijos personalizada", prefix_custom_desc: "Los juegos que instales a partir de ahora tendrán su prefijo de Proton en esta carpeta en lugar del compatdata de Steam. Los ya instalados conservan el suyo (sus partidas guardadas están dentro).", prefix_folder: "Carpeta de prefijos",
@@ -252,6 +256,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Actualización {version} disponible",
   },
   it: {
+    view_expanded: "Apri vista estesa", view_close: "Chiudi",
     ea_installer_warning: "Il programma di installazione EA ha segnalato un problema (codice {code}). Il gioco risulta installato, ma potrebbe non avviarsi.",
     sec_proton: "Proton", proton_valve_desc: "Il Proton di Valve viene installato da Steam.", proton_community_desc: "Versioni della community: ultima release, verificata prima dell'installazione. Riavvia Steam dopo per vederle nell'elenco di compatibilità.", proton_downloading: "Download", proton_verifying: "Verifica del download…", proton_extracting: "Installazione…", proton_done: "{tag} installato — riavvia Steam per usarlo.",
     prefix_custom: "Posizione dei prefissi personalizzata", prefix_custom_desc: "I giochi installati da ora in poi avranno il prefisso Proton in questa cartella invece che nel compatdata di Steam. Quelli già installati mantengono il loro (i salvataggi sono lì dentro).", prefix_folder: "Cartella dei prefissi",
@@ -304,6 +309,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Aggiornamento {version} disponibile",
   },
   pt: {
+    view_expanded: "Abrir vista ampliada", view_close: "Fechar",
     ea_installer_warning: "O instalador da EA indicou um problema (código {code}). O jogo é reconhecido como instalado, mas poderá não iniciar.",
     sec_proton: "Proton", proton_valve_desc: "O Proton da Valve é instalado pelo Steam.", proton_community_desc: "Versões da comunidade: última versão, verificada antes de instalar. Reinicie o Steam depois para vê-las na lista de compatibilidade.", proton_downloading: "A transferir", proton_verifying: "A verificar a transferência…", proton_extracting: "A instalar…", proton_done: "{tag} instalado — reinicie o Steam para usá-lo.",
     prefix_custom: "Local de prefixo personalizado", prefix_custom_desc: "Os jogos instalados a partir de agora terão o prefixo do Proton nesta pasta em vez do compatdata do Steam. Os já instalados mantêm o seu (os saves estão lá dentro).", prefix_folder: "Pasta dos prefixos",
@@ -356,6 +362,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Atualização {version} disponível",
   },
   nl: {
+    view_expanded: "Uitgebreide weergave openen", view_close: "Sluiten",
     ea_installer_warning: "Het EA-installatieprogramma heeft een probleem gemeld (code {code}). Het spel staat als geïnstalleerd, maar start mogelijk niet.",
     sec_proton: "Proton", proton_valve_desc: "Valves Proton wordt door Steam geïnstalleerd.", proton_community_desc: "Communityversies: nieuwste release, gecontroleerd vóór installatie. Herstart Steam daarna om ze in de compatibiliteitslijst te zien.", proton_downloading: "Downloaden", proton_verifying: "Download controleren…", proton_extracting: "Installeren…", proton_done: "{tag} geïnstalleerd — herstart Steam om het te gebruiken.",
     prefix_custom: "Eigen prefix-locatie", prefix_custom_desc: "Games die je vanaf nu installeert krijgen hun Proton-prefix in deze map in plaats van Steams compatdata. Al geïnstalleerde games houden die van hen (hun saves staan erin).", prefix_folder: "Prefix-map",
@@ -408,6 +415,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} beschikbaar",
   },
   pl: {
+    view_expanded: "Otwórz widok rozszerzony", view_close: "Zamknij",
     ea_installer_warning: "Instalator EA zgłosił problem (kod {code}). Gra jest oznaczona jako zainstalowana, ale może się nie uruchomić.",
     sec_proton: "Proton", proton_valve_desc: "Proton od Valve instaluje Steam.", proton_community_desc: "Wersje społeczności: najnowsze wydanie, sprawdzane przed instalacją. Potem uruchom ponownie Steam, aby zobaczyć je na liście zgodności.", proton_downloading: "Pobieranie", proton_verifying: "Sprawdzanie pobranego pliku…", proton_extracting: "Instalowanie…", proton_done: "Zainstalowano {tag} — uruchom ponownie Steam, aby go użyć.",
     prefix_custom: "Własna lokalizacja prefiksów", prefix_custom_desc: "Gry instalowane od teraz dostaną prefiks Protona w tym folderze zamiast w compatdata Steama. Już zainstalowane zachowują swój (są w nim zapisy).", prefix_folder: "Folder prefiksów",
@@ -460,6 +468,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Dostępna aktualizacja {version}",
   },
   ru: {
+    view_expanded: "Открыть расширенный вид", view_close: "Закрыть",
     ea_installer_warning: "Установщик EA сообщил о проблеме (код {code}). Игра отмечена как установленная, но может не запуститься.",
     sec_proton: "Proton", proton_valve_desc: "Proton от Valve устанавливает Steam.", proton_community_desc: "Версии сообщества: последний выпуск, проверяется перед установкой. Затем перезапустите Steam, чтобы увидеть их в списке совместимости.", proton_downloading: "Загрузка", proton_verifying: "Проверка загрузки…", proton_extracting: "Установка…", proton_done: "{tag} установлен — перезапустите Steam, чтобы им пользоваться.",
     prefix_custom: "Своё расположение префиксов", prefix_custom_desc: "Игры, установленные с этого момента, получат префикс Proton в этой папке вместо compatdata Steam. Уже установленные сохраняют свой (в нём их сохранения).", prefix_folder: "Папка префиксов",
