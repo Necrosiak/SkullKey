@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.21.7 — 2026-11-02
+
+### New
+
+- **Hide the SkullKey entry in Steam's main menu.** A new option in Settings → General removes the entry from the menu; the Quick Access panel stays available.
+
+### Improved
+
+- **Xbox: engine 0.2.14** (from Xodus Nexus 0.4.2). Games get a working folder for their DLC content at launch, and the "last played" date is read correctly again. The engine is updated automatically.
+
+### Known issue
+
+- Battlefield 2142 still stops at its own registration step, and Syndicate's installer now ends with code 3; both are still being investigated (#10).
+
+**Full changelog:** [v1.21.6...v1.21.7](https://github.com/Necrosiak/SkullKey/compare/v1.21.6...v1.21.7)
+
 ## 1.21.6 — 2026-11-01
 
 ### Fixes
