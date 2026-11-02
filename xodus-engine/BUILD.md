@@ -4,22 +4,22 @@ SkullKey's Xbox tab uses the [Xodus](https://github.com/xodus-gaming) engine
 (`xodus-cli`, `xodus-service`, GPL-3.0, [LICENSE](LICENSE)) as packaged by
 [Xodus Nexus](https://github.com/domsvoboda/xodus-nexus).
 
-The release asset `xodus-engine-skullkey-0.2.13-linux-x86_64.tar.xz` is the
-official Nexus backend **0.2.13** source, unmodified, built with one upstream
+The release asset `xodus-engine-skullkey-0.2.14-linux-x86_64.tar.xz` is the
+official Nexus backend **0.2.14** source, unmodified, built with one upstream
 Cargo feature switched on: `xodus/key-chain-file`. It keeps the Microsoft
 sign-in in `~/.xodus-keyring.ron` (mode 600) instead of the Secret Service
 (KDE Wallet), whose password prompt cannot be answered in Game Mode.
 
 ## Source
 
-- Archive: `xodus-nexus-backend-0.2.13-linux-x86_64-source.tar.xz` from the
-  [backend-v0.2.13 release](https://github.com/domsvoboda/xodus-nexus/releases/tag/backend-v0.2.13)
+- Archive: `xodus-nexus-backend-0.2.14-linux-x86_64-source.tar.xz` from the
+  [backend-v0.2.14 release](https://github.com/domsvoboda/xodus-nexus/releases/tag/backend-v0.2.14)
   (checked against its published `.sha512sum`).
 
 ## Build
 
 ```sh
-tar xJf xodus-nexus-backend-0.2.13-linux-x86_64-source.tar.xz
+tar xJf xodus-nexus-backend-0.2.14-linux-x86_64-source.tar.xz
 podman run --rm -v "$PWD":/src:Z docker.io/library/rust:1.99-bookworm bash -c '
   apt-get update -qq && apt-get install -y -qq pkg-config libssl-dev protobuf-compiler cmake libdbus-1-dev clang
   cd /src/source
@@ -28,8 +28,8 @@ mkdir xodus-engine-skullkey
 cp source/target/release/xodus-cli source/target/release/xodus-service source/LICENSE xodus-engine-skullkey/
 # BUILD-METADATA.json records the source tag and checksums; SkullKey reads
 # its source_tag to know which engine version is installed.
-tar -cJf xodus-engine-skullkey-0.2.13-linux-x86_64.tar.xz xodus-engine-skullkey
-sha512sum xodus-engine-skullkey-0.2.13-linux-x86_64.tar.xz
+tar -cJf xodus-engine-skullkey-0.2.14-linux-x86_64.tar.xz xodus-engine-skullkey
+sha512sum xodus-engine-skullkey-0.2.14-linux-x86_64.tar.xz
 ```
 
 The SHA-512 of the published asset is pinned in

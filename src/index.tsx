@@ -7,7 +7,7 @@ import {
   useParams
 } from "decky-frontend-lib";
 import { EXPANDED_EVENT } from "./expandedAccess";
-import { registerSteamMenu } from "./steamMenu";
+import { patchMenu } from "./menuEntry";
 import { SkullKeyRoute, openSkullKeyExpanded, closeSkullKeyExpanded } from "./SkullKeyExpanded";
 import { FaSkull } from "react-icons/fa";
 
@@ -72,8 +72,7 @@ export default definePlugin((serverApi: ServerAPI) => {
   serverApi.routerHook.addRoute("/skullkey", () => <SkullKeyRoute serverAPI={serverApi} />);
   const openExpanded = () => openSkullKeyExpanded(serverApi);
   window.addEventListener(EXPANDED_EVENT, openExpanded);
-  const SkullMenuIcon = FaSkull as any;
-  const removeMenu = registerSteamMenu({ id: "skullkey", label: "SkullKey", route: "/skullkey", icon: <SkullMenuIcon />, order: 20 });
+  const removeMenu = patchMenu();
 
   reportFailedUpdate(serverApi);
   let checkingPorts = false;

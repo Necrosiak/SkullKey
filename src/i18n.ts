@@ -34,6 +34,7 @@ let _locale: Locale | null = null;
 
 const T: Record<Locale, Dict> = {
   en: {
+    menu_entry: "SkullKey in the Steam menu", menu_entry_desc: "Show the SkullKey entry in Steam's main menu. The Quick Access panel stays available either way.",
     view_expanded: "Open expanded view", view_close: "Close",
     ea_installer_warning: "EA's installer reported a problem (code {code}). The game is marked as installed, but may not start.",
     sec_proton: "Proton", proton_valve_desc: "Valve's Proton is installed by Steam.", proton_community_desc: "Community builds: latest release, checked before install. Restart Steam afterwards to see them in the compatibility list.", proton_downloading: "Downloading", proton_verifying: "Checking the download…", proton_extracting: "Installing…", proton_done: "{tag} installed — restart Steam to use it.",
@@ -97,6 +98,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} available",
   },
   fr: {
+    menu_entry: "SkullKey dans le menu Steam", menu_entry_desc: "Affiche l’entrée SkullKey dans le menu principal de Steam. Le panneau d’accès rapide reste disponible dans tous les cas.",
     view_expanded: "Ouvrir la vue étendue", view_close: "Fermer",
     ea_installer_warning: "L’installeur EA a signalé un problème (code {code}). Le jeu est reconnu comme installé, mais peut ne pas démarrer.",
     sec_proton: "Proton", proton_valve_desc: "Le Proton de Valve est installé par Steam.", proton_community_desc: "Versions communautaires : dernière release, vérifiée avant installation. Redémarre Steam ensuite pour les voir dans la liste de compatibilité.", proton_downloading: "Téléchargement", proton_verifying: "Vérification du téléchargement…", proton_extracting: "Installation…", proton_done: "{tag} installé — redémarre Steam pour l'utiliser.",
@@ -150,6 +152,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Mise à jour {version} disponible",
   },
   de: {
+    menu_entry: "SkullKey im Steam-Menü", menu_entry_desc: "Zeigt den SkullKey-Eintrag im Steam-Hauptmenü. Das Schnellzugriffspanel bleibt in jedem Fall verfügbar.",
     view_expanded: "Große Ansicht öffnen", view_close: "Schließen",
     ea_installer_warning: "Das EA-Installationsprogramm hat ein Problem gemeldet (Code {code}). Das Spiel wird als installiert erkannt, startet aber möglicherweise nicht.",
     sec_proton: "Proton", proton_valve_desc: "Valves Proton wird von Steam installiert.", proton_community_desc: "Community-Versionen: neueste Version, vor der Installation geprüft. Starte Steam danach neu, um sie in der Kompatibilitätsliste zu sehen.", proton_downloading: "Herunterladen", proton_verifying: "Download wird geprüft…", proton_extracting: "Wird installiert…", proton_done: "{tag} installiert — Steam neu starten, um es zu nutzen.",
@@ -203,6 +206,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} verfügbar",
   },
   es: {
+    menu_entry: "SkullKey en el menú de Steam", menu_entry_desc: "Muestra la entrada de SkullKey en el menú principal de Steam. El panel de acceso rápido sigue disponible en todo caso.",
     view_expanded: "Abrir vista ampliada", view_close: "Cerrar",
     ea_installer_warning: "El instalador de EA indicó un problema (código {code}). El juego figura como instalado, pero es posible que no se inicie.",
     sec_proton: "Proton", proton_valve_desc: "El Proton de Valve lo instala Steam.", proton_community_desc: "Versiones de la comunidad: última versión, comprobada antes de instalar. Reinicia Steam después para verlas en la lista de compatibilidad.", proton_downloading: "Descargando", proton_verifying: "Comprobando la descarga…", proton_extracting: "Instalando…", proton_done: "{tag} instalado — reinicia Steam para usarlo.",
@@ -256,6 +260,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Actualización {version} disponible",
   },
   it: {
+    menu_entry: "SkullKey nel menu di Steam", menu_entry_desc: "Mostra la voce SkullKey nel menu principale di Steam. Il pannello di accesso rapido resta comunque disponibile.",
     view_expanded: "Apri vista estesa", view_close: "Chiudi",
     ea_installer_warning: "Il programma di installazione EA ha segnalato un problema (codice {code}). Il gioco risulta installato, ma potrebbe non avviarsi.",
     sec_proton: "Proton", proton_valve_desc: "Il Proton di Valve viene installato da Steam.", proton_community_desc: "Versioni della community: ultima release, verificata prima dell'installazione. Riavvia Steam dopo per vederle nell'elenco di compatibilità.", proton_downloading: "Download", proton_verifying: "Verifica del download…", proton_extracting: "Installazione…", proton_done: "{tag} installato — riavvia Steam per usarlo.",
@@ -309,6 +314,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Aggiornamento {version} disponibile",
   },
   pt: {
+    menu_entry: "SkullKey no menu do Steam", menu_entry_desc: "Mostra a entrada SkullKey no menu principal do Steam. O painel de acesso rápido continua disponível em qualquer caso.",
     view_expanded: "Abrir vista ampliada", view_close: "Fechar",
     ea_installer_warning: "O instalador da EA indicou um problema (código {code}). O jogo é reconhecido como instalado, mas poderá não iniciar.",
     sec_proton: "Proton", proton_valve_desc: "O Proton da Valve é instalado pelo Steam.", proton_community_desc: "Versões da comunidade: última versão, verificada antes de instalar. Reinicie o Steam depois para vê-las na lista de compatibilidade.", proton_downloading: "A transferir", proton_verifying: "A verificar a transferência…", proton_extracting: "A instalar…", proton_done: "{tag} instalado — reinicie o Steam para usá-lo.",
@@ -362,6 +368,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Atualização {version} disponível",
   },
   nl: {
+    menu_entry: "SkullKey in het Steam-menu", menu_entry_desc: "Toont het SkullKey-item in het Steam-hoofdmenu. Het sneltoegangspaneel blijft altijd beschikbaar.",
     view_expanded: "Uitgebreide weergave openen", view_close: "Sluiten",
     ea_installer_warning: "Het EA-installatieprogramma heeft een probleem gemeld (code {code}). Het spel staat als geïnstalleerd, maar start mogelijk niet.",
     sec_proton: "Proton", proton_valve_desc: "Valves Proton wordt door Steam geïnstalleerd.", proton_community_desc: "Communityversies: nieuwste release, gecontroleerd vóór installatie. Herstart Steam daarna om ze in de compatibiliteitslijst te zien.", proton_downloading: "Downloaden", proton_verifying: "Download controleren…", proton_extracting: "Installeren…", proton_done: "{tag} geïnstalleerd — herstart Steam om het te gebruiken.",
@@ -415,6 +422,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Update {version} beschikbaar",
   },
   pl: {
+    menu_entry: "SkullKey w menu Steam", menu_entry_desc: "Pokazuje pozycję SkullKey w głównym menu Steam. Panel szybkiego dostępu pozostaje dostępny w każdym przypadku.",
     view_expanded: "Otwórz widok rozszerzony", view_close: "Zamknij",
     ea_installer_warning: "Instalator EA zgłosił problem (kod {code}). Gra jest oznaczona jako zainstalowana, ale może się nie uruchomić.",
     sec_proton: "Proton", proton_valve_desc: "Proton od Valve instaluje Steam.", proton_community_desc: "Wersje społeczności: najnowsze wydanie, sprawdzane przed instalacją. Potem uruchom ponownie Steam, aby zobaczyć je na liście zgodności.", proton_downloading: "Pobieranie", proton_verifying: "Sprawdzanie pobranego pliku…", proton_extracting: "Instalowanie…", proton_done: "Zainstalowano {tag} — uruchom ponownie Steam, aby go użyć.",
@@ -468,6 +476,7 @@ const T: Record<Locale, Dict> = {
     update_available: "Dostępna aktualizacja {version}",
   },
   ru: {
+    menu_entry: "SkullKey в меню Steam", menu_entry_desc: "Показывает пункт SkullKey в главном меню Steam. Панель быстрого доступа остаётся доступной в любом случае.",
     view_expanded: "Открыть расширенный вид", view_close: "Закрыть",
     ea_installer_warning: "Установщик EA сообщил о проблеме (код {code}). Игра отмечена как установленная, но может не запуститься.",
     sec_proton: "Proton", proton_valve_desc: "Proton от Valve устанавливает Steam.", proton_community_desc: "Версии сообщества: последний выпуск, проверяется перед установкой. Затем перезапустите Steam, чтобы увидеть их в списке совместимости.", proton_downloading: "Загрузка", proton_verifying: "Проверка загрузки…", proton_extracting: "Установка…", proton_done: "{tag} установлен — перезапустите Steam, чтобы им пользоваться.",

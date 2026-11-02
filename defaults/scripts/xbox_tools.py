@@ -243,11 +243,11 @@ OWN_ENGINE = "engine-file-keychain"
 # `key-chain-file` feature switched on (see xodus-engine/BUILD.md), published
 # as a SkullKey release asset and pinned here by checksum. A different pinned
 # version replaces the installed one when no install or game is running.
-OWN_ENGINE_VERSION = (0, 2, 13)
-OWN_ENGINE_ASSET = "xodus-engine-skullkey-0.2.13-linux-x86_64.tar.xz"
-OWN_ENGINE_URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.2/" + OWN_ENGINE_ASSET
-OWN_ENGINE_SHA512 = ("461ab85504cf9ee05fc0ead644a450b2e3f005531cd9e16c3b92601fdf5092c1677536000f65a0f65fb92784f6cd7725"
-                     "5701632eefd3d71272ae3be078b835ad")
+OWN_ENGINE_VERSION = (0, 2, 14)
+OWN_ENGINE_ASSET = "xodus-engine-skullkey-0.2.14-linux-x86_64.tar.xz"
+OWN_ENGINE_URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.7/" + OWN_ENGINE_ASSET
+OWN_ENGINE_SHA512 = ("90285f2df5fe8bf3d37d3c526dbbc6f850bdce72b59906fdf9062e4e7f2e40bbc5b1a5ae3ac8566a0cd4324965cb3237"
+                     "dc65b99580d2676bd1e2bbf655f28d3a")
 
 
 def install_own_engine(download=None):

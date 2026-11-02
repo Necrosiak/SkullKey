@@ -14,6 +14,7 @@ import { Developer } from "./Developer";
 import { ActionCard, ACCENT } from "./Components/Styled";
 import { t } from "./i18n";
 import { FreeGamesPage, InstalledGamesPage, PlatformsPage } from "./Components/SettingsPages";
+import { menuEntryEnabled, setMenuEntryEnabled } from "./menuEntry";
 
 const GITHUB_URL = "https://github.com/Necrosiak/SkullKey";
 
@@ -209,6 +210,7 @@ const SettingsTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
     const [doubleStick, setDoubleStick] = useState(localStorage.getItem('sk_doubleStick') === 'true');
     const [logging, setLogging] = useState(localStorage.getItem('enableLogger') === 'true');
     const [devMode, setDevMode] = useState(localStorage.getItem('sk_developermode') === 'true');
+    const [menuEntry, setMenuEntry] = useState(menuEntryEnabled);
 
     return (
         <div style={{ padding: "0 8px" }}>
@@ -218,6 +220,12 @@ const SettingsTab: VFC<{ serverAPI: ServerAPI }> = ({ serverAPI }) => {
                     description={t("quick_menu_desc")}
                     checked={doubleStick}
                     onChange={(v) => { setDoubleStick(v); localStorage.setItem('sk_doubleStick', String(v)); }}
+                />
+                <ToggleField
+                    label={t("menu_entry")}
+                    description={t("menu_entry_desc")}
+                    checked={menuEntry}
+                    onChange={(v) => { setMenuEntry(v); setMenuEntryEnabled(v); }}
                 />
                 <PrefixLocation serverAPI={serverAPI} />
             </Section>
