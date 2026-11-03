@@ -24,9 +24,9 @@ import urllib.request
 # maxima-patches/: game language over LSX via MAXIMA_LOCALE, and the 32-bit
 # Origin registry key games need to reach LSX at all. The binary is attached
 # to the SkullKey release that introduced it and pinned by digest.
-VERSION = "v0.14.3-skullkey4"
-SHA256 = "44be94c6d66b9d9dfadc624244b6a7a414d241a16d5c11231251ea6f5dc027fd"
-URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.6/maxima-cli-skullkey-linux-x86_64"
+VERSION = "v0.14.3-skullkey5"
+SHA256 = "da8858aa9bd27a070a1332cbf8cea11f35707967f7d885b6b67ab56d45244143"
+URL = "https://github.com/Necrosiak/SkullKey/releases/download/v1.21.8/maxima-cli-skullkey-linux-x86_64"
 # maxima-cli pads slug/name/offer to 35/35/25 columns as a MINIMUM: a slug or
 # title of 35+ characters is followed by a single space. Parse from the right
 # instead (slug has no spaces, offer has none, the title may contain " - ").

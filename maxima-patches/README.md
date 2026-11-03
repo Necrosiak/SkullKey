@@ -1,8 +1,9 @@
 # Maxima source patches
 
 Base: Maxima v0.14.3, commit `afea420242f282019b1ffd7d9e223d0631d300dc`.
-Apply `skullkey-locale.patch` first, then `skullkey-ea-installers.patch`.
-The second patch was checked against a fresh copy with the first patch applied.
+Apply `skullkey-locale.patch` first, then `skullkey-ea-installers.patch`, then
+`skullkey-ea-legacy-staging.patch`. Each patch was checked against a fresh copy
+with the previous ones applied.
 
 These are source changes for the next client build. Adding the patch does not
 replace the released client: the EA adapter still checks its pinned binary and
@@ -29,6 +30,27 @@ This is an explicit parameter contract, **not** automatic registry injection for
 all older games. There is no guessed registry path and no game-specific key mapping.
 Battlefield 2142's installer has not been tested; this patch must not be advertised
 as a confirmed fix for its CD-key error without that validation.
+
+## Staged keys for older installers (`skullkey-ea-legacy-staging.patch`)
+
+EA Download Manager-era installers such as Battlefield 2142's `EASetup.exe` take no
+key argument. The EA app hands them the product key through
+`HKCU\Software\Electronic Arts\EA Core\Staging\eadm\eadm\online_content\<id>\ergc`
+(default value, REG_SZ, the plain key shown in the app); the installer then writes its
+own encrypted copy. The `<id>` is read from the installer's `autorun.dat` under
+`__Installer` (ASCII or UTF-16). Only when exactly one such id is found is the account's
+key resolved and written, through a private `.reg` file (mode 600, removed afterwards)
+imported by `regedit /S` with the sensitive runner. Installers without that entry never
+query the key API; a missing key is logged, not fatal.
+
+Touchup exit code 3 is accepted when the lines it added to `__Installer/InstallLog.txt`
+show a failed Windows Game Explorer registration (`IGameExplorer2`, `Failed to install
+GDF`) and no other error; the game files are installed. Any other code-3 failure still
+fails.
+
+Validation: 33 Rust regression tests pass, including staging id parsing (ASCII and
+UTF-16), refusal of ambiguous ids, the exact registry entry, and the Game Explorer
+rule. Battlefield 2142 itself has not been tested yet.
 
 The CLI now returns a nonzero process status for errors instead of only printing
 an error and exiting successfully. The patch propagates terminal
