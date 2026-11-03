@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.21.8 — 2026-11-03
+
+### Fixes
+
+- **EA: installs that only failed to register with Windows' game list now finish.** Some older EA installers (Syndicate, Battlefield 1942…) end with code 3 when Windows Game Explorer refuses to list the game, even though the game is fully installed. SkullKey now accepts that case, and only that case; any other installer error still stops the install.
+- **EA: product keys for older installers.** Installers from the EA Download Manager era (such as Battlefield 2142) read the product key that the EA app stores in the registry. SkullKey now places your account's key there before the installer starts, as the EA app does. The key never appears in logs. Battlefield 2142 still needs to be confirmed (#10).
+- SkullKey's background process now stops on its own if Decky Loader goes away without stopping it, instead of staying in memory.
+
+### Thanks
+
+Thanks to [@zavaro](https://github.com/zavaro) for the detailed logs and registry details in [#10](https://github.com/Necrosiak/SkullKey/issues/10).
+
+**Full changelog:** [v1.21.7...v1.21.8](https://github.com/Necrosiak/SkullKey/compare/v1.21.7...v1.21.8)
+
 ## 1.21.7 — 2026-11-02
 
 ### New
