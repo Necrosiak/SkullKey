@@ -1,0 +1,96 @@
+--- a/maxima-lib/src/unix/wine.rs
++++ b/maxima-lib/src/unix/wine.rs
+@@ -573,7 +573,10 @@
+         registry_map.get(&wow6432_query_key).cloned()
+     };
+ 
+-    Ok(value.map(|x| x.replace("Z:", "").replace("\\", "/")))
++    Ok(value.map(|value| {
++        let prefix = wine_prefix_dir().ok();
++        registry_path_for_prefix(&value, prefix.as_deref())
++    }))
+ }
+ 
+ #[cfg(test)]
+@@ -600,3 +603,81 @@
+         assert_eq!(status.code(), Some(7));
+     }
+ }
++
++// Registry values may contain native Windows paths on any Wine drive, including
++// home (X:) and removable libraries. Resolve the current prefix's mapping instead
++// of assuming every path begins with Z:. Non-path registry values stay intact.
++fn registry_path_for_prefix(value: &str, prefix: Option<&std::path::Path>) -> String {
++    let normalized = value.replace("\\", "/");
++    let bytes = normalized.as_bytes();
++    if bytes.len() < 3 || !bytes[0].is_ascii_alphabetic()
++        || bytes[1] != b':' || bytes[2] != b'/' {
++        return normalized;
++    }
++    let Some(prefix) = prefix else { return normalized; };
++    let mapping = prefix.join("dosdevices")
++        .join(format!("{}:", (bytes[0] as char).to_ascii_lowercase()));
++    if !mapping.is_symlink() { return normalized; }
++    let Ok(base) = mapping.canonicalize() else { return normalized; };
++    if !base.is_dir() { return normalized; }
++    let relative = std::path::Path::new(normalized[3..].trim_start_matches('/'));
++    if relative.components().any(|part| matches!(part, std::path::Component::ParentDir)) {
++        return normalized;
++    }
++    base.join(relative).to_string_lossy().into_owned()
++}
++
++#[cfg(test)]
++mod wine_registry_drive_regression {
++    use super::registry_path_for_prefix;
++    use std::os::unix::fs::symlink;
++
++    #[test]
++    fn resolves_every_drive_using_the_selected_prefix() {
++        let root = std::env::temp_dir().join(format!("maxima-all-drives-{}", std::process::id()));
++        for profile in ["first", "second"] {
++            let prefix = root.join(profile);
++            std::fs::create_dir_all(prefix.join("dosdevices")).unwrap();
++            for letter in b'a'..=b'z' {
++                let target = prefix.join(format!("Library {} with spaces", letter as char));
++                std::fs::create_dir_all(&target).unwrap();
++                symlink(&target, prefix.join("dosdevices").join(format!("{}:", letter as char))).unwrap();
++                let input = format!("{}:/Games/any-game.exe", (letter as char).to_ascii_uppercase());
++                assert_eq!(registry_path_for_prefix(&input, Some(&prefix)),
++                    target.join("Games/any-game.exe").display().to_string());
++            }
++        }
++        std::fs::remove_dir_all(root).unwrap();
++    }
++
++    #[test]
++    fn maps_all_current_prefix_drives_and_preserves_non_paths() {
++        let root = std::env::temp_dir().join(format!("maxima-drive-test-{}", std::process::id()));
++        std::fs::create_dir_all(root.join("dosdevices")).unwrap();
++        std::fs::create_dir_all(root.join("drive_c")).unwrap();
++        std::fs::create_dir_all(root.join("Library With Spaces")).unwrap();
++        symlink("/", root.join("dosdevices/z:")).unwrap();
++        symlink(&root, root.join("dosdevices/x:")).unwrap();
++        symlink("../drive_c", root.join("dosdevices/c:")).unwrap();
++        symlink(root.join("Library With Spaces"), root.join("dosdevices/f:")).unwrap();
++        symlink(root.join("missing"), root.join("dosdevices/q:")).unwrap();
++        for (input, expected) in [
++            (r"X:\homebrew\game.exe", root.join("homebrew/game.exe").display().to_string()),
++            (r"x:\homebrew\game.exe", root.join("homebrew/game.exe").display().to_string()),
++            (r"C:\Games\Game.exe", root.join("drive_c/Games/Game.exe").display().to_string()),
++            (r"F:\SkullKey\Burnout", root.join("Library With Spaces/SkullKey/Burnout").display().to_string()),
++            (r"Z:\home\deck\Game.exe", "/home/deck/Game.exe".to_owned()),
++            (r"Q:\Game.exe", "Q:/Game.exe".to_owned()),
++            (r"Y:\Game.exe", "Y:/Game.exe".to_owned()),
++            (r"X:relative", "X:relative".to_owned()),
++            (r"X:\..\outside", "X:/../outside".to_owned()),
++            ("en_US", "en_US".to_owned()),
++            ("key-Z:value", "key-Z:value".to_owned()),
++            ("/native/path", "/native/path".to_owned()),
++        ] {
++            assert_eq!(registry_path_for_prefix(input, Some(&root)), expected, "{input}");
++        }
++        assert_eq!(registry_path_for_prefix(r"X:\game", None), "X:/game");
++        std::fs::remove_dir_all(root).unwrap();
++    }
++}

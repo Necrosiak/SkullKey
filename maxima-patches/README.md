@@ -2,7 +2,7 @@
 
 Base: Maxima v0.14.3, commit `afea420242f282019b1ffd7d9e223d0631d300dc`.
 Apply `skullkey-locale.patch` first, then `skullkey-ea-installers.patch`, then
-`skullkey-ea-legacy-staging.patch`. Each patch was checked against a fresh copy
+`skullkey-ea-legacy-staging.patch`, then `skullkey-wine-drive-paths.patch`. Each patch was checked against a fresh copy
 with the previous ones applied.
 
 These are source changes for the next client build. Adding the patch does not
@@ -88,3 +88,29 @@ The native fixture test is
 It requires `SK_EA_NATIVE_KEY_SMOKE_DIR` containing the dummy installer fixture,
 plus `MAXIMA_WINE_COMMAND` pointing to an isolated-prefix UMU proxy. Never use an
 existing game prefix for this test.
+
+## Wine drive paths (`skullkey-wine-drive-paths.patch`)
+
+Installation checks and launch paths share a registry resolver. Previously it
+only removed `Z:`; a valid game installed through `X:`, `C:` or a removable
+library could finish setup successfully and still appear uninstalled.
+The resolver now translates drive-absolute paths through the selected Wine
+prefix's `dosdevices/<letter>:` mapping. It supports all drive letters,
+relative symlink targets and library paths containing spaces. Non-path values,
+unmapped or broken drives and drive-relative paths remain unconverted;
+parent traversal is not resolved. It does not guess an installation folder or
+mark a game installed because an installer returned zero.
+
+The fix is shared by every EA title and uses each account's own prefix. It
+changes no entitlement check: installed files do not grant a right to launch.
+The EA adapter already reports `NOT_ENTITLED` for any EA game, independently
+of the installation check.
+
+Validation: a private Linux CLI changed Burnout Paradise's `game-info` result
+from `installed: false` to `true` on the same installed files, and SkullKey's
+independent installation check passed without downloading again. Its subsequent
+launch was refused by EA as `NOT_ENTITLED`; gameplay was not validated.
+Regression coverage includes every letter in two independent prefixes,
+relative C-drive mappings, spaces, missing mappings and non-path values.
+Release packaging must ship the rebuilt client together with the matching
+adapter version, download URL and SHA-256 digest.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.21.9 — 2026-11-06
+
+### Fixes
+
+- EA installs that completed successfully could still be reported as failed, including Burnout Paradise. SkullKey now resolves installation paths across Wine drives, for all EA games and library locations. The EA client updates automatically.
+
+### Known issue
+
+- Battlefield 2142 and Syndicate still have separate installer problems under investigation ([#10](https://github.com/Necrosiak/SkullKey/issues/10)).
+
+### Thanks
+
+Thanks to [@bastiHST90](https://github.com/bastiHST90) for reporting the Burnout Paradise install failure in [#14](https://github.com/Necrosiak/SkullKey/issues/14).
+
+**Full changelog:** [v1.21.8...v1.21.9](https://github.com/Necrosiak/SkullKey/compare/v1.21.8...v1.21.9)
+
 ## 1.21.8 — 2026-11-03
 
 ### Fixes
